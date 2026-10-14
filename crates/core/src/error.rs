@@ -40,6 +40,12 @@ pub enum Error {
     CreateFolderFailed,
     #[error("no se pudo renombrar")]
     RenameFailed,
+    #[error("no se pudo leer el archivo o carpeta del equipo")]
+    LocalUnreadable,
+    #[error("no se pudo escribir en la carpeta del equipo")]
+    LocalWriteFailed,
+    #[error("la Transferencia falló")]
+    TransferFailed,
 }
 
 impl Error {
@@ -65,6 +71,9 @@ impl Error {
             Self::InvalidName => "files.invalid_name",
             Self::CreateFolderFailed => "files.create_folder_failed",
             Self::RenameFailed => "files.rename_failed",
+            Self::LocalUnreadable => "transfer.local_unreadable",
+            Self::LocalWriteFailed => "transfer.local_write_failed",
+            Self::TransferFailed => "transfer.failed",
         }
     }
 }

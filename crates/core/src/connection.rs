@@ -12,6 +12,10 @@ use serde::Serialize;
 use crate::error::{Error, Result};
 use crate::profile::Profile;
 
+mod transfer;
+
+pub use transfer::Progress;
+
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -155,8 +159,9 @@ impl Connection {
         }
     }
 
-    /// Traduce un error SFTP, distinguiendo una conexión caída, un permiso
-    /// denegado o algo que no existe de un fallo genérico de la operación.
+    /// Traduce un error SFTP, distinguiendo una conexión caída o que no
+    /// responde, un permiso denegado o algo que no existe de un fallo genérico
+    /// de la operación.
     fn failure(&self, err: SftpError, fallback: Error) -> Error {
         if self.ssh.is_closed() {
             return Error::ConnectionLost;
@@ -164,6 +169,7 @@ impl Connection {
         match err {
             SftpError::Status(s) if s.status_code == StatusCode::PermissionDenied => Error::PermissionDenied,
             SftpError::Status(s) if s.status_code == StatusCode::NoSuchFile => Error::NotFound,
+            SftpError::Timeout | SftpError::IO(_) | SftpError::UnexpectedBehavior(_) => Error::ConnectionLost,
             _ => fallback,
         }
     }

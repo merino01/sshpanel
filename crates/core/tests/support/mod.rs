@@ -147,9 +147,10 @@ impl TestServer {
         self.exec_ok(&["sh", "-c", &script]);
     }
 
-    /// Ejecuta un script como root en el servidor, para preparar casos especiales.
-    pub fn sh(&self, script: &str) {
-        self.exec_ok(&["sh", "-c", script]);
+    /// Ejecuta un script como root en el servidor, para preparar casos
+    /// especiales o comprobar el resultado. Devuelve su salida.
+    pub fn sh(&self, script: &str) -> String {
+        self.exec_ok(&["sh", "-c", script])
     }
 
     /// Registro de `sshd` (nivel VERBOSE) hasta ahora.

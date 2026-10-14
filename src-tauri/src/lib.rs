@@ -1,8 +1,13 @@
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
-use sshpanel_core::{Core, Listing, Profile, SystemSecretStore};
+use sshpanel_core::{Core, Listing, Profile, Progress, SystemSecretStore};
+use tauri::ipc::Channel;
 use tauri::{Manager, State};
+
+/// Cada cuánto, como mucho, se avisa a la interfaz del avance de una Transferencia.
+const PROGRESS_INTERVAL: Duration = Duration::from_millis(100);
 
 /// Lo que la interfaz necesita saber al arrancar.
 #[derive(Serialize)]
@@ -52,6 +57,34 @@ async fn rename(dir: String, from: String, to: String, core: State<'_, Core>) ->
     core.rename(&dir, &from, &to).await.map_err(code)
 }
 
+/// Envía el avance por `channel`, sin saturar la interfaz: el primero, el
+/// último y como mucho uno cada [`PROGRESS_INTERVAL`].
+fn throttled(channel: Channel<Progress>) -> impl FnMut(Progress) + Send {
+    let mut last: Option<Instant> = None;
+    move |progress| {
+        if progress.done == progress.total || last.is_none_or(|t| t.elapsed() >= PROGRESS_INTERVAL) {
+            last = Some(Instant::now());
+            let _ = channel.send(progress);
+        }
+    }
+}
+
+#[tauri::command]
+async fn upload(local: PathBuf, remote_dir: String, on_progress: Channel<Progress>, core: State<'_, Core>) -> Result<String, String> {
+    core.upload(&local, &remote_dir, throttled(on_progress)).await.map_err(code)
+}
+
+#[tauri::command]
+async fn download(
+    remote_dir: String,
+    name: String,
+    local_dir: PathBuf,
+    on_progress: Channel<Progress>,
+    core: State<'_, Core>,
+) -> Result<PathBuf, String> {
+    core.download(&remote_dir, &name, &local_dir, throttled(on_progress)).await.map_err(code)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -61,7 +94,16 @@ pub fn run() {
             app.manage(Core::new(data_dir, Box::new(secrets)));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![app_state, import_profile, connect, list_dir, create_folder, rename])
+        .invoke_handler(tauri::generate_handler![
+            app_state,
+            import_profile,
+            connect,
+            list_dir,
+            create_folder,
+            rename,
+            upload,
+            download
+        ])
         .run(tauri::generate_context!())
         .expect("error al iniciar la aplicación");
 }

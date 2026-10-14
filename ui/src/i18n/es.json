@@ -35,6 +35,23 @@
   "explorer.renameLabel": "Nuevo nombre para {name}",
   "explorer.save": "Guardar",
   "explorer.cancel": "Cancelar",
+  "explorer.upload": "Subir archivos",
+  "explorer.download": "Descargar",
+
+  "transfers.title": "Transferencias",
+  "transfers.clear": "Quitar las terminadas",
+  "transfers.upload": "Subida",
+  "transfers.download": "Descarga",
+  "transfers.waiting": "En espera",
+  "transfers.preparing": "Preparando…",
+  "transfers.progress": "{done} de {total}",
+  "transfers.uploaded": "Subido a {path}",
+  "transfers.uploadedAs": "Subido a {path} como «{name}», porque ya había algo con ese nombre",
+  "transfers.downloaded": "Guardado en {path}",
+  "transfers.lost": "Se ha cortado la conexión con el servidor y la transferencia no ha terminado. Vuelve a conectar y repítela.",
+  "transfers.dropHere": "Suelta aquí para subir a {path}",
+  "transfers.uploadDialog": "Elige los archivos que quieres subir",
+  "transfers.downloadDialog": "Elige dónde guardar «{name}»",
 
   "error.profile.unreadable": "No se ha podido abrir ese fichero. Comprueba que existe y vuelve a intentarlo.",
   "error.profile.malformed": "Ese fichero no parece un perfil válido. Pídele al administrador que te envíe uno nuevo.",
@@ -55,5 +72,8 @@
   "error.files.invalid_name": "Escribe un nombre que no esté vacío y no contenga «/». Tampoco valen «.» ni «..».",
   "error.files.create_folder_failed": "No se ha podido crear la carpeta. Inténtalo de nuevo.",
   "error.files.rename_failed": "No se ha podido cambiar el nombre. Inténtalo de nuevo.",
+  "error.transfer.local_unreadable": "No se ha podido leer ese archivo o carpeta de tu equipo. Comprueba que sigue ahí y que puedes abrirlo.",
+  "error.transfer.local_write_failed": "No se ha podido guardar en esa carpeta de tu equipo. Elige otra o comprueba que queda espacio libre.",
+  "error.transfer.failed": "La transferencia no ha podido terminar. Puede que no quede espacio en el servidor. Inténtalo de nuevo.",
   "error.unknown": "Ha ocurrido un error inesperado. Inténtalo de nuevo."
 }

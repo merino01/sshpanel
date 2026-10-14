@@ -8,12 +8,13 @@ mod secrets;
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
 use connection::Connection;
 
-pub use connection::{Entry, EntryKind, Listing};
+pub use connection::{Entry, EntryKind, Listing, Progress};
 pub use error::{Error, Result};
 pub use profile::{Mode, Profile};
 pub use secrets::{MemorySecretStore, SecretStore, SystemSecretStore};
@@ -25,7 +26,8 @@ const PROFILE_FILE: &str = "profile.json";
 pub struct Core {
     data_dir: PathBuf,
     secrets: Box<dyn SecretStore>,
-    connection: Mutex<Option<Connection>>,
+    /// Compartida, para que una Transferencia larga no bloquee el Explorador.
+    connection: Mutex<Option<Arc<Connection>>>,
 }
 
 impl Core {
@@ -69,33 +71,43 @@ impl Core {
         *slot = None;
         let connection = Connection::open(&profile, &private_key).await?;
         let listing = connection.list(&connection.home).await?;
-        *slot = Some(connection);
+        *slot = Some(Arc::new(connection));
         Ok(listing)
     }
 
     /// Lista una carpeta del Servidor (ruta absoluta).
     pub async fn list(&self, path: &str) -> Result<Listing> {
-        match self.connection.lock().await.as_ref() {
-            Some(connection) => connection.list(path).await,
-            None => Err(Error::NotConnected),
-        }
+        self.connection().await?.list(path).await
     }
 
     /// Crea la carpeta `name` dentro de `parent`. Falla si ya existe algo con
     /// ese nombre.
     pub async fn create_folder(&self, parent: &str, name: &str) -> Result<()> {
-        match self.connection.lock().await.as_ref() {
-            Some(connection) => connection.create_folder(parent, name).await,
-            None => Err(Error::NotConnected),
-        }
+        self.connection().await?.create_folder(parent, name).await
     }
 
     /// Renombra el archivo o carpeta `from` de la carpeta `dir` a `to`, sin
     /// moverlo de carpeta. Nunca sustituye algo que ya exista.
     pub async fn rename(&self, dir: &str, from: &str, to: &str) -> Result<()> {
-        match self.connection.lock().await.as_ref() {
-            Some(connection) => connection.rename(dir, from, to).await,
-            None => Err(Error::NotConnected),
-        }
+        self.connection().await?.rename(dir, from, to).await
+    }
+
+    /// Sube el archivo o la carpeta `local` a la carpeta `remote_dir` del
+    /// Servidor, avisando a `progress` de cada avance. Si el nombre está
+    /// ocupado usa `nombre (1)`, `nombre (2)`…; devuelve el nombre elegido.
+    pub async fn upload(&self, local: &Path, remote_dir: &str, mut progress: impl FnMut(Progress) + Send) -> Result<String> {
+        self.connection().await?.upload(local, remote_dir, &mut progress).await
+    }
+
+    /// Descarga el archivo o la carpeta `name` de la carpeta `remote_dir` a la
+    /// carpeta `local_dir` del equipo, avisando a `progress` de cada avance. Si
+    /// el nombre está ocupado usa `nombre (1)`, `nombre (2)`…; devuelve dónde
+    /// ha quedado.
+    pub async fn download(&self, remote_dir: &str, name: &str, local_dir: &Path, mut progress: impl FnMut(Progress) + Send) -> Result<PathBuf> {
+        self.connection().await?.download(remote_dir, name, local_dir, &mut progress).await
+    }
+
+    async fn connection(&self) -> Result<Arc<Connection>> {
+        self.connection.lock().await.clone().ok_or(Error::NotConnected)
     }
 }

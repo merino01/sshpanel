@@ -1,4 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
+import { downloadDir } from "@tauri-apps/api/path";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
 import "./styles.css";
 import { branding } from "./branding.generated";
@@ -23,6 +25,10 @@ interface Listing {
   path: string;
   entries: Entry[];
 }
+interface Progress {
+  done: number;
+  total: number;
+}
 
 const app = document.querySelector<HTMLElement>("#app")!;
 document.title = branding.name;
@@ -40,6 +46,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 function render(...nodes: Node[]) {
   closeMenu();
+  current = null;
   app.replaceChildren(...nodes);
 }
 
@@ -170,6 +177,9 @@ interface Explorer {
   editing?: Editing;
 }
 
+/** Explorador en pantalla, si es lo que se ve. */
+let current: Explorer | null = null;
+
 function showExplorer(ex: Explorer) {
   const { listing, editing } = ex;
   const shared = ex.state.profile?.shared_folder;
@@ -179,6 +189,8 @@ function showExplorer(ex: Explorer) {
   up.addEventListener("click", () => parent !== null && openFolder(ex, parent));
   const newFolder = el("button", { className: "secondary", textContent: t("explorer.newFolder") });
   newFolder.addEventListener("click", () => startCreating(ex));
+  const upload = el("button", { className: "secondary", textContent: t("explorer.upload") });
+  upload.addEventListener("click", () => pickUploads(listing.path));
 
   const rows = listing.entries.map((entry) =>
     editing?.kind === "rename" && editing.name === entry.name ? nameForm(ex, editing, entry) : entryRow(ex, entry),
@@ -200,10 +212,11 @@ function showExplorer(ex: Explorer) {
       shortcut(ex, t("explorer.home"), ex.home),
       ...(shared ? [shortcut(ex, t("explorer.shared"), shared)] : []),
     ),
-    el("div", { className: "toolbar" }, up, el("p", { className: "path" }, listing.path), newFolder),
+    el("div", { className: "toolbar" }, up, el("p", { className: "path" }, listing.path), newFolder, upload),
     ...(ex.message ? [el("p", { className: "error", role: "alert" }, ex.message)] : []),
     folderArea,
   );
+  current = ex;
   app.querySelector<HTMLInputElement>(".files input")?.focus();
 }
 
@@ -243,6 +256,8 @@ function entryRow(ex: Explorer, entry: Entry) {
 function entryMenuItems(ex: Explorer, entry: Entry, open: () => void): MenuItem[] {
   const items: MenuItem[] = [];
   if (entry.kind === "dir") items.push({ label: t("explorer.openShort"), action: open });
+  // Un enlace roto no tiene nada que descargar.
+  if (entry.kind !== "symlink") items.push({ label: t("explorer.download"), action: () => pickDownload(ex.listing.path, entry.name) });
   items.push(
     {
       label: t("explorer.rename"),
@@ -312,6 +327,152 @@ function fail(ex: Explorer, code: unknown) {
   if (code === "connection.lost" || code === "connection.not_connected") showProblem(ex.state, errorMessage(code));
   else showExplorer({ ...ex, message: errorMessage(code) });
 }
+
+/** Una Transferencia de la cola. */
+interface Transfer {
+  direction: "upload" | "download";
+  name: string;
+  status: "waiting" | "running" | "done" | "failed";
+  progress: Progress | null;
+  /** Al terminar, dónde ha quedado; si falla, qué ha pasado. */
+  outcome?: string;
+  /** Lanza la Transferencia y devuelve dónde ha quedado. */
+  start: (onProgress: Channel<Progress>) => Promise<string>;
+  /** Carpeta del Servidor que cambia al terminar, para refrescarla si está en pantalla. */
+  changes?: string;
+}
+
+const transfers: Transfer[] = [];
+let queueRunning = false;
+/** Vive fuera de `#app` para seguir a la vista al navegar o al perder la conexión. */
+const transferPanel = el("aside", { className: "transfers", ariaLabel: t("transfers.title"), hidden: true });
+document.body.append(transferPanel);
+
+function enqueue(transfer: Omit<Transfer, "status" | "progress">) {
+  transfers.push({ ...transfer, status: "waiting", progress: null });
+  renderTransfers();
+  void runQueue();
+}
+
+/** Lanza las Transferencias en espera, de una en una y por orden de llegada. */
+async function runQueue() {
+  if (queueRunning) return;
+  queueRunning = true;
+  let next: Transfer | undefined;
+  while ((next = transfers.find((tr) => tr.status === "waiting"))) {
+    const transfer = next;
+    transfer.status = "running";
+    renderTransfers();
+    const onProgress = new Channel<Progress>();
+    onProgress.onmessage = (progress) => {
+      transfer.progress = progress;
+      renderTransfers();
+    };
+    try {
+      transfer.outcome = await transfer.start(onProgress);
+      transfer.status = "done";
+      if (current && !current.editing && current.listing.path === transfer.changes) void openFolder(current, transfer.changes);
+    } catch (code) {
+      transfer.status = "failed";
+      if (code === "connection.lost" || code === "connection.not_connected") {
+        transfer.outcome = t("transfers.lost");
+        if (current) fail(current, code);
+      } else {
+        transfer.outcome = errorMessage(code);
+      }
+    }
+    renderTransfers();
+  }
+  queueRunning = false;
+}
+
+function renderTransfers() {
+  const finished = transfers.some((tr) => tr.status === "done" || tr.status === "failed");
+  const clear = el("button", { className: "link", textContent: t("transfers.clear"), hidden: !finished });
+  clear.addEventListener("click", () => {
+    transfers.splice(0, transfers.length, ...transfers.filter((tr) => tr.status === "waiting" || tr.status === "running"));
+    renderTransfers();
+  });
+  transferPanel.hidden = transfers.length === 0;
+  transferPanel.replaceChildren(
+    el("header", {}, el("h2", {}, t("transfers.title")), clear),
+    el("ul", {}, ...transfers.map(transferRow)),
+  );
+}
+
+function transferRow(transfer: Transfer) {
+  const { status, progress } = transfer;
+  const isUpload = transfer.direction === "upload";
+  // Sin `value`, la barra se muestra indeterminada mientras se prepara.
+  const bar = el("progress", { max: 1 });
+  if (status === "done") bar.value = 1;
+  else if (progress) bar.value = progress.total ? Math.min(1, progress.done / progress.total) : 1;
+  else if (status !== "running") bar.value = 0;
+
+  let detail = transfer.outcome ?? t("transfers.waiting");
+  if (status === "running") {
+    detail = progress
+      ? t("transfers.progress", { done: formatSize(Math.min(progress.done, progress.total)), total: formatSize(progress.total) })
+      : t("transfers.preparing");
+  }
+  return el(
+    "li",
+    { className: `transfer ${status}` },
+    el("span", { className: "icon", title: t(isUpload ? "transfers.upload" : "transfers.download") }, isUpload ? "↑" : "↓"),
+    el("span", { className: "name", title: transfer.name }, transfer.name),
+    bar,
+    el("span", { className: status === "failed" ? "detail error" : "detail", title: detail }, detail),
+  );
+}
+
+/** Sube a `dir` los archivos que elija el Miembro con el selector del sistema. */
+async function pickUploads(dir: string) {
+  const paths = await open({ title: t("transfers.uploadDialog"), multiple: true });
+  for (const path of paths ?? []) queueUpload(path, dir);
+}
+
+function queueUpload(local: string, dir: string) {
+  const name = local.split(/[\\/]/).filter(Boolean).pop() ?? local;
+  enqueue({
+    direction: "upload",
+    name,
+    changes: dir,
+    start: async (onProgress) => {
+      const saved = await invoke<string>("upload", { local, remoteDir: dir, onProgress });
+      return saved === name ? t("transfers.uploaded", { path: dir }) : t("transfers.uploadedAs", { name: saved, path: dir });
+    },
+  });
+}
+
+/** Carpeta del equipo elegida en la última descarga, para proponerla la próxima vez. */
+let lastDownloadDir: string | undefined;
+
+/** Descarga `name` de `dir` a la carpeta del equipo que elija el Miembro. */
+async function pickDownload(dir: string, name: string) {
+  const defaultPath = lastDownloadDir ?? (await downloadDir().catch(() => undefined));
+  const localDir = await open({ title: t("transfers.downloadDialog", { name }), directory: true, defaultPath });
+  if (typeof localDir !== "string") return;
+  lastDownloadDir = localDir;
+  enqueue({
+    direction: "download",
+    name,
+    start: async (onProgress) => {
+      const saved = await invoke<string>("download", { remoteDir: dir, name, localDir, onProgress });
+      return t("transfers.downloaded", { path: saved });
+    },
+  });
+}
+
+// Arrastrar archivos o carpetas sobre la ventana los sube a la carpeta que se está viendo.
+void getCurrentWebview().onDragDropEvent(({ payload }) => {
+  const target = current?.listing.path;
+  if (target !== undefined && (payload.type === "enter" || payload.type === "over")) {
+    document.body.dataset.drop = t("transfers.dropHere", { path: target });
+    return;
+  }
+  delete document.body.dataset.drop;
+  if (target !== undefined && payload.type === "drop") for (const path of payload.paths) queueUpload(path, target);
+});
 
 /** Carpeta que contiene `path`, o `null` en la raíz. */
 function parentOf(path: string): string | null {
