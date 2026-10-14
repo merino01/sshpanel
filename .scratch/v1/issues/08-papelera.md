@@ -6,6 +6,7 @@
 
 **Status:** ready-for-agent
 
+- [ ] «Eliminar» disponible en el menú contextual de cada fila (ticket 14)
 - [ ] Borrar siempre pide confirmación
 - [ ] El archivo borrado va a la Papelera y no se elimina
 - [ ] Restaurar un archivo desde la Papelera lo devuelve a su sitio

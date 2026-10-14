@@ -39,8 +39,74 @@ function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 function render(...nodes: Node[]) {
+  closeMenu();
   app.replaceChildren(...nodes);
 }
+
+interface MenuItem {
+  label: string;
+  action: () => void;
+}
+
+/** Menú contextual abierto, si lo hay. Vive fuera de `#app` para que `render()` no lo destruya a medias. */
+let menu: HTMLElement | null = null;
+
+function closeMenu() {
+  menu?.remove();
+  menu = null;
+}
+
+/**
+ * Abre un menú contextual junto al puntero o, si se abrió con el teclado
+ * (tecla Menú o Shift+F10), junto a `anchor`. Al cancelarlo con Escape el foco
+ * vuelve a `anchor`.
+ */
+function showContextMenu(event: MouseEvent, anchor: HTMLElement, label: string, items: MenuItem[]) {
+  event.preventDefault();
+  event.stopPropagation();
+  closeMenu();
+
+  const buttons = items.map(({ label, action }) => {
+    const button = el("button", { role: "menuitem", textContent: label, tabIndex: -1 });
+    button.addEventListener("click", () => {
+      closeMenu();
+      action();
+    });
+    return button;
+  });
+  const list = el("ul", { className: "context-menu", role: "menu", ariaLabel: label }, ...buttons.map((b) => el("li", { role: "none" }, b)));
+  list.addEventListener("keydown", (e) => {
+    const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    const target = { ArrowDown: current + 1, ArrowUp: current - 1, Home: 0, End: buttons.length - 1 }[e.key];
+    if (target !== undefined) {
+      e.preventDefault();
+      buttons[(target + buttons.length) % buttons.length].focus();
+    } else if (e.key === "Escape" || e.key === "Tab") {
+      e.preventDefault();
+      closeMenu();
+      anchor.focus();
+    }
+  });
+  document.body.append(list);
+  menu = list;
+
+  const fromKeyboard = event.clientX === 0 && event.clientY === 0;
+  const rect = anchor.getBoundingClientRect();
+  const x = fromKeyboard ? rect.left + 16 : event.clientX;
+  const y = fromKeyboard ? rect.bottom : event.clientY;
+  list.style.left = `${Math.max(4, Math.min(x, innerWidth - list.offsetWidth - 4))}px`;
+  list.style.top = `${Math.max(4, Math.min(y, innerHeight - list.offsetHeight - 4))}px`;
+  buttons[0]?.focus();
+}
+
+document.addEventListener("pointerdown", (e) => menu && !menu.contains(e.target as Node) && closeMenu(), true);
+addEventListener("blur", closeMenu);
+addEventListener("resize", closeMenu);
+// El menú nativo de la webview («Recargar», «Inspeccionar») no pinta nada en la app;
+// solo se deja en los campos de texto, para poder pegar.
+document.addEventListener("contextmenu", (e) => {
+  if (!(e.target instanceof HTMLInputElement)) e.preventDefault();
+});
 
 function showWelcome(error?: string) {
   const button = el("button", { className: "primary", textContent: t("welcome.import") });
@@ -112,12 +178,19 @@ function showExplorer(ex: Explorer) {
   const up = el("button", { className: "secondary", textContent: t("explorer.up"), disabled: parent === null });
   up.addEventListener("click", () => parent !== null && openFolder(ex, parent));
   const newFolder = el("button", { className: "secondary", textContent: t("explorer.newFolder") });
-  newFolder.addEventListener("click", () => showExplorer({ ...ex, message: undefined, editing: { kind: "create", value: "" } }));
+  newFolder.addEventListener("click", () => startCreating(ex));
 
   const rows = listing.entries.map((entry) =>
     editing?.kind === "rename" && editing.name === entry.name ? nameForm(ex, editing, entry) : entryRow(ex, entry),
   );
   if (editing?.kind === "create") rows.unshift(nameForm(ex, editing));
+
+  // Clic derecho en el hueco de la carpeta, fuera de cualquier fila.
+  const folderArea: HTMLElement = rows.length ? el("ul", { className: "files" }, ...rows) : el("p", { className: "help empty" }, t("files.empty"));
+  folderArea.addEventListener("contextmenu", (event) => {
+    if ((event.target as Element).closest("li")) return;
+    showContextMenu(event, folderArea, t("explorer.menuFolderLabel"), [{ label: t("explorer.newFolder"), action: () => startCreating(ex) }]);
+  });
 
   render(
     el("h1", {}, t("files.title")),
@@ -129,7 +202,7 @@ function showExplorer(ex: Explorer) {
     ),
     el("div", { className: "toolbar" }, up, el("p", { className: "path" }, listing.path), newFolder),
     ...(ex.message ? [el("p", { className: "error", role: "alert" }, ex.message)] : []),
-    rows.length ? el("ul", { className: "files" }, ...rows) : el("p", { className: "help" }, t("files.empty")),
+    folderArea,
   );
   app.querySelector<HTMLInputElement>(".files input")?.focus();
 }
@@ -143,24 +216,45 @@ function shortcut(ex: Explorer, label: string, path: string) {
 
 function entryRow(ex: Explorer, entry: Entry) {
   const isDir = entry.kind === "dir";
+  const open = () => openFolder(ex, joinPath(ex.listing.path, entry.name));
+  // La fila es la que recibe el foco; el botón del nombre solo sirve para el ratón.
   const name = isDir
-    ? el("button", { className: "name", textContent: entry.name, title: t("explorer.open", { name: entry.name }) })
+    ? el("button", { className: "name", textContent: entry.name, title: t("explorer.open", { name: entry.name }), tabIndex: -1 })
     : el("span", { className: "name", title: entry.name }, entry.name);
-  if (isDir) name.addEventListener("click", () => openFolder(ex, joinPath(ex.listing.path, entry.name)));
+  if (isDir) name.addEventListener("click", open);
 
-  const rename = el("button", { className: "link", textContent: t("explorer.rename") });
-  rename.addEventListener("click", () =>
-    showExplorer({ ...ex, message: undefined, editing: { kind: "rename", name: entry.name, value: entry.name } }),
-  );
-
-  return el(
+  const row = el(
     "li",
-    { className: `entry ${entry.kind}` },
+    { className: `entry ${entry.kind}`, tabIndex: 0 },
     el("span", { className: "icon", ariaHidden: "true" }, isDir ? "📁" : "📄"),
     name,
     el("span", { className: "size" }, entry.kind === "file" ? formatSize(entry.size) : ""),
-    rename,
   );
+  row.addEventListener("keydown", (event) => {
+    if (event.target === row && event.key === "Enter" && isDir) open();
+  });
+  row.addEventListener("contextmenu", (event) =>
+    showContextMenu(event, row, t("explorer.menuLabel", { name: entry.name }), entryMenuItems(ex, entry, open)),
+  );
+  return row;
+}
+
+/** Acciones del menú contextual de una fila. */
+function entryMenuItems(ex: Explorer, entry: Entry, open: () => void): MenuItem[] {
+  const items: MenuItem[] = [];
+  if (entry.kind === "dir") items.push({ label: t("explorer.openShort"), action: open });
+  items.push(
+    {
+      label: t("explorer.rename"),
+      action: () => showExplorer({ ...ex, message: undefined, editing: { kind: "rename", name: entry.name, value: entry.name } }),
+    },
+    { label: t("explorer.newFolder"), action: () => startCreating(ex) },
+  );
+  return items;
+}
+
+function startCreating(ex: Explorer) {
+  showExplorer({ ...ex, message: undefined, editing: { kind: "create", value: "" } });
 }
 
 /** Fila con un campo para escribir el nombre de una carpeta nueva o el nuevo nombre de `entry`. */
