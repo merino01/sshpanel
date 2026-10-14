@@ -7,14 +7,20 @@
   "scripts": {
     "branding": "node scripts/apply-branding.mjs",
     "dev": "vite ui",
-    "build": "tsc -p ui && vite build ui",
-    "tauri": "tauri"
+    "build": "npm run check && vite build ui",
+    "tauri": "tauri",
+    "check": "svelte-check --workspace ui --tsconfig ./tsconfig.json",
+    "test": "vitest run --root ui"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tauri-apps/cli": "^2.12.2",
     "smol-toml": "^1.9.1",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.4"
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.6",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.3",

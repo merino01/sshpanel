@@ -1,0 +1,38 @@
+<!--
+  La app: la pantalla que toque según `session.screen` y, una sola vez fuera de
+  ella, el panel de Transferencias, el aviso de soltar, el menú contextual y el
+  diálogo de confirmación, para que sigan ahí al cambiar de pantalla.
+-->
+<script lang="ts">
+  import ConfirmDialog from "./components/ConfirmDialog.svelte";
+  import ContextMenu from "./components/ContextMenu.svelte";
+  import Connecting from "./screens/Connecting.svelte";
+  import Explorer from "./screens/explorer/Explorer.svelte";
+  import Problem from "./screens/Problem.svelte";
+  import PublicKey from "./screens/PublicKey.svelte";
+  import DropOverlay from "./screens/transfers/DropOverlay.svelte";
+  import TransferPanel from "./screens/transfers/TransferPanel.svelte";
+  import Trash from "./screens/trash/Trash.svelte";
+  import Welcome from "./screens/Welcome.svelte";
+  import { session } from "./state/session.svelte";
+</script>
+
+<main>
+  {#if session.screen.name === "welcome"}
+    <Welcome error={session.screen.error} />
+  {:else if session.screen.name === "key"}
+    <PublicKey notice={session.screen.notice} />
+  {:else if session.screen.name === "connecting"}
+    <Connecting />
+  {:else if session.screen.name === "problem"}
+    <Problem message={session.screen.message} />
+  {:else if session.screen.name === "explorer"}
+    <Explorer />
+  {:else if session.screen.name === "trash"}
+    <Trash />
+  {/if}
+</main>
+<TransferPanel />
+<DropOverlay />
+<ContextMenu />
+<ConfirmDialog />

@@ -1,0 +1,84 @@
+/**
+ * Comandos del núcleo, uno por función y con sus tipos. Es el único sitio que
+ * llama a `invoke`: si cambia un comando en `src-tauri/src/commands/`, se
+ * cambia aquí. Los errores llegan como el código del núcleo (`files.not_found`…).
+ */
+import { Channel, invoke } from "@tauri-apps/api/core";
+
+export interface Profile {
+  host: string;
+  username: string;
+  shared_folder: string | null;
+}
+
+export interface AppState {
+  profile: Profile | null;
+  public_key: string | null;
+}
+
+export interface Entry {
+  name: string;
+  kind: "file" | "dir" | "symlink";
+  size: number;
+  /** Segundos desde la época Unix. */
+  modified: number | null;
+}
+
+/** Contenido de una carpeta del Servidor: carpetas primero, luego por nombre. */
+export interface Listing {
+  path: string;
+  entries: Entry[];
+}
+
+/** Un archivo o carpeta de la Papelera. */
+export interface Trashed {
+  id: string;
+  name: string;
+  original_dir: string;
+  kind: Entry["kind"];
+  size: number;
+  /** Cuándo se borró, en segundos desde la época Unix. */
+  deleted: number | null;
+}
+
+/** Dónde ha quedado algo restaurado; `name` puede no ser el original. */
+export interface Restored {
+  dir: string;
+  name: string;
+}
+
+/** Avance de una Transferencia, en bytes. */
+export interface Progress {
+  done: number;
+  total: number;
+}
+
+/** Dónde ha quedado una Transferencia terminada. */
+export type Outcome = { uploaded: string } | { downloaded: string };
+
+export const api = {
+  appState: () => invoke<AppState>("app_state"),
+  importProfile: (path: string) => invoke<AppState>("import_profile", { path }),
+  connect: () => invoke<Listing>("connect"),
+
+  listDir: (path: string) => invoke<Listing>("list_dir", { path }),
+  createFolder: (parent: string, name: string) => invoke<void>("create_folder", { parent, name }),
+  rename: (dir: string, from: string, to: string) => invoke<void>("rename", { dir, from, to }),
+
+  trash: (dir: string, name: string) => invoke<void>("trash", { dir, name }),
+  listTrash: () => invoke<Trashed[]>("list_trash"),
+  restore: (id: string) => invoke<Restored>("restore", { id }),
+
+  addUpload: (id: number, local: string, remoteDir: string) => invoke<void>("add_upload", { id, local, remoteDir }),
+  addDownload: (id: number, remoteDir: string, name: string, localDir: string) =>
+    invoke<void>("add_download", { id, remoteDir, name, localDir }),
+  /** Lanza la Transferencia `id`, o la reanuda donde se quedó, avisando de cada avance. */
+  runTransfer: (id: number, onProgress: (progress: Progress) => void) => {
+    const channel = new Channel<Progress>();
+    channel.onmessage = onProgress;
+    return invoke<Outcome>("run_transfer", { id, onProgress: channel });
+  },
+  cancelTransfer: (id: number) => invoke<void>("cancel_transfer", { id }),
+};
+
+export type Api = typeof api;

@@ -1,0 +1,5 @@
+# Svelte 5 para la interfaz
+
+La interfaz empezó en TypeScript sin framework, construyendo el DOM a mano y repintando cada pantalla entera con cada cambio. Al crecer (Explorador, Transferencias, Papelera) el estado acabó repartido entre variables globales y copias que se pasaban de función en función, todo en un `main.ts` de 750 líneas. Pasamos a Svelte 5: componentes de un solo fichero con sus estilos, estado reactivo con runes en módulos `.svelte.ts` y un runtime pequeño que compila a JavaScript; es además una de las plantillas oficiales de Tauri. Descartamos seguir sin framework (los componentes seguirían siendo funciones que montan DOM y el repintado manual seguiría ahí), React (más runtime y ceremonia para una app de este tamaño) y Solid (menos conocido).
+
+Consecuencias: `svelte-check` sustituye a `tsc` en `npm run build` y obliga a TypeScript 6, porque aún no es compatible con TypeScript 7. La lógica sin DOM vive en `ui/src/lib/` y se prueba con Vitest; la interfaz gráfica sigue sin más pruebas que el smoke test previsto en el spec.
