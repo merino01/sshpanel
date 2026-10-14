@@ -28,6 +28,7 @@
   "explorer.openShort": "Abrir",
   "explorer.menuLabel": "Acciones de {name}",
   "explorer.menuFolderLabel": "Acciones de la carpeta",
+  "explorer.folderLabel": "Contenido de la carpeta",
   "explorer.newFolder": "Nueva carpeta",
   "explorer.newFolderLabel": "Nombre de la carpeta nueva",
   "explorer.create": "Crear",

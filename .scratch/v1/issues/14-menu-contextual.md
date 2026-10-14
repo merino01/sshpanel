@@ -16,3 +16,4 @@
 
 - 2026-10-14: «Eliminar» se añade a este menú en el ticket 08, con confirmación y Papelera.
 - 2026-10-14: Probado a mano: menú con ratón y teclado, Renombrar, Nueva carpeta y Abrir funcionan.
+- 2026-10-14: Cambio decidido con el usuario: el botón «Nueva carpeta» sale de la barra (antes se mantenía). El hueco de la carpeta ocupa el resto de la ventana, se enfoca con Tab y su menú tiene «Nueva carpeta» y «Subir archivos». Las filas muestran la mano y subrayan el nombre al pasar por encima, y un clic en cualquier parte de una carpeta la abre.

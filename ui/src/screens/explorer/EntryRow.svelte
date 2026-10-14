@@ -1,7 +1,7 @@
 <!--
-  Un archivo o carpeta del Explorador. La fila es la que recibe el foco; el
-  botón del nombre de una carpeta solo sirve para el ratón. Intro abre la
-  carpeta, Supr la mueve a la Papelera y el menú contextual tiene el resto.
+  Un archivo o carpeta del Explorador. La fila recibe el foco y, si es una
+  carpeta, se abre con un clic en cualquier parte o con Intro. Supr la mueve a
+  la Papelera y el menú contextual tiene el resto.
 -->
 <script lang="ts">
   import { t } from "../../i18n";
@@ -57,26 +57,26 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-<li bind:this={row} class="entry {entry.kind}" tabindex="0" {onkeydown} {oncontextmenu}>
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_click_events_have_key_events -->
+<li
+  bind:this={row}
+  class="entry {entry.kind}"
+  tabindex="0"
+  title={isDir ? t("explorer.open", { name: entry.name }) : entry.name}
+  onclick={isDir ? open : undefined}
+  {onkeydown}
+  {oncontextmenu}
+>
   <span class="icon" aria-hidden="true">{isDir ? "📁" : "📄"}</span>
-  {#if isDir}
-    <button class="name" title={t("explorer.open", { name: entry.name })} tabindex="-1" onclick={open}>{entry.name}</button>
-  {:else}
-    <span class="name" title={entry.name}>{entry.name}</span>
-  {/if}
+  <span class="name">{entry.name}</span>
   <span class="size">{entry.kind === "file" ? formatSize(entry.size) : ""}</span>
 </li>
 
 <style>
-  button.name {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    text-align: left;
+  li {
+    cursor: pointer;
   }
-  button.name:hover {
+  li:hover .name {
     color: var(--accent);
     text-decoration: underline;
   }
