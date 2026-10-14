@@ -80,4 +80,22 @@ impl Core {
             None => Err(Error::NotConnected),
         }
     }
+
+    /// Crea la carpeta `name` dentro de `parent`. Falla si ya existe algo con
+    /// ese nombre.
+    pub async fn create_folder(&self, parent: &str, name: &str) -> Result<()> {
+        match self.connection.lock().await.as_ref() {
+            Some(connection) => connection.create_folder(parent, name).await,
+            None => Err(Error::NotConnected),
+        }
+    }
+
+    /// Renombra el archivo o carpeta `from` de la carpeta `dir` a `to`, sin
+    /// moverlo de carpeta. Nunca sustituye algo que ya exista.
+    pub async fn rename(&self, dir: &str, from: &str, to: &str) -> Result<()> {
+        match self.connection.lock().await.as_ref() {
+            Some(connection) => connection.rename(dir, from, to).await,
+            None => Err(Error::NotConnected),
+        }
+    }
 }

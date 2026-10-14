@@ -21,6 +21,17 @@
 
   "files.title": "Tus archivos",
   "files.empty": "Esta carpeta está vacía.",
+  "explorer.home": "Mi carpeta",
+  "explorer.shared": "Carpeta compartida",
+  "explorer.up": "↑ Carpeta superior",
+  "explorer.open": "Abrir {name}",
+  "explorer.newFolder": "Nueva carpeta",
+  "explorer.newFolderLabel": "Nombre de la carpeta nueva",
+  "explorer.create": "Crear",
+  "explorer.rename": "Renombrar",
+  "explorer.renameLabel": "Nuevo nombre para {name}",
+  "explorer.save": "Guardar",
+  "explorer.cancel": "Cancelar",
 
   "error.profile.unreadable": "No se ha podido abrir ese fichero. Comprueba que existe y vuelve a intentarlo.",
   "error.profile.malformed": "Ese fichero no parece un perfil válido. Pídele al administrador que te envíe uno nuevo.",
@@ -35,5 +46,11 @@
   "error.connection.not_connected": "No estás conectado al servidor. Pulsa «Reintentar».",
   "error.connection.lost": "Se ha perdido la conexión con el servidor. Pulsa «Reintentar».",
   "error.files.list_failed": "No se ha podido abrir esta carpeta.",
+  "error.files.permission_denied": "El servidor no te da permiso para hacer esto. Si lo necesitas, pídeselo al administrador.",
+  "error.files.not_found": "Esa carpeta o archivo no existe. Puede que alguien lo haya movido o borrado.",
+  "error.files.already_exists": "Ya hay un archivo o carpeta con ese nombre aquí. Elige otro.",
+  "error.files.invalid_name": "Escribe un nombre que no esté vacío y no contenga «/». Tampoco valen «.» ni «..».",
+  "error.files.create_folder_failed": "No se ha podido crear la carpeta. Inténtalo de nuevo.",
+  "error.files.rename_failed": "No se ha podido cambiar el nombre. Inténtalo de nuevo.",
   "error.unknown": "Ha ocurrido un error inesperado. Inténtalo de nuevo."
 }

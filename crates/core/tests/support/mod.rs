@@ -147,6 +147,11 @@ impl TestServer {
         self.exec_ok(&["sh", "-c", &script]);
     }
 
+    /// Ejecuta un script como root en el servidor, para preparar casos especiales.
+    pub fn sh(&self, script: &str) {
+        self.exec_ok(&["sh", "-c", script]);
+    }
+
     /// Registro de `sshd` (nivel VERBOSE) hasta ahora.
     pub fn logs(&self) -> String {
         let out = docker(&["logs", &self.container]);

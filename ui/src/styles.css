@@ -99,7 +99,8 @@ button.secondary {
 }
 .entry {
   display: grid;
-  grid-template-columns: 1.5rem 1fr auto;
+  grid-template-columns: 1.5rem 1fr auto auto;
+  align-items: center;
   gap: 0.5rem;
   padding: 0.45rem 0.5rem;
   border-bottom: 1px solid rgba(127, 127, 127, 0.2);
@@ -112,4 +113,75 @@ button.secondary {
 .entry .size {
   opacity: 0.6;
   font-size: 0.85rem;
+}
+.entry button.name {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+.entry button.name:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.entry button.link {
+  font-size: 0.85rem;
+}
+.entry.editing {
+  grid-template-columns: 1.5rem 1fr;
+}
+.name-form {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.name-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid rgba(127, 127, 127, 0.5);
+  border-radius: 0.4rem;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+}
+button.primary.small {
+  padding: 0.35rem 0.8rem;
+}
+.shortcuts {
+  display: flex;
+  gap: 0.4rem;
+}
+.shortcut {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid rgba(127, 127, 127, 0.4);
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+}
+.shortcut[aria-current] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+.toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  width: min(30rem, 90vw);
+}
+.toolbar .path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.toolbar button.secondary {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.9rem;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }

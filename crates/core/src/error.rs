@@ -28,6 +28,18 @@ pub enum Error {
     ConnectionLost,
     #[error("no se pudo listar la carpeta")]
     ListFailed,
+    #[error("el Servidor no da permiso para esta operación")]
+    PermissionDenied,
+    #[error("el archivo o carpeta no existe")]
+    NotFound,
+    #[error("ya existe un archivo o carpeta con ese nombre")]
+    AlreadyExists,
+    #[error("el nombre está vacío o contiene `/`")]
+    InvalidName,
+    #[error("no se pudo crear la carpeta")]
+    CreateFolderFailed,
+    #[error("no se pudo renombrar")]
+    RenameFailed,
 }
 
 impl Error {
@@ -47,6 +59,12 @@ impl Error {
             Self::NotConnected => "connection.not_connected",
             Self::ConnectionLost => "connection.lost",
             Self::ListFailed => "files.list_failed",
+            Self::PermissionDenied => "files.permission_denied",
+            Self::NotFound => "files.not_found",
+            Self::AlreadyExists => "files.already_exists",
+            Self::InvalidName => "files.invalid_name",
+            Self::CreateFolderFailed => "files.create_folder_failed",
+            Self::RenameFailed => "files.rename_failed",
         }
     }
 }

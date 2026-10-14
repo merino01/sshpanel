@@ -42,6 +42,16 @@ async fn list_dir(path: String, core: State<'_, Core>) -> Result<Listing, String
     core.list(&path).await.map_err(code)
 }
 
+#[tauri::command]
+async fn create_folder(parent: String, name: String, core: State<'_, Core>) -> Result<(), String> {
+    core.create_folder(&parent, &name).await.map_err(code)
+}
+
+#[tauri::command]
+async fn rename(dir: String, from: String, to: String, core: State<'_, Core>) -> Result<(), String> {
+    core.rename(&dir, &from, &to).await.map_err(code)
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -51,7 +61,7 @@ pub fn run() {
             app.manage(Core::new(data_dir, Box::new(secrets)));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![app_state, import_profile, connect, list_dir])
+        .invoke_handler(tauri::generate_handler![app_state, import_profile, connect, list_dir, create_folder, rename])
         .run(tauri::generate_context!())
         .expect("error al iniciar la aplicación");
 }
