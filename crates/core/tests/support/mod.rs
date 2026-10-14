@@ -1,7 +1,9 @@
 //! Banco de pruebas: un servidor OpenSSH efímero en contenedor Docker.
 //!
 //! Usuarios disponibles: `alice` y `bob`, sin contraseña; solo entran con una
-//! clave autorizada mediante [`TestServer::authorize`].
+//! clave autorizada mediante [`TestServer::authorize`]. Como recomienda la guía
+//! del servidor, las claves están en `/etc/ssh/authorized_keys/<usuario>`, de
+//! root, donde los Miembros no pueden cambiarlas.
 
 #![allow(dead_code)]
 
@@ -127,16 +129,14 @@ impl TestServer {
     pub fn authorize_with(&self, user: &str, options: &str, public_key: &str) {
         let line = if options.is_empty() { public_key.to_string() } else { format!("{options} {public_key}") };
         let script = format!(
-            "echo '{line}' >> /home/{user}/.ssh/authorized_keys \
-             && chown {user}:{user} /home/{user}/.ssh/authorized_keys \
-             && chmod 600 /home/{user}/.ssh/authorized_keys"
+            "echo '{line}' >> /etc/ssh/authorized_keys/{user} && chmod 644 /etc/ssh/authorized_keys/{user}"
         );
         self.exec_ok(&["sh", "-c", &script]);
     }
 
     /// Revoca todas las claves de `user`.
     pub fn revoke_all(&self, user: &str) {
-        let script = format!("rm -f /home/{user}/.ssh/authorized_keys");
+        let script = format!("rm -f /etc/ssh/authorized_keys/{user}");
         self.exec_ok(&["sh", "-c", &script]);
     }
 

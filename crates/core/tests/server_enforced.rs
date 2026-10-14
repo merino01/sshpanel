@@ -61,6 +61,22 @@ async fn a_simple_key_gets_files_but_no_terminal_whatever_the_profile_says() {
 }
 
 #[tokio::test]
+async fn a_simple_member_cannot_lift_the_limits_by_rewriting_their_keys() {
+    let server = TestServer::start();
+    let s = connect(&server, SIMPLE).await;
+    let unrestricted = s.dir.path().join("authorized_keys");
+    fs::write(&unrestricted, s.core.public_key().unwrap()).unwrap();
+
+    // Su `~/.ssh` es suyo, pero el Servidor no lo lee: las claves están en /etc.
+    s.core.run(&Transfer::upload(&unrestricted, "/home/alice/.ssh"), |_| {}).await.unwrap();
+    assert_eq!(server.sh("cat /home/alice/.ssh/authorized_keys"), s.core.public_key().unwrap());
+    assert_eq!(s.core.run(&Transfer::upload(&unrestricted, "/etc/ssh/authorized_keys"), |_| {}).await.unwrap_err(), Error::PermissionDenied);
+    s.core.connect().await.unwrap();
+
+    assert_eq!(s.core.open_terminal(1, 80, 24, |_| {}).await.unwrap_err(), Error::TerminalFailed);
+}
+
+#[tokio::test]
 async fn an_advanced_key_gets_the_terminal() {
     let server = TestServer::start();
     let s = connect(&server, ADVANCED).await;

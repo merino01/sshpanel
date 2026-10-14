@@ -9,3 +9,4 @@
 - [ ] Detecta una versión nueva en GitHub Releases al arrancar
 - [ ] Ofrece actualizar con un botón y aplica la actualización
 - [ ] Si no es viable sin firma de código, se documenta la reinstalación manual y se acuerda con el usuario
+- [ ] README: cómo configurar las claves de firma del actualizador y el repositorio de releases (viene del ticket 11)

@@ -15,7 +15,7 @@ const KEY_TYPES = /^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed
 const BASE64 = /^[A-Za-z0-9+/]+={0,3}$/;
 
 /**
- * La línea para `~usuario/.ssh/authorized_keys`, o `null` si `key` no es una
+ * La línea para `/etc/ssh/authorized_keys/<usuario>`, o `null` si `key` no es una
  * única clave pública tal como la copia la app (`tipo base64 [comentario]`).
  * Una línea que ya trae opciones no vale: las pone el modo.
  */

@@ -91,7 +91,7 @@ async fn invalid_choices_are_refused_before_connecting() {
 
     let cases = [
         (NewProfile { host: "  ".into(), ..base.clone() }, "host"),
-        (NewProfile { host: "ejemplo.com/x".into(), ..base.clone() }, "host"),
+        (NewProfile { host: "example.com/x".into(), ..base.clone() }, "host"),
         (NewProfile { port: 0, ..base.clone() }, "port"),
         (NewProfile { username: "Alice".into(), ..base.clone() }, "username"),
         (NewProfile { shared_folder: Some("compartida".into()), ..base.clone() }, "shared_folder"),

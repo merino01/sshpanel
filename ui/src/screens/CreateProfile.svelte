@@ -36,7 +36,7 @@
     <form {onsubmit} novalidate>
       <label class:invalid={isInvalid("host")}>
         <span>{t("create.host")}</span>
-        <input type="text" bind:value={form.host} placeholder="vps.ejemplo.com" spellcheck={false} aria-invalid={isInvalid("host")} />
+        <input type="text" bind:value={form.host} placeholder="vps.example.com" spellcheck={false} aria-invalid={isInvalid("host")} />
         {#if isInvalid("host")}<small class="error">{t("create.invalid.host")}</small>{/if}
       </label>
       <label class:invalid={isInvalid("port")}>

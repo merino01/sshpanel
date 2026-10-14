@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { authorizedKeyLine } from "./authorizedKeys";
 
-const KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl";
+const KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEjEmPlOdEcLaVeNoReAlXxXxXxXxXxXxXxXxXxXxXxX";
 
 describe("authorizedKeyLine", () => {
   it("antepone las opciones de cada modo", () => {

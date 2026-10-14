@@ -10,11 +10,11 @@ use sshpanel_core::{Core, Error, MemorySecretStore, Mode, SecretStore};
 use support::{TestKey, TestServer};
 use tempfile::TempDir;
 
-const FINGERPRINT: &str = "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8";
+const FINGERPRINT: &str = "SHA256:EjEmPlOdEhUeLlAnOeSrEaLxXxXxXxXxXxXxXxXxXxX";
 
 fn profile_json(extra: &str) -> String {
     format!(
-        r#"{{"version":1,"host":"servidor.ejemplo.com","username":"usuario1","fingerprint":"{FINGERPRINT}","mode":"simple"{extra}}}"#
+        r#"{{"version":1,"host":"servidor.example.com","username":"usuario1","fingerprint":"{FINGERPRINT}","mode":"simple"{extra}}}"#
     )
 }
 
@@ -46,7 +46,7 @@ fn importing_a_valid_profile_makes_it_the_current_one() {
 
     let profile = fx.core.import_profile(&file).unwrap();
 
-    assert_eq!(profile.host, "servidor.ejemplo.com");
+    assert_eq!(profile.host, "servidor.example.com");
     assert_eq!(profile.port, 2222);
     assert_eq!(profile.username, "usuario1");
     assert_eq!(profile.mode, Mode::Simple);
@@ -77,7 +77,7 @@ fn invalid_profiles_are_rejected_and_nothing_is_saved() {
         ("no es JSON", "esto no es un perfil".into(), Error::ProfileMalformed),
         ("falta un campo", r#"{"version":1,"host":"a.com"}"#.into(), Error::ProfileMalformed),
         ("versión futura", profile_json("").replace(r#""version":1"#, r#""version":9"#), Error::ProfileUnsupportedVersion),
-        ("host vacío", profile_json("").replace("servidor.ejemplo.com", " "), Error::ProfileInvalidField("host")),
+        ("host vacío", profile_json("").replace("servidor.example.com", " "), Error::ProfileInvalidField("host")),
         ("usuario con mayúsculas", profile_json("").replace("usuario1", "Root"), Error::ProfileInvalidField("username")),
         ("huella inválida", profile_json("").replace(FINGERPRINT, "SHA256:corta"), Error::ProfileInvalidField("fingerprint")),
         ("puerto cero", profile_json(r#","port":0"#), Error::ProfileInvalidField("port")),

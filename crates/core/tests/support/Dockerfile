@@ -12,8 +12,10 @@ RUN apk add --no-cache openssh openssh-sftp-server \
       'KbdInteractiveAuthentication no' \
       'PermitRootLogin no' \
       'HostKey /etc/ssh/ssh_host_ed25519_key' \
+      'AuthorizedKeysFile /etc/ssh/authorized_keys/%u' \
       'Subsystem sftp internal-sftp' \
       'LogLevel VERBOSE' \
-      > /etc/ssh/sshd_config
+      > /etc/ssh/sshd_config \
+ && mkdir -m 755 /etc/ssh/authorized_keys
 EXPOSE 22
 CMD ["sh", "-c", "ssh-keygen -q -t ed25519 -N '' -f /etc/ssh/ssh_host_ed25519_key && exec /usr/sbin/sshd -D -e"]

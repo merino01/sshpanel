@@ -10,7 +10,7 @@ use support::{TestKey, TestServer};
 use tempfile::TempDir;
 
 /// Huella con formato válido que no es la de ningún servidor de prueba.
-const OTHER_FINGERPRINT: &str = "SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8";
+const OTHER_FINGERPRINT: &str = "SHA256:EjEmPlOdEhUeLlAnOeSrEaLxXxXxXxXxXxXxXxXxXxX";
 
 struct Fixture {
     dir: TempDir,
