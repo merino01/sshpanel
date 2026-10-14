@@ -2,13 +2,15 @@
   «Crear perfil» (Administrador): servidor, usuario, modo y Carpeta compartida
   de un Miembro. La Huella no se escribe: la app la calcula conectándose al
   Servidor. Al terminar dice dónde ha quedado el fichero para enviárselo. Debajo,
-  «Autorizar clave» da la línea de `authorized_keys` de cada Miembro.
+  «Autorizar clave» da la línea de `authorized_keys` de cada Miembro. Sin Perfil
+  importado, el primero es el del propio Administrador: se importa al momento y
+  no hay claves de otros que autorizar.
 -->
 <script lang="ts">
   import { t } from "../i18n";
   import type { ProfileField } from "../lib/profileForm";
   import AuthorizeKey from "./AuthorizeKey.svelte";
-  import { createAnother, createForm, leaveCreateProfile, submitProfile } from "../state/createProfile.svelte";
+  import { createAnother, createForm, importCreated, leaveCreateProfile, submitProfile } from "../state/createProfile.svelte";
 
   const form = $derived(createForm.form);
   const created = $derived(createForm.created);
@@ -24,15 +26,24 @@
   <h1>{t("create.title")}</h1>
   {#if created}
     <p role="status">{t("create.done", { username: created.profile.username, path: created.path })}</p>
+    {#if createForm.own}
+      <p>{t("create.nextStepOwn")}</p>
+    {:else}
+      <p>{t("create.nextStep", { username: created.profile.username })}</p>
+    {/if}
     <p class="help">{t("create.fingerprintHelp")}</p>
     <code class="fingerprint">{created.profile.fingerprint}</code>
-    <p class="help">{t("create.nextStep", { username: created.profile.username })}</p>
     <div class="actions">
-      <button class="secondary" onclick={leaveCreateProfile}>{t("create.back")}</button>
-      <button class="primary" onclick={createAnother}>{t("create.another")}</button>
+      {#if createForm.own}
+        <button class="secondary" onclick={leaveCreateProfile}>{t("create.back")}</button>
+        <button class="primary" onclick={importCreated}>{t("create.importOwn")}</button>
+      {:else}
+        <button class="secondary" onclick={leaveCreateProfile}>{t("create.back")}</button>
+        <button class="primary" onclick={createAnother}>{t("create.another")}</button>
+      {/if}
     </div>
   {:else}
-    <p class="help">{t("create.help")}</p>
+    <p class="help">{t(createForm.own ? "create.helpOwn" : "create.help")}</p>
     <form {onsubmit} novalidate>
       <label class:invalid={isInvalid("host")}>
         <span>{t("create.host")}</span>
@@ -82,7 +93,9 @@
       </div>
     </form>
   {/if}
-  <AuthorizeKey />
+  {#if !createForm.own}
+    <AuthorizeKey />
+  {/if}
 </section>
 
 <style>
@@ -160,6 +173,7 @@
     background: rgba(127, 127, 127, 0.15);
     overflow-wrap: anywhere;
     user-select: all;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    opacity: 0.8;
   }
 </style>

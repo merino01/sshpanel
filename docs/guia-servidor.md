@@ -85,14 +85,20 @@ La ruta (`/srv/compartida`) es la que pondrás en el campo «Carpeta compartida�
 ## 5. Tu Perfil de Administrador
 
 1. Instala la app (ver la [guía de instalación](guia-instalacion.md)).
-2. En la pantalla de bienvenida, pulsa «¿Eres el administrador? Crea un perfil».
-3. Rellena el Servidor, tu usuario, Modo avanzado y la Carpeta compartida, y marca «Perfil de administrador». La app se conecta al Servidor para calcular su Huella; no tienes que copiarla.
-4. Guarda el fichero y vuelve a la bienvenida para importarlo con «Importar perfil».
-5. La app te enseña tu clave pública. En «Autorizar clave» (en la pantalla «Crear perfil»), pégala, elige Modo avanzado y añade la línea que sale a tu fichero de claves:
+2. En la pantalla de bienvenida, pulsa «¿Administras el servidor? Empieza creando tu perfil».
+3. Rellena el Servidor, tu usuario y, si la hay, la Carpeta compartida. Modo avanzado y «Perfil de administrador» ya vienen marcados. La app se conecta al Servidor para calcular su Huella; no tienes que copiarla ni hacer nada con ella.
+4. Guarda el fichero y pulsa «Importar este perfil».
+5. La app te enseña tu clave pública. Cópiala y añade al fichero de claves de tu usuario (paso 2) esta línea, con tu clave detrás de `restrict,pty` (las opciones del Modo avanzado, ver [Modos y seguridad](#modos-y-seguridad)):
 
 ```sh
 sudo nano /etc/ssh/authorized_keys/tu-usuario
 ```
+
+```
+restrict,pty ssh-ed25519 AAAA…tu-clave… sshpanel
+```
+
+Si te sigue rechazando, comprueba que `sudo sshd -T | grep -i authorizedkeysfile` dice `/etc/ssh/authorized_keys/%u`: sin el cambio del paso 2, OpenSSH no mira esa carpeta.
 
 6. Pulsa «Reintentar» en la app.
 

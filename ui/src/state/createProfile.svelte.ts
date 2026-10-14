@@ -4,29 +4,34 @@ import { branding } from "../branding.generated";
 import { errorMessage, t } from "../i18n";
 import { api, type Profile } from "../lib/api";
 import { parseProfileForm, type ProfileField, type ProfileForm } from "../lib/profileForm";
-import { session, show } from "./session.svelte";
+import { importProfileFrom, session, show } from "./session.svelte";
 
 export const createForm = $state<{
   form: ProfileForm;
   invalid: ProfileField[];
   creating: boolean;
+  /** Sin Perfil importado: es el primero, el del propio Administrador. */
+  own: boolean;
   error?: string;
   /** El último Perfil creado y dónde se guardó. */
   created?: { profile: Profile; path: string };
   /** «Autorizar clave»: la clave pública que ha enviado un Miembro, su modo y de quién es. */
   authorize: { key: string; mode: Profile["mode"]; owner: string };
-}>({ form: emptyForm(), invalid: [], creating: false, authorize: { key: "", mode: "simple", owner: "" } });
+}>({ form: emptyForm(), invalid: [], creating: false, own: false, authorize: { key: "", mode: "simple", owner: "" } });
 
-/** Formulario nuevo; con un Perfil importado, propone su mismo Servidor y Carpeta compartida. */
+/**
+ * Formulario nuevo. Con un Perfil importado, es para un Miembro y propone su
+ * mismo Servidor y Carpeta compartida; sin él, es el del propio Administrador.
+ */
 function emptyForm(): ProfileForm {
   const current = session.appState?.profile;
   return {
     host: current?.host ?? "",
     port: String(current?.port ?? 22),
     username: "",
-    mode: "simple",
+    mode: current ? "simple" : "advanced",
     sharedFolder: current?.shared_folder ?? "",
-    admin: false,
+    admin: !current,
   };
 }
 
@@ -36,6 +41,7 @@ export function openCreateProfile() {
     form: emptyForm(),
     invalid: [],
     creating: false,
+    own: !session.appState?.profile,
     error: undefined,
     created: undefined,
     authorize: { key: "", mode: "simple", owner: "" },
@@ -80,4 +86,9 @@ export async function submitProfile() {
   } finally {
     createForm.creating = false;
   }
+}
+
+/** Importa el Perfil recién creado, el del propio Administrador, y entra con él. */
+export async function importCreated() {
+  if (createForm.created) await importProfileFrom(createForm.created.path);
 }

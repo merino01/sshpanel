@@ -134,7 +134,7 @@ export async function openPendingProfile(): Promise<boolean> {
 }
 
 /** Importa el Perfil del fichero `path` y conecta con él. */
-async function importProfileFrom(path: string) {
+export async function importProfileFrom(path: string) {
   try {
     session.appState = await api.importProfile(path);
   } catch (code) {
