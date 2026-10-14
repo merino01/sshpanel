@@ -82,7 +82,8 @@ export const api = {
   createFolder: (parent: string, name: string) => invoke<void>("create_folder", { parent, name }),
   rename: (dir: string, from: string, to: string) => invoke<void>("rename", { dir, from, to }),
 
-  trash: (dir: string, name: string) => invoke<void>("trash", { dir, name }),
+  /** Devuelve su id en la Papelera, para deshacerlo con `restore`. */
+  trash: (dir: string, name: string) => invoke<string>("trash", { dir, name }),
   listTrash: () => invoke<Trashed[]>("list_trash"),
   restore: (id: string) => invoke<Restored>("restore", { id }),
   /** Solo en Modo avanzado. */

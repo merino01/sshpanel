@@ -1,12 +1,13 @@
 <!--
   La app: la pantalla que toque según `session.screen` y, una sola vez fuera de
-  ella, el panel de Transferencias, el aviso de soltar, el menú contextual y el
-  diálogo de confirmación, para que sigan ahí al cambiar de pantalla.
+  ella, el panel de Transferencias, el aviso de soltar, el menú contextual, el
+  diálogo de confirmación y los avisos, para que sigan ahí al cambiar de pantalla.
 -->
 <script lang="ts">
   import ConfirmDialog from "./components/ConfirmDialog.svelte";
   import ContextMenu from "./components/ContextMenu.svelte";
   import Sidebar from "./components/Sidebar.svelte";
+  import Toasts from "./components/Toasts.svelte";
   import Connecting from "./screens/Connecting.svelte";
   import CreateProfile from "./screens/CreateProfile.svelte";
   import Explorer from "./screens/explorer/Explorer.svelte";
@@ -50,3 +51,4 @@
 <DropOverlay />
 <ContextMenu />
 <ConfirmDialog />
+<Toasts />

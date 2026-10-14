@@ -6,8 +6,9 @@ use tauri::State;
 
 use super::code;
 
+/// Devuelve el id en la Papelera, para «Deshacer».
 #[tauri::command]
-pub async fn trash(dir: String, name: String, core: State<'_, Core>) -> Result<(), String> {
+pub async fn trash(dir: String, name: String, core: State<'_, Core>) -> Result<String, String> {
     core.trash(&dir, &name).await.map_err(code)
 }
 

@@ -53,7 +53,7 @@ impl Connection {
         join(&join(&self.home, TRASH), part)
     }
 
-    pub(crate) async fn trash(&self, dir: &str, name: &str) -> Result<()> {
+    pub(crate) async fn trash(&self, dir: &str, name: &str) -> Result<String> {
         self.check_allowed(dir)?;
         if !is_single_name(name) {
             return Err(Error::InvalidName);
@@ -79,7 +79,7 @@ impl Connection {
         if result.is_err() {
             let _ = self.sftp.remove_file(info_path).await;
         }
-        result
+        result.map(|()| id)
     }
 
     /// Reserva en la Papelera el primer nombre libre para `name`, creando su

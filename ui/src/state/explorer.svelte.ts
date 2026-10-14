@@ -4,6 +4,7 @@ import { api, type Entry, type Listing } from "../lib/api";
 import type { Place } from "../lib/paths";
 import { isConnectionError } from "../lib/errors";
 import { show, showConnectionLost, session } from "./session.svelte";
+import { toasts } from "./toasts.svelte";
 
 /** Nombre que el Miembro está escribiendo: una carpeta nueva o un renombrado. */
 export type Editing = { kind: "create"; value: string } | { kind: "rename"; name: string; value: string };
@@ -14,10 +15,6 @@ interface Explorer {
   listing: Listing;
   /** Carpetas visitadas antes de la actual, para volver con «Carpeta anterior». */
   history: string[];
-  /** Qué ha hecho la última operación. */
-  notice?: string;
-  /** Error de la última operación. */
-  message?: string;
   editing?: Editing;
 }
 
@@ -44,16 +41,16 @@ export function enterExplorer(listing: Listing) {
 }
 
 /** Muestra `listing`. Si es otra carpeta, la que se veía pasa al historial, salvo al volver atrás. */
-function showListing(listing: Listing, notice?: string, back = false) {
+function showListing(listing: Listing, back = false) {
   const previous = explorer.listing.path;
   if (!back && previous && previous !== listing.path) explorer.history.push(previous);
-  Object.assign(explorer, { listing, notice, message: undefined, editing: undefined });
+  Object.assign(explorer, { listing, editing: undefined });
   show({ name: "explorer" });
 }
 
-export async function openFolder(path: string, notice?: string) {
+export async function openFolder(path: string) {
   try {
-    showListing(await api.listDir(path), notice);
+    showListing(await api.listDir(path));
   } catch (code) {
     fail(code);
   }
@@ -64,7 +61,7 @@ export async function goBack() {
   const path = explorer.history.pop();
   if (path === undefined) return;
   try {
-    showListing(await api.listDir(path), undefined, true);
+    showListing(await api.listDir(path), true);
   } catch (code) {
     fail(code);
   }
@@ -76,13 +73,12 @@ export function refresh(dir: string) {
 }
 
 /**
- * Una operación ha fallado: se explica en el Explorador, sin salir de la
- * carpeta, salvo si se ha caído la conexión.
+ * Una operación ha fallado: se explica en un aviso y se queda en el
+ * Explorador, salvo si se ha caído la conexión.
  */
 export function fail(code: unknown) {
   if (isConnectionError(code)) return showConnectionLost(code);
-  explorer.notice = undefined;
-  explorer.message = errorMessage(code);
+  toasts.error(errorMessage(code));
   show({ name: "explorer" });
 }
 
@@ -99,7 +95,7 @@ export function stopEditing() {
 }
 
 function edit(editing: Editing | undefined) {
-  Object.assign(explorer, { editing, notice: undefined, message: undefined });
+  explorer.editing = editing;
 }
 
 /** Crea la carpeta o aplica el renombrado que se está escribiendo, con el nombre `value`. */
@@ -117,13 +113,27 @@ export async function submitName(value: string) {
   await openFolder(dir);
 }
 
-/** Mueve `name`, de la carpeta en pantalla, a la Papelera. La confirmación se pide antes. */
+/** Mueve `name`, de la carpeta en pantalla, a la Papelera, con «Deshacer» en el aviso. La confirmación se pide antes. */
 export async function trashEntry(name: string) {
   const dir = explorer.listing.path;
+  let id: string;
   try {
-    await api.trash(dir, name);
+    id = await api.trash(dir, name);
   } catch (code) {
     return fail(code);
   }
-  await openFolder(dir, t("explorer.deleted", { name }));
+  toasts.success(t("explorer.deleted", { name }), { label: t("toast.undo"), run: () => undoTrash(id, name) });
+  await openFolder(dir);
+}
+
+/** Devuelve a su sitio lo que se acaba de mover a la Papelera. */
+async function undoTrash(id: string, original: string) {
+  try {
+    const { dir, name } = await api.restore(id);
+    toasts.success(name === original ? t("trash.restored", { name, dir }) : t("trash.restoredAs", { original, name, dir }));
+    refresh(dir);
+  } catch (code) {
+    if (isConnectionError(code)) showConnectionLost(code);
+    else toasts.error(errorMessage(code));
+  }
 }

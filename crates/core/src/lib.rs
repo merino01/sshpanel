@@ -110,8 +110,9 @@ impl Core {
     }
 
     /// Mueve el archivo o carpeta `name` de la carpeta `dir` a la Papelera del
-    /// Miembro, recordando de dónde vino. Nunca elimina nada.
-    pub async fn trash(&self, dir: &str, name: &str) -> Result<()> {
+    /// Miembro, recordando de dónde vino. Nunca elimina nada. Devuelve su id en
+    /// la Papelera, para deshacerlo con [`Core::restore`].
+    pub async fn trash(&self, dir: &str, name: &str) -> Result<String> {
         self.connection().await?.trash(dir, name).await
     }
 

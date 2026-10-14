@@ -107,6 +107,10 @@
   "terminal.closed": "La sesión de Terminal ha terminado.",
   "terminal.reopen": "Abrir otra",
 
+  "toast.region": "Avisos",
+  "toast.undo": "Deshacer",
+  "toast.close": "Cerrar aviso",
+
   "transfers.title": "Transferencias",
   "transfers.clear": "Quitar las terminadas",
   "transfers.upload": "Subida",

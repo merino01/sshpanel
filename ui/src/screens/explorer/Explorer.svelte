@@ -3,7 +3,6 @@
   «Subir archivos», y debajo el contenido de la carpeta a todo el ancho.
 -->
 <script lang="ts">
-  import Feedback from "../../components/Feedback.svelte";
   import { t } from "../../i18n";
   import { isWithin, parentOf } from "../../lib/paths";
   import { allowedPlaces, explorer, goBack, openFolder, startCreating } from "../../state/explorer.svelte";
@@ -50,7 +49,6 @@
     <Breadcrumbs />
     <button class="secondary" onclick={() => pickUploads(explorer.listing.path)}>{t("explorer.upload")}</button>
   </header>
-  <Feedback notice={explorer.notice} message={explorer.message} />
   <div class="columns" aria-hidden="true">
     <span></span>
     <span>{t("explorer.nameColumn")}</span>
@@ -111,10 +109,6 @@
   .icon:not(:disabled):hover {
     border-color: var(--accent);
     color: var(--accent);
-  }
-  section > :global(.error),
-  section > :global(.feedback) {
-    padding: 0.5rem 1rem 0;
   }
   .folder {
     flex: 1;

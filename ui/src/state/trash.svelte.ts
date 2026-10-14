@@ -5,18 +5,19 @@ import { isConnectionError } from "../lib/errors";
 import { confirm } from "./confirm.svelte";
 import { fail } from "./explorer.svelte";
 import { show, showConnectionLost } from "./session.svelte";
+import { toasts } from "./toasts.svelte";
 
-export const trashView = $state<{ items: Trashed[]; notice?: string; message?: string }>({ items: [] });
+export const trashView = $state<{ items: Trashed[] }>({ items: [] });
 
 /** Muestra la Papelera. Si no se puede listar, se explica en el Explorador. */
-export async function openTrash(notice?: string, message?: string) {
+export async function openTrash() {
   let items: Trashed[];
   try {
     items = await api.listTrash();
   } catch (code) {
     return fail(code);
   }
-  Object.assign(trashView, { items, notice, message });
+  trashView.items = items;
   show({ name: "trash" });
 }
 
@@ -55,12 +56,13 @@ export async function emptyTrash() {
   });
 }
 
-/** Hace un cambio en la Papelera y la vuelve a mostrar con su aviso o, si falla, con el error. */
+/** Hace un cambio en la Papelera, avisa de cómo ha ido y la vuelve a mostrar. */
 async function change(run: () => Promise<string>) {
   try {
-    await openTrash(await run());
+    toasts.success(await run());
   } catch (code) {
-    if (isConnectionError(code)) showConnectionLost(code);
-    else await openTrash(undefined, errorMessage(code));
+    if (isConnectionError(code)) return showConnectionLost(code);
+    toasts.error(errorMessage(code));
   }
+  await openTrash();
 }

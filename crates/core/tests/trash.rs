@@ -87,6 +87,19 @@ async fn restoring_puts_it_back_where_it_was() {
 }
 
 #[tokio::test]
+async fn the_id_returned_when_deleting_undoes_it() {
+    let server = TestServer::start();
+    server.put_file("alice", "notas.txt", "hola");
+    let s = connect(&server).await;
+
+    let id = s.core.trash(HOME, "notas.txt").await.unwrap();
+
+    assert_eq!(s.core.list_trash().await.unwrap()[0].id, id);
+    assert_eq!(s.core.restore(&id).await.unwrap(), Restored { dir: HOME.into(), name: "notas.txt".into() });
+    assert_eq!(server.sh("cat /home/alice/notas.txt"), "hola");
+}
+
+#[tokio::test]
 async fn restoring_onto_an_occupied_name_keeps_both() {
     let server = TestServer::start();
     server.put_file("alice", "notas.txt", "vieja");

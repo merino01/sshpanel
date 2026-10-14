@@ -1,6 +1,5 @@
 <!-- Papelera: lo borrado desde la app, con de dónde vino y cuándo se borró. -->
 <script lang="ts">
-  import Feedback from "../../components/Feedback.svelte";
   import { t } from "../../i18n";
   import { isAdvanced } from "../../state/session.svelte";
   import { emptyTrash, trashView } from "../../state/trash.svelte";
@@ -17,7 +16,6 @@
       <button class="secondary" disabled={!trashView.items.length} onclick={emptyTrash}>{t("trash.emptyTrash")}</button>
     {/if}
   </header>
-  <Feedback notice={trashView.notice} message={trashView.message} />
   <div class="columns" aria-hidden="true">
     <span></span>
     <span>{t("explorer.nameColumn")}</span>
@@ -62,10 +60,6 @@
   h1 {
     margin: 0 0 0.25rem;
     font-size: 1.2rem;
-  }
-  section > :global(.error),
-  section > :global(.feedback) {
-    padding: 0.5rem 1rem 0;
   }
   .items {
     flex: 1;
