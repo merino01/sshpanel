@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "SSH Panel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "io.github.merino01.sshpanel",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -65,5 +65,12 @@
       }
     }
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJBODM5NTkyRTM3MEY4RTMKUldUaitIRGprcFdEdXVYdU9XWGVZcHJDUlh1KzJDOW42bWowd0MxVWh0QXFvVTZucEt3Y29uM3oK",
+      "endpoints": [
+        "https://github.com/merino01/sshpanel/releases/latest/download/latest.json"
+      ]
+    }
+  }
 }

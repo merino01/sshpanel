@@ -10,5 +10,5 @@ accent_color = "#3b82f6"
 # Actualizador: las Releases de dónde se descargan las versiones nuevas y la
 # clave pública con que se firman (ver «Actualizaciones» en el README). Vacíos,
 # la app no busca actualizaciones.
-releases_repo = ""
-updater_pubkey = ""
+releases_repo = "merino01/sshpanel"
+updater_pubkey = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJBODM5NTkyRTM3MEY4RTMKUldUaitIRGprcFdEdXVYdU9XWGVZcHJDUlh1KzJDOW42bWowd0MxVWh0QXFvVTZucEt3Y29uM3oK"
