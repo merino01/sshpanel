@@ -5,6 +5,7 @@ import { errorMessage, t } from "../i18n";
 import { api, type AppState } from "../lib/api";
 import { enterExplorer } from "./explorer.svelte";
 import { closeMenu } from "./menu.svelte";
+import { resetTerminal } from "./terminal.svelte";
 import { transfers } from "./transfers.svelte";
 
 export type Screen =
@@ -15,9 +16,16 @@ export type Screen =
   | { name: "connecting" }
   | { name: "problem"; message: string }
   | { name: "explorer" }
-  | { name: "trash" };
+  | { name: "trash" }
+  /** Solo en Modo avanzado. */
+  | { name: "terminal" };
 
 export const session = $state<{ screen: Screen; appState: AppState | null }>({ screen: { name: "starting" }, appState: null });
+
+/** Si el Perfil es de Modo avanzado: Terminal y borrar para siempre de la Papelera. */
+export function isAdvanced(): boolean {
+  return session.appState?.profile?.mode === "advanced";
+}
 
 export function show(screen: Screen) {
   closeMenu();
@@ -41,6 +49,7 @@ export async function start() {
 
 export async function connect() {
   show({ name: "connecting" });
+  resetTerminal();
   try {
     enterExplorer(await api.connect());
     transfers.resume();

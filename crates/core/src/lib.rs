@@ -12,9 +12,9 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use connection::{Connection, Reserved};
+use connection::{Connection, Reserved, Terminal};
 
-pub use connection::{Entry, EntryKind, Listing, Outcome, Progress, Restored, Transfer, Trashed};
+pub use connection::{Entry, EntryKind, Listing, Outcome, Progress, Restored, TerminalEvent, Transfer, Trashed};
 pub use error::{Error, Result};
 pub use profile::{Mode, Profile};
 pub use secrets::{MemorySecretStore, SecretStore, SystemSecretStore};
@@ -30,11 +30,13 @@ pub struct Core {
     connection: Mutex<Option<Arc<Connection>>>,
     /// Destinos elegidos por las operaciones en curso.
     reserved: Reserved,
+    /// La Terminal abierta, si la hay; solo una a la vez.
+    terminal: Mutex<Option<Terminal>>,
 }
 
 impl Core {
     pub fn new(data_dir: impl Into<PathBuf>, secrets: Box<dyn SecretStore>) -> Self {
-        Self { data_dir: data_dir.into(), secrets, connection: Mutex::new(None), reserved: Reserved::default() }
+        Self { data_dir: data_dir.into(), secrets, connection: Mutex::new(None), reserved: Reserved::default(), terminal: Mutex::new(None) }
     }
 
     /// Importa un fichero de Perfil. Genera la identidad del Miembro si todavía
@@ -69,6 +71,7 @@ impl Core {
     pub async fn connect(&self) -> Result<Listing> {
         let profile = self.current_profile()?.ok_or(Error::NoProfile)?;
         let private_key = identity::private_key(self.secrets.as_ref())?;
+        self.close_terminal().await;
         let mut slot = self.connection.lock().await;
         *slot = None;
         let connection = Connection::open(&profile, &private_key).await?;
@@ -110,6 +113,46 @@ impl Core {
     /// ocupado usa `nombre (1)`, `nombre (2)`…
     pub async fn restore(&self, id: &str) -> Result<Restored> {
         self.connection().await?.restore(id, &self.reserved).await
+    }
+
+    /// Borra para siempre el elemento `id` de la Papelera. Solo en Modo avanzado.
+    pub async fn delete_forever(&self, id: &str) -> Result<()> {
+        self.connection().await?.delete_forever(id).await
+    }
+
+    /// Borra para siempre todo lo que hay en la Papelera. Solo en Modo avanzado.
+    pub async fn empty_trash(&self) -> Result<()> {
+        self.connection().await?.empty_trash().await
+    }
+
+    /// Abre una Terminal en el Servidor de `cols` columnas y `rows` filas,
+    /// cerrando la que hubiera. Lo que responde el Servidor, y el cierre de la
+    /// sesión, llegan por `on_event`. Solo en Modo avanzado.
+    pub async fn open_terminal(&self, cols: u32, rows: u32, on_event: impl FnMut(TerminalEvent) + Send + 'static) -> Result<()> {
+        let connection = self.connection().await?;
+        let mut slot = self.terminal.lock().await;
+        if let Some(old) = slot.take() {
+            old.close().await;
+        }
+        *slot = Some(connection.open_terminal(cols, rows, on_event).await?);
+        Ok(())
+    }
+
+    /// Envía a la Terminal lo que teclea el Miembro.
+    pub async fn terminal_input(&self, data: &[u8]) -> Result<()> {
+        self.terminal.lock().await.as_ref().ok_or(Error::NotConnected)?.input(data).await
+    }
+
+    /// Cambia el tamaño de la Terminal, en columnas y filas.
+    pub async fn resize_terminal(&self, cols: u32, rows: u32) -> Result<()> {
+        self.terminal.lock().await.as_ref().ok_or(Error::NotConnected)?.resize(cols, rows).await
+    }
+
+    /// Cierra la Terminal, si hay una abierta.
+    pub async fn close_terminal(&self) {
+        if let Some(terminal) = self.terminal.lock().await.take() {
+            terminal.close().await;
+        }
     }
 
     /// Lanza una Transferencia, avisando a `progress` de cada avance, o la

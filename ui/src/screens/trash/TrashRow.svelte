@@ -1,16 +1,21 @@
-<!-- Un elemento de la Papelera; «Restaurar» está en su menú contextual. -->
+<!-- Un elemento de la Papelera; «Restaurar» y, en Modo avanzado, «Eliminar definitivamente» están en su menú contextual. -->
 <script lang="ts">
   import { t } from "../../i18n";
   import type { Trashed } from "../../lib/api";
   import { formatDate, formatSize } from "../../lib/format";
   import { openMenu } from "../../state/menu.svelte";
-  import { restore } from "../../state/trash.svelte";
+  import { isAdvanced } from "../../state/session.svelte";
+  import { deleteForever, restore } from "../../state/trash.svelte";
 
   let { item }: { item: Trashed } = $props();
   let row = $state<HTMLLIElement>();
 
   function oncontextmenu(event: MouseEvent) {
-    if (row) openMenu(event, row, t("explorer.menuLabel", { name: item.name }), [{ label: t("trash.restore"), action: () => restore(item) }]);
+    if (!row) return;
+    openMenu(event, row, t("explorer.menuLabel", { name: item.name }), [
+      { label: t("trash.restore"), action: () => restore(item) },
+      ...(isAdvanced() ? [{ label: t("trash.deleteForever"), action: () => deleteForever(item) }] : []),
+    ]);
   }
 </script>
 

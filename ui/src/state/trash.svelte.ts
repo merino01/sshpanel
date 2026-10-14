@@ -1,7 +1,8 @@
-/** Papelera: su contenido y restaurar. */
+/** Papelera: su contenido, restaurar y, en Modo avanzado, borrar para siempre. */
 import { errorMessage, t } from "../i18n";
 import { api, type Trashed } from "../lib/api";
 import { isConnectionError } from "../lib/errors";
+import { confirm } from "./confirm.svelte";
 import { fail } from "./explorer.svelte";
 import { show, showConnectionLost } from "./session.svelte";
 
@@ -19,11 +20,45 @@ export async function openTrash(notice?: string, message?: string) {
   show({ name: "trash" });
 }
 
-export async function restore(item: Trashed) {
-  try {
+export function restore(item: Trashed) {
+  return change(async () => {
     const { dir, name } = await api.restore(item.id);
-    const notice = name === item.name ? t("trash.restored", { name, dir }) : t("trash.restoredAs", { original: item.name, name, dir });
-    await openTrash(notice);
+    return name === item.name ? t("trash.restored", { name, dir }) : t("trash.restoredAs", { original: item.name, name, dir });
+  });
+}
+
+/** Borra `item` para siempre, tras confirmarlo. Solo en Modo avanzado. */
+export async function deleteForever(item: Trashed) {
+  const confirmed = await confirm({
+    title: t("trash.deleteConfirmTitle", { name: item.name }),
+    body: t("trash.deleteConfirmHelp"),
+    confirmLabel: t("trash.deleteForever"),
+  });
+  if (!confirmed) return;
+  await change(async () => {
+    await api.deleteForever(item.id);
+    return t("trash.deletedForever", { name: item.name });
+  });
+}
+
+/** Borra para siempre todo lo de la Papelera, tras confirmarlo. Solo en Modo avanzado. */
+export async function emptyTrash() {
+  const confirmed = await confirm({
+    title: t("trash.emptyConfirmTitle"),
+    body: t("trash.emptyConfirmHelp"),
+    confirmLabel: t("trash.emptyTrash"),
+  });
+  if (!confirmed) return;
+  await change(async () => {
+    await api.emptyTrash();
+    return t("trash.emptied");
+  });
+}
+
+/** Hace un cambio en la Papelera y la vuelve a mostrar con su aviso o, si falla, con el error. */
+async function change(run: () => Promise<string>) {
+  try {
+    await openTrash(await run());
   } catch (code) {
     if (isConnectionError(code)) showConnectionLost(code);
     else await openTrash(undefined, errorMessage(code));

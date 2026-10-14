@@ -2,14 +2,20 @@
 <script lang="ts">
   import Feedback from "../../components/Feedback.svelte";
   import { t } from "../../i18n";
-  import { trashView } from "../../state/trash.svelte";
+  import { isAdvanced } from "../../state/session.svelte";
+  import { emptyTrash, trashView } from "../../state/trash.svelte";
   import TrashRow from "./TrashRow.svelte";
 </script>
 
 <section>
   <header>
-    <h1>{t("trash.title")}</h1>
-    <p class="help">{t("trash.help")}</p>
+    <div>
+      <h1>{t("trash.title")}</h1>
+      <p class="help">{t(isAdvanced() ? "trash.helpAdvanced" : "trash.help")}</p>
+    </div>
+    {#if isAdvanced()}
+      <button class="secondary" disabled={!trashView.items.length} onclick={emptyTrash}>{t("trash.emptyTrash")}</button>
+    {/if}
   </header>
   <Feedback notice={trashView.notice} message={trashView.message} />
   <div class="columns" aria-hidden="true">
@@ -41,8 +47,17 @@
     min-height: 0;
   }
   header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+  }
+  header :global(button.secondary) {
+    flex-shrink: 0;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.9rem;
   }
   h1 {
     margin: 0 0 0.25rem;

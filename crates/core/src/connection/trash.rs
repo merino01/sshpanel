@@ -13,7 +13,7 @@ use serde::Serialize;
 use tokio::io::AsyncWriteExt;
 
 use super::naming::{Reserved, numbered};
-use super::paths::{is_single_name, join, overlaps, split_path};
+use super::paths::{is_single_name, is_within, join, overlaps, split_path};
 use super::{Connection, EntryKind};
 use crate::error::{Error, Result};
 
@@ -159,6 +159,71 @@ impl Connection {
         self.sftp.rename(source, join(dir, &name)).await.map_err(|e| self.failure(e, Error::RestoreFailed))?;
         let _ = self.sftp.remove_file(info_path).await;
         Ok(Restored { dir: dir.to_string(), name })
+    }
+
+    /// Borra para siempre el elemento `id` de la Papelera.
+    pub(crate) async fn delete_forever(&self, id: &str) -> Result<()> {
+        self.check_advanced()?;
+        if !is_single_name(id) {
+            return Err(Error::InvalidName);
+        }
+        self.remove_tree(&join(&self.trash_dir("files"), id)).await?;
+        let _ = self.sftp.remove_file(join(&self.trash_dir("info"), &format!("{id}{INFO_SUFFIX}"))).await;
+        Ok(())
+    }
+
+    /// Borra para siempre todo lo que hay en la Papelera, también lo que no
+    /// tiene `.trashinfo`. Sigue aunque algo falle y devuelve el primer error.
+    pub(crate) async fn empty_trash(&self) -> Result<()> {
+        self.check_advanced()?;
+        let (files, info) = (self.trash_dir("files"), self.trash_dir("info"));
+        let mut first_error = None;
+        for e in self.read_dir_if_exists(&files).await? {
+            if let Err(err) = self.remove_tree(&join(&files, &e)).await {
+                first_error.get_or_insert(err);
+            }
+        }
+        for e in self.read_dir_if_exists(&info).await? {
+            if e.ends_with(INFO_SUFFIX) && self.sftp.remove_file(join(&info, &e)).await.is_err() {
+                self.check_connection()?;
+            }
+        }
+        first_error.map_or(Ok(()), Err)
+    }
+
+    /// Nombres de lo que hay en `dir`; nada si no existe.
+    async fn read_dir_if_exists(&self, dir: &str) -> Result<Vec<String>> {
+        match self.sftp.read_dir(dir).await {
+            Ok(entries) => Ok(entries.map(|e| e.file_name()).filter(|n| is_single_name(n)).collect()),
+            Err(SftpError::Status(s)) if s.status_code == StatusCode::NoSuchFile => Ok(Vec::new()),
+            Err(e) => Err(self.failure(e, Error::DeleteFailed)),
+        }
+    }
+
+    /// Borra `path` con todo lo que contiene, sin seguir enlaces simbólicos.
+    /// Solo dentro de la Papelera.
+    async fn remove_tree(&self, path: &str) -> Result<()> {
+        let trash = join(&self.home, TRASH);
+        if !is_within(path, &trash) || path.trim_end_matches('/') == trash {
+            return Err(Error::DeleteFailed);
+        }
+        let mut pending = vec![(path.to_string(), false)];
+        // Recorrido en profundidad: cada carpeta se borra al volver a ella, ya vacía.
+        while let Some((path, emptied)) = pending.pop() {
+            if emptied {
+                self.sftp.remove_dir(path.as_str()).await.map_err(|e| self.failure(e, Error::DeleteFailed))?;
+                continue;
+            }
+            let meta = self.sftp.symlink_metadata(path.as_str()).await.map_err(|e| self.failure(e, Error::DeleteFailed))?;
+            if !meta.is_dir() {
+                self.sftp.remove_file(path.as_str()).await.map_err(|e| self.failure(e, Error::DeleteFailed))?;
+                continue;
+            }
+            let children = self.read_dir_if_exists(&path).await?;
+            pending.push((path.clone(), true));
+            pending.extend(children.iter().map(|name| (join(&path, name), false)));
+        }
+        Ok(())
     }
 
     /// Crea las carpetas que falten hasta `path` (ruta absoluta).

@@ -3,6 +3,7 @@
 
 pub mod files;
 pub mod profile;
+pub mod terminal;
 pub mod transfers;
 pub mod trash;
 

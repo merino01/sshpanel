@@ -17,12 +17,15 @@ use crate::profile::{Mode, Profile};
 mod explorer;
 mod naming;
 mod paths;
+mod terminal;
 mod transfer;
 mod trash;
 
 pub use explorer::{Entry, EntryKind, Listing};
 pub(crate) use naming::Reserved;
 use paths::is_within;
+pub(crate) use terminal::Terminal;
+pub use terminal::TerminalEvent;
 pub(crate) use transfer::{discard, run};
 pub use transfer::{Outcome, Progress, Transfer};
 pub use trash::{Restored, Trashed};
@@ -61,6 +64,7 @@ pub(crate) struct Connection {
     /// En Modo simple, las únicas carpetas que se pueden usar (con todo lo que
     /// contienen): la personal y la Carpeta compartida. `None` en Modo avanzado.
     allowed: Option<Vec<String>>,
+    mode: Mode,
 }
 
 impl Connection {
@@ -95,7 +99,7 @@ impl Connection {
             Mode::Simple => Some([Some(home.clone()), profile.shared_folder.clone()].into_iter().flatten().collect()),
             Mode::Advanced => None,
         };
-        Ok(Self { ssh, sftp, home, allowed })
+        Ok(Self { ssh, sftp, home, allowed, mode: profile.mode })
     }
 
     /// En Modo simple, falla si `dir` queda fuera de la carpeta personal y de
@@ -105,6 +109,15 @@ impl Connection {
         match &self.allowed {
             Some(roots) if !roots.iter().any(|root| is_within(dir, root)) => Err(Error::OutsideAllowed),
             _ => Ok(()),
+        }
+    }
+
+    /// Falla en Modo simple: la Terminal y borrar para siempre son solo del
+    /// Modo avanzado.
+    fn check_advanced(&self) -> Result<()> {
+        match self.mode {
+            Mode::Advanced => Ok(()),
+            Mode::Simple => Err(Error::AdvancedOnly),
         }
     }
 

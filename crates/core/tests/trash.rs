@@ -227,4 +227,76 @@ async fn the_trash_requires_a_connection() {
     assert_eq!(core.trash(HOME, "x").await.unwrap_err(), Error::NotConnected);
     assert_eq!(core.list_trash().await.unwrap_err(), Error::NotConnected);
     assert_eq!(core.restore("x").await.unwrap_err(), Error::NotConnected);
+    assert_eq!(core.delete_forever("x").await.unwrap_err(), Error::NotConnected);
+    assert_eq!(core.empty_trash().await.unwrap_err(), Error::NotConnected);
+}
+
+#[tokio::test]
+async fn deleting_forever_removes_only_that_item() {
+    let server = TestServer::start();
+    server.put_file("alice", "notas.txt", "hola");
+    server.mkdir("alice", "fotos");
+    server.mkdir("alice", "fotos/viaje");
+    server.put_file("alice", "fotos/viaje/playa.jpg", "jpg");
+    let s = connect(&server).await;
+    s.core.trash(HOME, "notas.txt").await.unwrap();
+    s.core.trash(HOME, "fotos").await.unwrap();
+
+    let fotos = s.core.list_trash().await.unwrap().into_iter().find(|t| t.name == "fotos").unwrap();
+    s.core.delete_forever(&fotos.id).await.unwrap();
+
+    let trash = s.core.list_trash().await.unwrap();
+    assert_eq!(trash.iter().map(|t| t.name.as_str()).collect::<Vec<_>>(), ["notas.txt"]);
+    assert_eq!(server.sh(&format!("ls -A {TRASH}/files {TRASH}/info | grep -v : | sort | tr '\\n' ' '")), "notas.txt notas.txt.trashinfo");
+    assert_eq!(s.core.delete_forever(&fotos.id).await.unwrap_err(), Error::NotFound);
+    assert_eq!(s.core.delete_forever("../notas.txt").await.unwrap_err(), Error::InvalidName);
+}
+
+#[tokio::test]
+async fn emptying_removes_everything_in_the_trash() {
+    let server = TestServer::start();
+    server.put_file("alice", "notas.txt", "hola");
+    server.mkdir("alice", "fotos");
+    server.mkdir("alice", "fotos/viaje");
+    server.put_file("alice", "fotos/viaje/playa.jpg", "jpg");
+    let s = connect(&server).await;
+    s.core.trash(HOME, "notas.txt").await.unwrap();
+    s.core.trash(HOME, "fotos").await.unwrap();
+    // Lo que dejan otras herramientas: un elemento sin `.trashinfo` y un `.trashinfo` roto.
+    server.sh(&format!(
+        "mkdir -p {TRASH}/files/huerfana/dentro && echo -n x > {TRASH}/files/huerfana/dentro/a.txt \
+         && printf 'basura' > {TRASH}/info/roto.trashinfo && chown -R alice:alice /home/alice/.local"
+    ));
+
+    s.core.empty_trash().await.unwrap();
+
+    assert!(s.core.list_trash().await.unwrap().is_empty());
+    assert_eq!(server.sh(&format!("ls -A {TRASH}/files {TRASH}/info | grep -v : | wc -w")), "0");
+    assert_eq!(server.sh(&format!("test -d {TRASH}/files && test -d {TRASH}/info && echo ok")), "ok");
+}
+
+#[tokio::test]
+async fn emptying_does_not_follow_symbolic_links() {
+    let server = TestServer::start();
+    server.mkdir("alice", "importante");
+    server.put_file("alice", "importante/dato.txt", "x");
+    server.sh(&format!(
+        "mkdir -p {TRASH}/files {TRASH}/info && ln -s /home/alice/importante {TRASH}/files/enlace \
+         && ln -s /home/alice/importante/dato.txt {TRASH}/files/enlace-archivo \
+         && chown -R -h alice:alice /home/alice/.local"
+    ));
+    let s = connect(&server).await;
+
+    s.core.empty_trash().await.unwrap();
+
+    assert_eq!(server.sh(&format!("ls -A {TRASH}/files | wc -w")), "0");
+    assert_eq!(server.sh("cat /home/alice/importante/dato.txt"), "x");
+}
+
+#[tokio::test]
+async fn emptying_a_trash_that_does_not_exist_works() {
+    let server = TestServer::start();
+    let s = connect(&server).await;
+
+    s.core.empty_trash().await.unwrap();
 }

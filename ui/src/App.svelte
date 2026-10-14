@@ -10,15 +10,16 @@
   import Connecting from "./screens/Connecting.svelte";
   import Explorer from "./screens/explorer/Explorer.svelte";
   import Problem from "./screens/Problem.svelte";
+  import TerminalScreen from "./screens/terminal/Terminal.svelte";
   import PublicKey from "./screens/PublicKey.svelte";
   import DropOverlay from "./screens/transfers/DropOverlay.svelte";
   import TransferPanel from "./screens/transfers/TransferPanel.svelte";
   import Trash from "./screens/trash/Trash.svelte";
   import Welcome from "./screens/Welcome.svelte";
-  import { session } from "./state/session.svelte";
+  import { isAdvanced, session } from "./state/session.svelte";
 
-  // El Explorador y la Papelera ocupan toda la ventana, con la barra lateral; el resto va centrado.
-  const workspace = $derived(session.screen.name === "explorer" || session.screen.name === "trash");
+  // El Explorador, la Papelera y la Terminal ocupan toda la ventana, con la barra lateral; el resto va centrado.
+  const workspace = $derived(["explorer", "trash", "terminal"].includes(session.screen.name));
 </script>
 
 <main class:workspace>
@@ -37,6 +38,9 @@
     <Explorer />
   {:else if session.screen.name === "trash"}
     <Trash />
+  {/if}
+  {#if workspace && isAdvanced()}
+    <TerminalScreen visible={session.screen.name === "terminal"} />
   {/if}
 </main>
 <TransferPanel />

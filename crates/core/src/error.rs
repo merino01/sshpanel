@@ -46,6 +46,12 @@ pub enum Error {
     TrashProtected,
     #[error("no se pudo restaurar desde la Papelera")]
     RestoreFailed,
+    #[error("no se pudo borrar para siempre de la Papelera")]
+    DeleteFailed,
+    #[error("solo disponible en Modo avanzado")]
+    AdvancedOnly,
+    #[error("no se pudo abrir la Terminal")]
+    TerminalFailed,
     #[error("en Modo simple solo se puede usar la carpeta personal y la Carpeta compartida")]
     OutsideAllowed,
     #[error("no se pudo leer el archivo o carpeta del equipo")]
@@ -84,6 +90,9 @@ impl Error {
             Self::TrashFailed => "files.trash_failed",
             Self::TrashProtected => "files.trash_protected",
             Self::RestoreFailed => "files.restore_failed",
+            Self::DeleteFailed => "files.delete_failed",
+            Self::AdvancedOnly => "mode.advanced_only",
+            Self::TerminalFailed => "terminal.failed",
             Self::OutsideAllowed => "files.outside_allowed",
             Self::LocalUnreadable => "transfer.local_unreadable",
             Self::LocalWriteFailed => "transfer.local_write_failed",

@@ -49,7 +49,7 @@ Carpeta del Servidor opcionalmente definida en el Perfil, con acceso directo fij
 _Avoid_: Carpeta de grupo, share
 
 **Papelera**:
-Carpeta del Servidor a la que van los archivos borrados desde la app en lugar de eliminarse. Solo se vacía en Modo avanzado.
+Carpeta del Servidor a la que van los archivos borrados desde la app en lugar de eliminarse. Solo en Modo avanzado se vacía o se borra algo de ella para siempre.
 _Avoid_: Basura, recycle bin
 
 **Transferencia**:

@@ -69,6 +69,22 @@ export const api = {
   trash: (dir: string, name: string) => invoke<void>("trash", { dir, name }),
   listTrash: () => invoke<Trashed[]>("list_trash"),
   restore: (id: string) => invoke<Restored>("restore", { id }),
+  /** Solo en Modo avanzado. */
+  deleteForever: (id: string) => invoke<void>("delete_forever", { id }),
+  /** Solo en Modo avanzado. */
+  emptyTrash: () => invoke<void>("empty_trash"),
+
+  /** Abre la Terminal (solo en Modo avanzado). Lo que escribe el Servidor llega a `onOutput` en bytes. */
+  openTerminal: (cols: number, rows: number, onOutput: (data: Uint8Array) => void, onClosed: () => void) => {
+    const output = new Channel<ArrayBuffer>();
+    output.onmessage = (data) => onOutput(new Uint8Array(data));
+    const closed = new Channel<null>();
+    closed.onmessage = onClosed;
+    return invoke<void>("open_terminal", { cols, rows, onOutput: output, onClosed: closed });
+  },
+  terminalInput: (data: string) => invoke<void>("terminal_input", { data }),
+  resizeTerminal: (cols: number, rows: number) => invoke<void>("resize_terminal", { cols, rows }),
+  closeTerminal: () => invoke<void>("close_terminal"),
 
   addUpload: (id: number, local: string, remoteDir: string) => invoke<void>("add_upload", { id, local, remoteDir }),
   addDownload: (id: number, remoteDir: string, name: string, localDir: string) =>

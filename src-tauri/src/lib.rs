@@ -1,7 +1,7 @@
 mod commands;
 
 use commands::transfers::Transfers;
-use commands::{files, profile, transfers, trash};
+use commands::{files, profile, terminal, transfers, trash};
 use sshpanel_core::{Core, SystemSecretStore};
 use tauri::Manager;
 
@@ -25,6 +25,12 @@ pub fn run() {
             trash::trash,
             trash::list_trash,
             trash::restore,
+            trash::delete_forever,
+            trash::empty_trash,
+            terminal::open_terminal,
+            terminal::terminal_input,
+            terminal::resize_terminal,
+            terminal::close_terminal,
             transfers::add_upload,
             transfers::add_download,
             transfers::run_transfer,
