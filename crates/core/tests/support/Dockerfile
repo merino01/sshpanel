@@ -13,6 +13,7 @@ RUN apk add --no-cache openssh openssh-sftp-server \
       'PermitRootLogin no' \
       'HostKey /etc/ssh/ssh_host_ed25519_key' \
       'Subsystem sftp internal-sftp' \
+      'LogLevel VERBOSE' \
       > /etc/ssh/sshd_config
 EXPOSE 22
 CMD ["sh", "-c", "ssh-keygen -q -t ed25519 -N '' -f /etc/ssh/ssh_host_ed25519_key && exec /usr/sbin/sshd -D -e"]

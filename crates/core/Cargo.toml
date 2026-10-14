@@ -6,3 +6,17 @@ license.workspace = true
 description = "Núcleo de SSH Panel: lógica de Perfil, identidad, SSH/SFTP, independiente de la interfaz"
 
 [dependencies]
+keyring = "4.2.0"
+rand_core = { version = "0.6", features = ["getrandom"] }
+# `ring` en lugar de `aws-lc-rs`: no exige cmake ni NASM para compilar en Windows.
+russh = { version = "0.64.1", default-features = false, features = ["ring", "flate2"] }
+russh-sftp = "3.0.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+ssh-key = { version = "0.6.7", features = ["ed25519"] }
+thiserror = "2.0.21"
+tokio = { version = "1.53.3", features = ["net", "time", "sync"] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread"] }

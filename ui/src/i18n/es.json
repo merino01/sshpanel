@@ -1,4 +1,39 @@
 {
   "welcome.title": "Te damos la bienvenida a {name}",
-  "welcome.subtitle": "Gestiona los archivos del servidor sin complicaciones."
+  "welcome.subtitle": "Para empezar, necesitas el fichero de perfil que te ha enviado el administrador.",
+  "welcome.import": "Importar perfil",
+  "welcome.dialogTitle": "Elige tu fichero de perfil",
+  "welcome.profileFiles": "Perfil de {name}",
+
+  "unauthorized.title": "Falta un paso: que te den acceso",
+  "ready.subtitle": "Conectarás como {username} a {host}.",
+  "ready.keyHeading": "Tu clave pública",
+  "ready.keyHelp": "Envíale esta clave al administrador para que te dé acceso al servidor. Es seguro compartirla.",
+  "ready.copyKey": "Copiar mi clave pública",
+  "ready.copied": "¡Copiada!",
+  "ready.copyFailed": "No se pudo copiar. Selecciona el texto y cópialo a mano.",
+  "ready.importAnother": "Importar otro perfil",
+
+  "connect.title": "Conectando…",
+  "connect.wait": "Un momento, estamos entrando en el servidor.",
+  "connect.retry": "Reintentar",
+  "problem.title": "No hemos podido conectar",
+
+  "files.title": "Tus archivos",
+  "files.empty": "Esta carpeta está vacía.",
+
+  "error.profile.unreadable": "No se ha podido abrir ese fichero. Comprueba que existe y vuelve a intentarlo.",
+  "error.profile.malformed": "Ese fichero no parece un perfil válido. Pídele al administrador que te envíe uno nuevo.",
+  "error.profile.unsupported_version": "Ese perfil es de una versión más nueva. Actualiza la aplicación o pide uno nuevo al administrador.",
+  "error.profile.invalid_field": "El perfil tiene datos incorrectos. Pídele al administrador que te envíe uno nuevo.",
+  "error.secrets.unavailable": "No se puede acceder al almacén seguro de tu equipo, donde se guarda tu clave. Comprueba que el llavero del sistema está activo.",
+  "error.storage.failed": "No se ha podido guardar la información en tu equipo. Inténtalo de nuevo.",
+  "error.connection.no_profile": "Todavía no has importado ningún perfil.",
+  "error.connection.fingerprint_mismatch": "No hemos podido comprobar que el servidor es el auténtico, así que no nos hemos conectado ni hemos enviado nada. Avisa al administrador.",
+  "error.connection.unauthorized": "El servidor todavía no reconoce tu clave. Envíasela al administrador y, cuando te avise de que ya tienes acceso, pulsa «Reintentar».",
+  "error.connection.unreachable": "No hemos podido contactar con el servidor. Comprueba tu conexión a internet y vuelve a intentarlo.",
+  "error.connection.not_connected": "No estás conectado al servidor. Pulsa «Reintentar».",
+  "error.connection.lost": "Se ha perdido la conexión con el servidor. Pulsa «Reintentar».",
+  "error.files.list_failed": "No se ha podido abrir esta carpeta.",
+  "error.unknown": "Ha ocurrido un error inesperado. Inténtalo de nuevo."
 }

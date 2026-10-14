@@ -9,8 +9,10 @@ description = "SSH Panel: gestor de archivos y terminal remotos para un VPS comp
 tauri-build = { version = "2.7.2", features = [] }
 
 [dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
 sshpanel-core = { path = "../crates/core" }
 tauri = { version = "2.12.3", features = [] }
+tauri-plugin-dialog = "2.8.2"
 
 [lib]
 name = "sshpanel"

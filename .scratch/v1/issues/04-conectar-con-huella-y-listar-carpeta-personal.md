@@ -4,9 +4,13 @@
 
 **Blocked by:** 02-banco-de-pruebas-openssh; 03-importar-perfil-y-generar-identidad
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Conecta y lista la carpeta personal contra el banco de pruebas
-- [ ] Si la Huella no coincide, rechaza la conexión con un mensaje claro y no envía nada
-- [ ] Si la clave no está autorizada, muestra un mensaje claro que invita a contactar al Administrador
-- [ ] El Miembro nunca ve avisos técnicos del tipo "¿confías en este host?"
+- [x] Conecta y lista la carpeta personal contra el banco de pruebas
+- [x] Si la Huella no coincide, rechaza la conexión con un mensaje claro y no envía nada
+- [x] Si la clave no está autorizada, muestra un mensaje claro que invita a contactar al Administrador
+- [x] El Miembro nunca ve avisos técnicos del tipo "¿confías en este host?"
+
+## Comments
+
+- 2026-10-14: Probado a mano contra un Servidor real. Al importar se genera la clave; tras autorizarla en el Servidor, la app conecta y lista la carpeta personal.

@@ -25,3 +25,91 @@ main {
 h1 {
   color: var(--accent);
 }
+h2 {
+  margin: 1rem 0 0;
+  font-size: 1rem;
+}
+main {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 1rem;
+  justify-items: center;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+}
+button.primary {
+  padding: 0.7rem 1.4rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+button.link {
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+}
+.error {
+  color: #dc2626;
+}
+.help,
+.feedback {
+  margin: 0;
+  opacity: 0.8;
+}
+.key {
+  display: block;
+  max-width: 100%;
+  padding: 0.6rem;
+  border-radius: 0.4rem;
+  background: rgba(127, 127, 127, 0.15);
+  overflow-wrap: anywhere;
+  user-select: all;
+  font-size: 0.8rem;
+}
+button.secondary {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+.notice {
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.4rem;
+  background: rgba(234, 179, 8, 0.15);
+}
+.path {
+  margin: 0;
+  opacity: 0.7;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+}
+.files {
+  width: min(30rem, 90vw);
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.entry {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr auto;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+}
+.entry .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.entry .size {
+  opacity: 0.6;
+  font-size: 0.85rem;
+}

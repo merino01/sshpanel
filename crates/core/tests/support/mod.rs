@@ -57,6 +57,17 @@ impl TestKey {
         Self { dir }
     }
 
+    /// Clave de prueba a partir de una clave privada OpenSSH ya existente.
+    pub fn from_private(pem: &str) -> Self {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("sshpanel-key-{}", unique()));
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("id");
+        fs::write(&path, pem).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+        Self { dir }
+    }
+
     pub fn private_path(&self) -> PathBuf {
         self.dir.join("id")
     }
@@ -120,6 +131,38 @@ impl TestServer {
     pub fn revoke_all(&self, user: &str) {
         let script = format!("rm -f /home/{user}/.ssh/authorized_keys");
         self.exec_ok(&["sh", "-c", &script]);
+    }
+
+    /// Crea un archivo en la carpeta personal de `user`, con él como dueño.
+    pub fn put_file(&self, user: &str, name: &str, content: &str) {
+        let script = format!(
+            "printf '%s' '{content}' > /home/{user}/{name} && chown {user}:{user} /home/{user}/{name}"
+        );
+        self.exec_ok(&["sh", "-c", &script]);
+    }
+
+    /// Crea una carpeta en la carpeta personal de `user`, con él como dueño.
+    pub fn mkdir(&self, user: &str, name: &str) {
+        let script = format!("mkdir -p /home/{user}/{name} && chown {user}:{user} /home/{user}/{name}");
+        self.exec_ok(&["sh", "-c", &script]);
+    }
+
+    /// Registro de `sshd` (nivel VERBOSE) hasta ahora.
+    pub fn logs(&self) -> String {
+        let out = docker(&["logs", &self.container]);
+        format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr))
+    }
+
+    /// Espera hasta 5 s a que el registro contenga `needle`.
+    pub fn wait_for_log(&self, needle: &str) -> bool {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline {
+            if self.logs().contains(needle) {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        false
     }
 
     /// Ejecuta `sftp` por lotes contra el servidor, con la clave dada.
