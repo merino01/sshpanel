@@ -13,9 +13,9 @@ export const createForm = $state<{
   error?: string;
   /** El último Perfil creado y dónde se guardó. */
   created?: { profile: Profile; path: string };
-  /** «Autorizar clave»: la clave pública que ha enviado un Miembro y su modo. */
-  authorize: { key: string; mode: Profile["mode"] };
-}>({ form: emptyForm(), invalid: [], creating: false, authorize: { key: "", mode: "simple" } });
+  /** «Autorizar clave»: la clave pública que ha enviado un Miembro, su modo y de quién es. */
+  authorize: { key: string; mode: Profile["mode"]; owner: string };
+}>({ form: emptyForm(), invalid: [], creating: false, authorize: { key: "", mode: "simple", owner: "" } });
 
 /** Formulario nuevo; con un Perfil importado, propone su mismo Servidor y Carpeta compartida. */
 function emptyForm(): ProfileForm {
@@ -38,7 +38,7 @@ export function openCreateProfile() {
     creating: false,
     error: undefined,
     created: undefined,
-    authorize: { key: "", mode: "simple" },
+    authorize: { key: "", mode: "simple", owner: "" },
   });
   const back = session.screen.name === "createProfile" ? session.screen.back : session.screen;
   show({ name: "createProfile", back });
@@ -74,7 +74,7 @@ export async function submitProfile() {
     const profile = await api.createProfile(parsed.profile, path);
     createForm.created = { profile, path };
     // Cuando el Miembro mande su clave, se autoriza con el mismo modo.
-    createForm.authorize = { key: "", mode: profile.mode };
+    createForm.authorize = { key: "", mode: profile.mode, owner: "" };
   } catch (code) {
     createForm.error = errorMessage(code);
   } finally {

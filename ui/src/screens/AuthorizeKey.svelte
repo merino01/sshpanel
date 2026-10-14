@@ -9,7 +9,7 @@
   import { createForm } from "../state/createProfile.svelte";
 
   const authorize = $derived(createForm.authorize);
-  const line = $derived(authorizedKeyLine(authorize.key, authorize.mode));
+  const line = $derived(authorizedKeyLine(authorize.key, authorize.mode, authorize.owner));
   let copied = $state("");
 
   async function copy() {
@@ -34,6 +34,11 @@
   <label>
     <span>{t("authorize.key")}</span>
     <textarea bind:value={authorize.key} rows="3" spellcheck={false} placeholder="ssh-ed25519 AAAA…"></textarea>
+  </label>
+  <label>
+    <span>{t("authorize.owner")}</span>
+    <input type="text" bind:value={authorize.owner} placeholder={t("authorize.ownerPlaceholder")} spellcheck={false} />
+    <small class="help">{t("authorize.ownerHelp")}</small>
   </label>
   <fieldset>
     <legend>{t("create.mode")}</legend>
@@ -76,7 +81,8 @@
   label > span {
     font-weight: 600;
   }
-  textarea {
+  textarea,
+  input[type="text"] {
     padding: 0.45rem 0.6rem;
     border: 1px solid rgba(127, 127, 127, 0.5);
     border-radius: 0.4rem;
@@ -86,7 +92,8 @@
     font-size: 0.85rem;
     resize: vertical;
   }
-  textarea:focus {
+  textarea:focus,
+  input[type="text"]:focus {
     outline: 2px solid var(--accent);
     outline-offset: -1px;
   }

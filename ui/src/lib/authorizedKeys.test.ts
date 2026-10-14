@@ -13,6 +13,12 @@ describe("authorizedKeyLine", () => {
     expect(authorizedKeyLine(`  ${KEY}  alice@portatil \n`, "advanced")).toBe(`restrict,pty ${KEY} alice@portatil`);
   });
 
+  it("pone de quién es en lugar del comentario de la clave, sin espacios", () => {
+    expect(authorizedKeyLine(`${KEY} sshpanel`, "simple", "alice-portatil")).toBe(`restrict,command="internal-sftp" ${KEY} alice-portatil`);
+    expect(authorizedKeyLine(KEY, "advanced", "  Bob   de casa ")).toBe(`restrict,pty ${KEY} Bob-de-casa`);
+    expect(authorizedKeyLine(`${KEY} sshpanel`, "advanced", "   ")).toBe(`restrict,pty ${KEY} sshpanel`);
+  });
+
   it("rechaza lo que no es una única clave pública", () => {
     expect(authorizedKeyLine("", "simple")).toBeNull();
     expect(authorizedKeyLine("hola, esta es mi clave", "simple")).toBeNull();

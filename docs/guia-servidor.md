@@ -101,10 +101,10 @@ sudo nano /etc/ssh/authorized_keys/tu-usuario
 1. Si va a tener su propio usuario, créalo (paso 3) y, si hace falta, añádelo al grupo `compartida` (paso 4). Si usáis usuarios por rol, ya existe.
 2. En la app, «Crear perfil» (abajo en la barra lateral): rellena el usuario (el suyo o el del rol, como `equipo`) y su modo, y guarda el fichero, por ejemplo `alice.dbdesp`. Con usuarios por rol, el mismo Perfil sirve para todos los del rol; solo cambia la clave de cada uno.
 3. Envíale el fichero. Al importarlo, la app le enseña su clave pública con un botón para copiarla, y te la manda.
-4. En «Autorizar clave», pega su clave, elige su modo y copia la línea. Tiene este aspecto:
+4. En «Autorizar clave», pega su clave, escribe de quién es, elige su modo y copia la línea. Tiene este aspecto:
 
 ```
-restrict,command="internal-sftp" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEjEmPlOdEcLaVeNoReAlXxXxXxXxXxXxXxXxXxXxXxX alice@portatil
+restrict,command="internal-sftp" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEjEmPlOdEcLaVeNoReAlXxXxXxXxXxXxXxXxXxXxXxX alice-portatil
 ```
 
 5. Añádela a su fichero de claves:
@@ -131,7 +131,7 @@ En los dos casos, añade una línea por clave, cada una con el modo que le toque
 sudo nano /etc/ssh/authorized_keys/equipo
 ```
 
-Todas las claves que genera la app acaban en `sshpanel`. **Cambia esa última palabra por algo que diga de quién es**, sin espacios, para reconocer cada línea cuando tengas que quitarla:
+Todas las claves que genera la app acaban en `sshpanel`. Para reconocer cada línea cuando tengas que quitarla, **rellena «De quién es»** en «Autorizar clave» (por ejemplo `alice-portatil`): la línea acabará en ese nombre en lugar de en `sshpanel`. Quedan así:
 
 ```
 restrict,pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEjEmPlOdEcLaVeNoReAlXxXxXxXxXxXxXxXxXxXxXxX alice-portatil

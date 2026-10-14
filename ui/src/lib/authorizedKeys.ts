@@ -18,11 +18,16 @@ const BASE64 = /^[A-Za-z0-9+/]+={0,3}$/;
  * La línea para `/etc/ssh/authorized_keys/<usuario>`, o `null` si `key` no es una
  * única clave pública tal como la copia la app (`tipo base64 [comentario]`).
  * Una línea que ya trae opciones no vale: las pone el modo.
+ *
+ * `owner` («De quién es») sustituye al comentario de la clave, que en las que
+ * genera la app es siempre `sshpanel`, para reconocer cada línea cuando varias
+ * claves comparten usuario. Los espacios se cambian por `-`.
  */
-export function authorizedKeyLine(key: string, mode: Profile["mode"]): string | null {
+export function authorizedKeyLine(key: string, mode: Profile["mode"], owner = ""): string | null {
   const line = key.trim();
   if (!line || /[\r\n]/.test(line)) return null;
   const [type, data, ...comment] = line.split(/\s+/);
   if (!KEY_TYPES.test(type) || !data || !BASE64.test(data)) return null;
-  return [KEY_OPTIONS[mode], type, data, ...comment].join(" ");
+  const name = owner.trim().replace(/\s+/g, "-");
+  return [KEY_OPTIONS[mode], type, data, ...(name ? [name] : comment)].join(" ");
 }
