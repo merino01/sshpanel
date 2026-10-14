@@ -87,6 +87,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           releaseId: ${{ needs.draft.outputs.id }}
+          # Si no, ve pnpm-lock.yaml y usa pnpm, que no está en los runners.
+          tauriScript: npx tauri
           args: ${{ matrix.args }}
 
       - name: Compilar (prueba)
