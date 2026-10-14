@@ -39,14 +39,27 @@ sudo sshd -t && sudo systemctl reload ssh
 
 Abre otra terminal y comprueba que sigues entrando antes de cerrar la primera.
 
-## 3. Un usuario Linux por Miembro
+## 3. Usuarios Linux: uno por persona o uno por rol
+
+Cada usuario Linux tiene su carpeta personal y sus permisos. Hay dos formas de repartirlos:
+
+- **Uno por persona** (`alice`, `bob`…). Cada uno tiene su carpeta, su Papelera y sus permisos, y en el Servidor se ve quién ha hecho cada cosa. Es lo más ordenado si sois muchos o si no os conocéis.
+- **Uno por rol**, por ejemplo `equipo` para todos y tu usuario de siempre para administrar. Hay menos usuarios que mantener, pero quienes comparten usuario comparten también todo lo demás:
+  - la misma carpeta personal y la misma Papelera (cada uno ve y puede restaurar lo que borra el otro);
+  - para el Servidor son la misma persona; solo sus registros dicen qué clave entró (ver el paso 8).
+
+  Lo que sí sigue siendo de cada uno es su clave. Cada persona tiene su propia línea en el fichero de claves del usuario, con su propio modo, y puedes quitarle el acceso a una sin tocar a las demás. Así puedes tener a alguien en Modo avanzado y a otro en Modo simple dentro del mismo `equipo`.
+
+Para crear un usuario, sea de una persona o de un rol:
 
 ```sh
 sudo adduser --disabled-password --gecos "" alice
 sudo chmod 750 /home/alice
 ```
 
-Uno por persona, para que cada Miembro tenga sus propios permisos y puedas darle de baja sin afectar a los demás. `--disabled-password` hace que solo se pueda entrar con clave. `chmod 750` hace que el resto de Miembros no pueda ver su carpeta personal.
+`--disabled-password` hace que solo se pueda entrar con clave. `chmod 750` hace que los demás usuarios no puedan ver su carpeta personal.
+
+Si usáis un usuario por rol, la Carpeta compartida (paso 4) es opcional: la carpeta personal de `equipo` ya es común.
 
 ## 4. Carpeta compartida (opcional)
 
@@ -85,8 +98,8 @@ sudo nano /etc/ssh/authorized_keys/tu-usuario
 
 ## 6. Dar de alta a un Miembro
 
-1. Crea su usuario (paso 3) y, si hace falta, añádelo al grupo `compartida` (paso 4).
-2. En la app, «Crear perfil» (abajo en la barra lateral): rellena sus datos y su modo, y guarda el fichero, por ejemplo `alice.dbdesp`.
+1. Si va a tener su propio usuario, créalo (paso 3) y, si hace falta, añádelo al grupo `compartida` (paso 4). Si usáis usuarios por rol, ya existe.
+2. En la app, «Crear perfil» (abajo en la barra lateral): rellena el usuario (el suyo o el del rol, como `equipo`) y su modo, y guarda el fichero, por ejemplo `alice.dbdesp`. Con usuarios por rol, el mismo Perfil sirve para todos los del rol; solo cambia la clave de cada uno.
 3. Envíale el fichero. Al importarlo, la app le enseña su clave pública con un botón para copiarla, y te la manda.
 4. En «Autorizar clave», pega su clave, elige su modo y copia la línea. Tiene este aspecto:
 
@@ -104,6 +117,32 @@ sudo chmod 644 /etc/ssh/authorized_keys/alice
 6. Dile que pulse «Reintentar».
 
 El Perfil no contiene ninguna clave, así que puedes enviarlo por cualquier medio. La clave pública tampoco es secreta.
+
+### Varias claves en el mismo usuario
+
+Un fichero de claves puede tener varias líneas, una por clave. Pasa en dos casos:
+
+- **La misma persona en varios equipos**, por ejemplo el portátil y el ordenador de casa. Cada equipo genera su propia clave, que nunca sale de él. La persona importa el mismo Perfil en los dos y te manda las dos claves.
+- **Varias personas con el mismo usuario**, si usáis usuarios por rol (paso 3). Cada una importa el Perfil de ese usuario y te manda su clave.
+
+En los dos casos, añade una línea por clave, cada una con el modo que le toque:
+
+```sh
+sudo nano /etc/ssh/authorized_keys/equipo
+```
+
+Todas las claves que genera la app acaban en `sshpanel`. **Cambia esa última palabra por algo que diga de quién es**, sin espacios, para reconocer cada línea cuando tengas que quitarla:
+
+```
+restrict,pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEjEmPlOdEcLaVeNoReAlXxXxXxXxXxXxXxXxXxXxXxX alice-portatil
+restrict,command="internal-sftp" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBoBeJeMpLoNoReAlXxXxXxXxXxXxXxXxXxXxXxXxXx bob-casa
+```
+
+Para ver qué claves tiene un usuario, con su Huella y de quién es cada una:
+
+```sh
+sudo ssh-keygen -lf /etc/ssh/authorized_keys/equipo
+```
 
 ## Modos y seguridad
 
@@ -179,6 +218,22 @@ Desde ese momento no puede entrar, ni con la app ni con ningún otro programa. L
 ```sh
 sudo usermod -L alice              # bloquearlo
 sudo deluser --remove-home alice   # borrarlo con su carpeta personal
+```
+
+### Quitar una sola clave
+
+Si el usuario lo comparten varias personas, o es un equipo que alguien ha perdido, borra solo esa línea:
+
+```sh
+sudo nano /etc/ssh/authorized_keys/equipo
+```
+
+Esa clave deja de servir para entrar desde ese momento, y las demás siguen funcionando. Si estaba conectada, la sesión abierta sigue hasta que se cierre. `pkill -u equipo` la cortaría, pero cortaría también las de todos los que usan `equipo`; normalmente basta con esperar.
+
+Para saber qué clave ha entrado y cuándo, busca su Huella en el registro del Servidor y compárala con las de `ssh-keygen -lf`:
+
+```sh
+sudo journalctl -u ssh | grep "Accepted publickey for equipo"
 ```
 
 ## 9. Comprobar la Huella (opcional)
