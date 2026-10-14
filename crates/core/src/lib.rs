@@ -43,12 +43,18 @@ impl Core {
     /// Importa un fichero de Perfil. Genera la identidad del Miembro si todavía
     /// no existe. Si algo falla no se guarda nada.
     pub fn import_profile(&self, file: &Path) -> Result<Profile> {
-        let text = fs::read_to_string(file).map_err(|_| Error::ProfileUnreadable)?;
-        let profile = Profile::parse(&text)?;
+        let profile = self.read_profile(file)?;
         identity::ensure(self.secrets.as_ref())?;
         fs::create_dir_all(&self.data_dir).map_err(|_| Error::Storage)?;
         fs::write(self.data_dir.join(PROFILE_FILE), profile.to_json()).map_err(|_| Error::Storage)?;
         Ok(profile)
+    }
+
+    /// Lee y comprueba un fichero de Perfil sin importarlo, para enseñar qué
+    /// contiene antes de cambiar a él. No guarda nada.
+    pub fn read_profile(&self, file: &Path) -> Result<Profile> {
+        let text = fs::read_to_string(file).map_err(|_| Error::ProfileUnreadable)?;
+        Profile::parse(&text)
     }
 
     /// Perfil importado anteriormente, si lo hay.

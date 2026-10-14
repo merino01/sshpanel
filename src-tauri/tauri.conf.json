@@ -40,8 +40,29 @@
         ],
         "name": "Perfil de DBDesp Panel",
         "description": "Perfil de DBDesp Panel",
-        "role": "Editor"
+        "role": "Editor",
+        "mimeType": "application/x-dbdesp",
+        "exportedType": {
+          "identifier": "com.dbdesp.panel.profile",
+          "conformsTo": [
+            "public.json"
+          ]
+        }
       }
-    ]
+    ],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "linux/app.desktop",
+        "files": {
+          "/usr/share/mime/packages/com.dbdesp.panel.xml": "linux/mime.xml"
+        }
+      },
+      "rpm": {
+        "desktopTemplate": "linux/app.desktop",
+        "files": {
+          "/usr/share/mime/packages/com.dbdesp.panel.xml": "linux/mime.xml"
+        }
+      }
+    }
   }
 }

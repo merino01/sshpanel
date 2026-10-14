@@ -5,6 +5,10 @@
   "welcome.dialogTitle": "Elige tu fichero de perfil",
   "welcome.profileFiles": "Perfil de {name}",
 
+  "open.confirmTitle": "¿Cambiar al perfil de {username} en {host}?",
+  "open.confirmHelp": "Ahora estás usando el de {username} en {host}. Tu clave no cambia; si el servidor nuevo no la conoce, tendrás que enviársela a su administrador.",
+  "open.confirm": "Cambiar de perfil",
+
   "welcome.admin": "¿Eres el administrador? Crea un perfil",
 
   "create.title": "Crear perfil",

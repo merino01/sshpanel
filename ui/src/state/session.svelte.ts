@@ -3,9 +3,11 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { branding } from "../branding.generated";
 import { errorMessage, t } from "../i18n";
 import { api, type AppState } from "../lib/api";
+import { confirm } from "./confirm.svelte";
 import { enterExplorer } from "./explorer.svelte";
 import { closeMenu } from "./menu.svelte";
 import { resetTerminals } from "./terminal.svelte";
+import { toasts } from "./toasts.svelte";
 import { transfers } from "./transfers.svelte";
 
 export type Screen =
@@ -69,8 +71,10 @@ export function showConnectionLost(code: unknown) {
 }
 
 export async function start() {
+  void api.onProfileOpened(() => void openPendingProfile());
   try {
     session.appState = await api.appState();
+    if (await openPendingProfile()) return;
     if (session.appState.profile) await connect();
     else show({ name: "welcome" });
   } catch (code) {
@@ -98,7 +102,39 @@ export async function importProfile() {
     multiple: false,
     filters: [{ name: t("welcome.profileFiles", { name: branding.name }), extensions: [branding.profileExtension] }],
   });
-  if (typeof path !== "string") return;
+  if (typeof path === "string") await importProfileFrom(path);
+}
+
+/**
+ * Importa el Perfil abierto con doble clic, si lo hay. Si ya había otro y es
+ * distinto, pregunta antes de cambiar. Devuelve si lo ha importado.
+ */
+export async function openPendingProfile(): Promise<boolean> {
+  const path = await api.takeOpenedProfile().catch(() => null);
+  if (!path) return false;
+  const current = session.appState?.profile;
+  if (current) {
+    let next;
+    try {
+      next = await api.readProfile(path);
+    } catch (code) {
+      toasts.error(errorMessage(code));
+      return false;
+    }
+    if (JSON.stringify(next) === JSON.stringify(current)) return false;
+    const confirmed = await confirm({
+      title: t("open.confirmTitle", { username: next.username, host: next.host }),
+      body: t("open.confirmHelp", { username: current.username, host: current.host }),
+      confirmLabel: t("open.confirm"),
+    });
+    if (!confirmed) return false;
+  }
+  await importProfileFrom(path);
+  return true;
+}
+
+/** Importa el Perfil del fichero `path` y conecta con él. */
+async function importProfileFrom(path: string) {
   try {
     session.appState = await api.importProfile(path);
   } catch (code) {

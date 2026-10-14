@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generado por scripts/apply-branding.mjs desde branding.toml. No editar. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-dbdesp">
+    <comment>Perfil de DBDesp Panel</comment>
+    <glob pattern="*.dbdesp"/>
+  </mime-type>
+</mime-info>

@@ -7,6 +7,7 @@ use sshpanel_core::{Core, Listing, NewProfile, Profile};
 use tauri::State;
 
 use super::code;
+use crate::opened::Opened;
 
 /// Lo que la interfaz necesita saber al arrancar.
 #[derive(Serialize)]
@@ -30,6 +31,18 @@ pub fn import_profile(path: PathBuf, core: State<Core>) -> Result<AppState, Stri
     let profile = core.import_profile(&path).map_err(code)?;
     let public_key = core.public_key().map_err(code)?;
     Ok(AppState { profile: Some(profile), public_key: Some(public_key) })
+}
+
+/// Lee un fichero de Perfil sin importarlo, para enseñar qué contiene.
+#[tauri::command]
+pub fn read_profile(path: PathBuf, core: State<Core>) -> Result<Profile, String> {
+    core.read_profile(&path).map_err(code)
+}
+
+/// El Perfil abierto con doble clic que la interfaz aún no ha recogido, si lo hay.
+#[tauri::command]
+pub fn take_opened_profile(opened: State<Opened>) -> Option<PathBuf> {
+    opened.take()
 }
 
 #[tauri::command]

@@ -87,6 +87,7 @@ fn invalid_profiles_are_rejected_and_nothing_is_saved() {
         let fx = Fixture::new();
         let file = fx.profile_file(&content);
 
+        assert_eq!(fx.core.read_profile(&file).unwrap_err(), expected, "caso: {name}: leer");
         let err = fx.core.import_profile(&file).unwrap_err();
 
         assert_eq!(err, expected, "caso: {name}");
@@ -102,6 +103,21 @@ fn a_missing_file_is_reported_as_unreadable() {
     let err = fx.core.import_profile(Path::new("/no/existe.dbdesp")).unwrap_err();
 
     assert_eq!(err, Error::ProfileUnreadable);
+}
+
+#[test]
+fn reading_a_profile_shows_it_without_importing_it() {
+    let fx = Fixture::new();
+    let current = fx.profile_file(&profile_json(""));
+    let imported = fx.core.import_profile(&current).unwrap();
+    let other = fx.dir.path().join("otro.dbdesp");
+    fs::write(&other, profile_json("").replace("usuario1", "usuario2")).unwrap();
+
+    let read = fx.core.read_profile(&other).unwrap();
+
+    assert_eq!(read.username, "usuario2");
+    assert_eq!(fx.core.current_profile().unwrap(), Some(imported));
+    assert_eq!(fx.core.read_profile(Path::new("/no/existe.dbdesp")).unwrap_err(), Error::ProfileUnreadable);
 }
 
 #[test]

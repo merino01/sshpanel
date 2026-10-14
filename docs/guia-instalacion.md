@@ -45,8 +45,8 @@ Solo hace falta la primera vez.
 
 ## Primeros pasos
 
-1. Abre la app y pulsa **Importar perfil**. Elige el fichero que te ha enviado el administrador.
+1. Haz doble clic en el fichero de perfil que te ha enviado el administrador, o abre la app, pulsa **Importar perfil** y elígelo. El doble clic funciona si la instalaste con el instalador de Windows, el `.dmg` de macOS o el `.deb`/`.rpm` de Linux; con la `.AppImage`, usa **Importar perfil**.
 2. La app crea tu clave y te la enseña. Pulsa **Copiar mi clave pública** y envíasela al administrador. Es seguro compartirla: la parte secreta nunca sale de tu equipo.
 3. Cuando el administrador te avise de que ya tienes acceso, pulsa **Reintentar**.
 
-Desde entonces, la app entra directamente al abrirla.
+Desde entonces, la app entra directamente al abrirla. Si más adelante te envían otro perfil, haz doble clic en él: la app te preguntará antes de cambiar.

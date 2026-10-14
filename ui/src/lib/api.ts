@@ -4,6 +4,7 @@
  * cambia aquí. Los errores llegan como el código del núcleo (`files.not_found`…).
  */
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 export interface Profile {
   host: string;
@@ -74,6 +75,12 @@ export type Outcome = { uploaded: string } | { downloaded: string };
 export const api = {
   appState: () => invoke<AppState>("app_state"),
   importProfile: (path: string) => invoke<AppState>("import_profile", { path }),
+  /** Lee un fichero de Perfil sin importarlo, para enseñar qué contiene. */
+  readProfile: (path: string) => invoke<Profile>("read_profile", { path }),
+  /** El Perfil abierto con doble clic que aún no se ha recogido, si lo hay. */
+  takeOpenedProfile: () => invoke<string | null>("take_opened_profile"),
+  /** Avisa cuando se abre un Perfil con doble clic con la app ya en marcha; recógelo con `takeOpenedProfile`. */
+  onProfileOpened: (handler: () => void) => listen("profile-opened", handler),
   connect: () => invoke<Listing>("connect"),
   /** Crea el fichero de Perfil `path`, conectando con el Servidor para calcular su Huella. */
   createProfile: (profile: NewProfile, path: string) => invoke<Profile>("create_profile", { profile, path }),

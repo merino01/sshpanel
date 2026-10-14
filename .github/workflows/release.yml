@@ -1,0 +1,107 @@
+name: Release
+
+# Al subir una etiqueta `vX.Y.Z`, compila los instaladores de los tres sistemas
+# y los deja en un borrador de Release para revisarlo y publicarlo a mano.
+# «Run workflow» compila lo mismo sin crear Release: los instaladores quedan
+# como artefactos del run, para probarlos antes de etiquetar.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  draft:
+    name: Borrador de Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.create.outputs.result }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: La etiqueta coincide con la versión
+        run: node scripts/check-version.mjs "$GITHUB_REF_NAME"
+      # Un solo borrador para todos: si lo creara cada compilación, saldrían varios.
+      - id: create
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const tag = context.ref.replace("refs/tags/", "");
+            const guide = `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${tag}/docs/guia-instalacion.md`;
+            const { data } = await github.rest.repos.createRelease({
+              ...context.repo,
+              tag_name: tag,
+              name: tag,
+              draft: true,
+              body: `Descarga el instalador de tu sistema. La app no está firmada: la [guía de instalación](${guide}) explica cómo abrirla pese a los avisos.`,
+            });
+            return String(data.id);
+
+  build:
+    name: Instaladores (${{ matrix.name }})
+    needs: draft
+    # Sin etiqueta no hay borrador, y aun así se compila.
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 22.04: la AppImage necesita una glibc antigua para funcionar en más distribuciones.
+          - { name: Linux, os: ubuntu-22.04, target: "", args: "" }
+          - { name: Windows, os: windows-latest, target: "", args: "" }
+          - { name: macOS Apple Silicon, os: macos-latest, target: aarch64-apple-darwin, args: "--target aarch64-apple-darwin" }
+          - { name: macOS Intel, os: macos-latest, target: x86_64-apple-darwin, args: "--target x86_64-apple-darwin" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - name: Dependencias de Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - run: npm ci
+
+      - name: Compilar y subir al borrador
+        if: needs.draft.result == 'success'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.draft.outputs.id }}
+          args: ${{ matrix.args }}
+
+      - name: Compilar (prueba)
+        if: needs.draft.result != 'success'
+        run: npx tauri build ${{ matrix.args }}
+      - name: Guardar los instaladores
+        if: needs.draft.result != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: instaladores-${{ matrix.name }}
+          path: |
+            target/release/bundle/deb/*.deb
+            target/release/bundle/rpm/*.rpm
+            target/release/bundle/appimage/*.AppImage
+            target/release/bundle/msi/*.msi
+            target/release/bundle/nsis/*.exe
+            target/*/release/bundle/dmg/*.dmg
+          if-no-files-found: error

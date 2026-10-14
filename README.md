@@ -57,6 +57,23 @@ npm run check                # comprobación de tipos de la interfaz
   - `screens/` y `components/` tienen las pantallas y sus piezas.
   - Los textos están en `i18n/es.json`.
 
+## Publicar una versión
+
+1. Sube la versión en `Cargo.toml` (`[workspace.package]`), `src-tauri/tauri.conf.json` y `package.json`. `node scripts/check-version.mjs` comprueba que coinciden.
+2. Haz commit, etiqueta y súbelo:
+
+   ```sh
+   git tag v0.2.0
+   git push origin master v0.2.0
+   ```
+
+3. El workflow `Release` compila los instaladores de Windows (`.msi`, `.exe`), macOS (`.dmg` para Apple Silicon y para Intel) y Linux (`.deb`, `.rpm`, `.AppImage`) y los deja en un **borrador** de Release. Si la etiqueta no coincide con la versión, falla sin crear nada.
+4. Revisa el borrador en la página de Releases de GitHub y publícalo.
+
+Para probar los instaladores sin publicar nada, lanza el workflow `Release` a mano («Run workflow» en la pestaña Actions): los deja como artefactos del run.
+
+Los instaladores no están firmados; la [guía de instalación](docs/guia-instalacion.md) explica cómo abrirlos pese a los avisos.
+
 ## Branding
 
 El nombre, el icono y los colores de la app salen de `branding.toml`:
@@ -75,7 +92,7 @@ Tras editarlo, aplica los cambios:
 npm run branding
 ```
 
-Esto regenera `src-tauri/tauri.conf.json`, `ui/src/branding.generated.ts` y los iconos de `src-tauri/icons/`; commitea el resultado. La CI comprueba que lo commiteado coincide con `branding.toml`.
+Esto regenera `src-tauri/tauri.conf.json`, `ui/src/branding.generated.ts`, los ficheros de Linux de `src-tauri/linux/` (para abrir los perfiles con doble clic) y los iconos de `src-tauri/icons/`; commitea el resultado. La CI comprueba que lo commiteado coincide con `branding.toml`.
 
 El identificador y la extensión se fijan al compilar ([ADR 0002](docs/adr/0002-proyecto-generico-con-branding-en-compilacion.md)). Si los cambias, es otra app: los perfiles y las claves guardadas con la anterior no se comparten.
 
