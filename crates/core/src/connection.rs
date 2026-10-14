@@ -14,7 +14,8 @@ use crate::profile::Profile;
 
 mod transfer;
 
-pub use transfer::Progress;
+pub(crate) use transfer::{Reserved, discard, run};
+pub use transfer::{Outcome, Progress, Transfer};
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 

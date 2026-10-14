@@ -46,6 +46,8 @@ pub enum Error {
     LocalWriteFailed,
     #[error("la Transferencia falló")]
     TransferFailed,
+    #[error("la Transferencia se ha cancelado")]
+    Cancelled,
 }
 
 impl Error {
@@ -74,6 +76,7 @@ impl Error {
             Self::LocalUnreadable => "transfer.local_unreadable",
             Self::LocalWriteFailed => "transfer.local_write_failed",
             Self::TransferFailed => "transfer.failed",
+            Self::Cancelled => "transfer.cancelled",
         }
     }
 }

@@ -12,9 +12,9 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use connection::Connection;
+use connection::{Connection, Reserved};
 
-pub use connection::{Entry, EntryKind, Listing, Progress};
+pub use connection::{Entry, EntryKind, Listing, Outcome, Progress, Transfer};
 pub use error::{Error, Result};
 pub use profile::{Mode, Profile};
 pub use secrets::{MemorySecretStore, SecretStore, SystemSecretStore};
@@ -28,11 +28,13 @@ pub struct Core {
     secrets: Box<dyn SecretStore>,
     /// Compartida, para que una Transferencia larga no bloquee el Explorador.
     connection: Mutex<Option<Arc<Connection>>>,
+    /// Destinos de las Transferencias empezadas.
+    reserved: Reserved,
 }
 
 impl Core {
     pub fn new(data_dir: impl Into<PathBuf>, secrets: Box<dyn SecretStore>) -> Self {
-        Self { data_dir: data_dir.into(), secrets, connection: Mutex::new(None) }
+        Self { data_dir: data_dir.into(), secrets, connection: Mutex::new(None), reserved: Reserved::default() }
     }
 
     /// Importa un fichero de Perfil. Genera la identidad del Miembro si todavía
@@ -92,19 +94,19 @@ impl Core {
         self.connection().await?.rename(dir, from, to).await
     }
 
-    /// Sube el archivo o la carpeta `local` a la carpeta `remote_dir` del
-    /// Servidor, avisando a `progress` de cada avance. Si el nombre está
-    /// ocupado usa `nombre (1)`, `nombre (2)`…; devuelve el nombre elegido.
-    pub async fn upload(&self, local: &Path, remote_dir: &str, mut progress: impl FnMut(Progress) + Send) -> Result<String> {
-        self.connection().await?.upload(local, remote_dir, &mut progress).await
+    /// Lanza una Transferencia, avisando a `progress` de cada avance, o la
+    /// reanuda donde se quedó si un intento anterior falló. Nunca sustituye
+    /// nada: si el nombre está ocupado usa `nombre (1)`, `nombre (2)`…
+    /// Varias Transferencias pueden ir a la vez sobre la misma conexión.
+    pub async fn run(&self, transfer: &Transfer, mut progress: impl FnMut(Progress) + Send) -> Result<Outcome> {
+        connection::run(self.connection().await.ok(), transfer, &self.reserved, &mut progress).await
     }
 
-    /// Descarga el archivo o la carpeta `name` de la carpeta `remote_dir` a la
-    /// carpeta `local_dir` del equipo, avisando a `progress` de cada avance. Si
-    /// el nombre está ocupado usa `nombre (1)`, `nombre (2)`…; devuelve dónde
-    /// ha quedado.
-    pub async fn download(&self, remote_dir: &str, name: &str, local_dir: &Path, mut progress: impl FnMut(Progress) + Send) -> Result<PathBuf> {
-        self.connection().await?.download(remote_dir, name, local_dir, &mut progress).await
+    /// Cancela una Transferencia, en curso o fallida, y borra lo que había
+    /// creado; si está en curso, espera a que se pare. Lo que ya existía antes
+    /// nunca se toca.
+    pub async fn discard(&self, transfer: &Transfer) {
+        connection::discard(self.connection().await.ok(), transfer).await
     }
 
     async fn connection(&self) -> Result<Arc<Connection>> {

@@ -328,69 +328,132 @@ function fail(ex: Explorer, code: unknown) {
   else showExplorer({ ...ex, message: errorMessage(code) });
 }
 
+/** Dónde ha quedado una Transferencia terminada. */
+type Outcome = { uploaded: string } | { downloaded: string };
+
 /** Una Transferencia de la cola. */
 interface Transfer {
+  id: number;
   direction: "upload" | "download";
   name: string;
-  status: "waiting" | "running" | "done" | "failed";
+  /** `lost`: cortada al perder la conexión; sigue sola al volver a conectar. */
+  status: "waiting" | "running" | "done" | "failed" | "lost" | "cancelled";
   progress: Progress | null;
+  /** Se ha pedido cancelarla y aún no se ha parado. */
+  cancelling?: boolean;
   /** Al terminar, dónde ha quedado; si falla, qué ha pasado. */
   outcome?: string;
-  /** Lanza la Transferencia y devuelve dónde ha quedado. */
-  start: (onProgress: Channel<Progress>) => Promise<string>;
+  /** Explica dónde ha quedado al terminar. */
+  describe: (outcome: Outcome) => string;
   /** Carpeta del Servidor que cambia al terminar, para refrescarla si está en pantalla. */
   changes?: string;
 }
 
+/** Cuántas Transferencias van a la vez; las demás esperan su turno. */
+const MAX_PARALLEL = 3;
 const transfers: Transfer[] = [];
-let queueRunning = false;
+let nextTransferId = 1;
+/** Falso desde que se pierde la conexión hasta que se recupera: mientras, no se lanza nada. */
+let online = true;
 /** Vive fuera de `#app` para seguir a la vista al navegar o al perder la conexión. */
 const transferPanel = el("aside", { className: "transfers", ariaLabel: t("transfers.title"), hidden: true });
 document.body.append(transferPanel);
 
-function enqueue(transfer: Omit<Transfer, "status" | "progress">) {
-  transfers.push({ ...transfer, status: "waiting", progress: null });
+/** Registra la Transferencia en el núcleo con `add` y la pone en la cola. */
+async function enqueue(transfer: Pick<Transfer, "direction" | "name" | "describe" | "changes">, add: (id: number) => Promise<unknown>) {
+  const id = nextTransferId++;
+  await add(id);
+  transfers.push({ ...transfer, id, status: "waiting", progress: null });
   renderTransfers();
-  void runQueue();
+  pump();
 }
 
-/** Lanza las Transferencias en espera, de una en una y por orden de llegada. */
-async function runQueue() {
-  if (queueRunning) return;
-  queueRunning = true;
-  let next: Transfer | undefined;
-  while ((next = transfers.find((tr) => tr.status === "waiting"))) {
-    const transfer = next;
-    transfer.status = "running";
-    renderTransfers();
-    const onProgress = new Channel<Progress>();
-    onProgress.onmessage = (progress) => {
-      transfer.progress = progress;
-      renderTransfers();
-    };
-    try {
-      transfer.outcome = await transfer.start(onProgress);
-      transfer.status = "done";
-      if (current && !current.editing && current.listing.path === transfer.changes) void openFolder(current, transfer.changes);
-    } catch (code) {
-      transfer.status = "failed";
-      if (code === "connection.lost" || code === "connection.not_connected") {
-        transfer.outcome = t("transfers.lost");
-        if (current) fail(current, code);
-      } else {
-        transfer.outcome = errorMessage(code);
-      }
-    }
-    renderTransfers();
+/** Lanza Transferencias en espera, por orden de llegada, hasta tener {@link MAX_PARALLEL} en curso. */
+function pump() {
+  if (!online) return;
+  let running = transfers.filter((tr) => tr.status === "running").length;
+  for (const transfer of transfers) {
+    if (running >= MAX_PARALLEL) break;
+    if (transfer.status !== "waiting") continue;
+    running++;
+    void runTransfer(transfer);
   }
-  queueRunning = false;
+}
+
+/** Lanza la Transferencia, o la reanuda donde se quedó si ya lo intentó antes. */
+async function runTransfer(transfer: Transfer) {
+  transfer.status = "running";
+  transfer.outcome = undefined;
+  renderTransfers();
+  const onProgress = new Channel<Progress>();
+  onProgress.onmessage = (progress) => {
+    transfer.progress = progress;
+    if (transfer.status === "running") renderTransfers();
+  };
+  try {
+    transfer.outcome = transfer.describe(await invoke<Outcome>("run_transfer", { id: transfer.id, onProgress }));
+    transfer.status = "done";
+  } catch (code) {
+    if (code === "transfer.cancelled") {
+      transfer.status = "cancelled";
+      transfer.outcome = t("transfers.cancelled");
+    } else if (code === "connection.lost" || code === "connection.not_connected") {
+      transfer.status = "lost";
+      transfer.outcome = t("transfers.lost");
+      if (online && current) fail(current, code);
+      online = false;
+    } else {
+      transfer.status = "failed";
+      transfer.outcome = errorMessage(code);
+    }
+  }
+  transfer.cancelling = false;
+  renderTransfers();
+  if (transfer.status !== "lost") refreshChanged(transfer);
+  pump();
+}
+
+/** Refresca la carpeta que cambia `transfer` si está en pantalla: al terminar, o al borrar lo que dejó a medias. */
+function refreshChanged(transfer: Transfer) {
+  if (current && !current.editing && current.listing.path === transfer.changes) void openFolder(current, transfer.changes);
+}
+
+/** Al volver a conectar, lo que se cortó sigue donde se quedó. */
+function resumeTransfers() {
+  online = true;
+  for (const transfer of transfers) if (transfer.status === "lost") transfer.status = "waiting";
+  renderTransfers();
+  pump();
+}
+
+/** Para la Transferencia y borra lo que había creado. Si está en curso, `runTransfer` recoge el final. */
+async function cancelTransfer(transfer: Transfer) {
+  if (transfer.cancelling) return;
+  if (transfer.status === "running") {
+    transfer.cancelling = true;
+  } else {
+    transfer.status = "cancelled";
+    transfer.outcome = t("transfers.cancelled");
+  }
+  renderTransfers();
+  const wasRunning = transfer.cancelling;
+  await invoke("cancel_transfer", { id: transfer.id }).catch(() => {});
+  // Si estaba en curso, `runTransfer` refresca al pararse.
+  if (!wasRunning) refreshChanged(transfer);
+}
+
+function retryTransfer(transfer: Transfer) {
+  transfer.status = "waiting";
+  transfer.outcome = undefined;
+  renderTransfers();
+  pump();
 }
 
 function renderTransfers() {
-  const finished = transfers.some((tr) => tr.status === "done" || tr.status === "failed");
-  const clear = el("button", { className: "link", textContent: t("transfers.clear"), hidden: !finished });
+  const isFinished = (tr: Transfer) => tr.status === "done" || tr.status === "cancelled";
+  const clear = el("button", { className: "link", textContent: t("transfers.clear"), hidden: !transfers.some(isFinished) });
   clear.addEventListener("click", () => {
-    transfers.splice(0, transfers.length, ...transfers.filter((tr) => tr.status === "waiting" || tr.status === "running"));
+    transfers.splice(0, transfers.length, ...transfers.filter((tr) => !isFinished(tr)));
     renderTransfers();
   });
   transferPanel.hidden = transfers.length === 0;
@@ -415,33 +478,51 @@ function transferRow(transfer: Transfer) {
       ? t("transfers.progress", { done: formatSize(Math.min(progress.done, progress.total)), total: formatSize(progress.total) })
       : t("transfers.preparing");
   }
+
+  const actions = el("span", { className: "actions" });
+  if (status === "failed") actions.append(transferButton(t("transfers.retry"), t("transfers.retryLabel", { name: transfer.name }), () => retryTransfer(transfer)));
+  if (status !== "done" && status !== "cancelled") {
+    const cancel = transferButton(t("transfers.cancel"), t("transfers.cancelLabel", { name: transfer.name }), () => cancelTransfer(transfer));
+    cancel.disabled = !!transfer.cancelling;
+    actions.append(cancel);
+  }
   return el(
     "li",
     { className: `transfer ${status}` },
     el("span", { className: "icon", title: t(isUpload ? "transfers.upload" : "transfers.download") }, isUpload ? "↑" : "↓"),
     el("span", { className: "name", title: transfer.name }, transfer.name),
+    actions,
     bar,
     el("span", { className: status === "failed" ? "detail error" : "detail", title: detail }, detail),
   );
 }
 
+function transferButton(text: string, label: string, action: () => void) {
+  const button = el("button", { className: "link", textContent: text, ariaLabel: label, title: label });
+  button.addEventListener("click", action);
+  return button;
+}
+
 /** Sube a `dir` los archivos que elija el Miembro con el selector del sistema. */
 async function pickUploads(dir: string) {
   const paths = await open({ title: t("transfers.uploadDialog"), multiple: true });
-  for (const path of paths ?? []) queueUpload(path, dir);
+  for (const path of paths ?? []) void queueUpload(path, dir);
 }
 
 function queueUpload(local: string, dir: string) {
   const name = local.split(/[\\/]/).filter(Boolean).pop() ?? local;
-  enqueue({
-    direction: "upload",
-    name,
-    changes: dir,
-    start: async (onProgress) => {
-      const saved = await invoke<string>("upload", { local, remoteDir: dir, onProgress });
-      return saved === name ? t("transfers.uploaded", { path: dir }) : t("transfers.uploadedAs", { name: saved, path: dir });
+  return enqueue(
+    {
+      direction: "upload",
+      name,
+      changes: dir,
+      describe: (outcome) => {
+        const saved = "uploaded" in outcome ? outcome.uploaded : name;
+        return saved === name ? t("transfers.uploaded", { path: dir }) : t("transfers.uploadedAs", { name: saved, path: dir });
+      },
     },
-  });
+    (id) => invoke("add_upload", { id, local, remoteDir: dir }),
+  );
 }
 
 /** Carpeta del equipo elegida en la última descarga, para proponerla la próxima vez. */
@@ -453,14 +534,14 @@ async function pickDownload(dir: string, name: string) {
   const localDir = await open({ title: t("transfers.downloadDialog", { name }), directory: true, defaultPath });
   if (typeof localDir !== "string") return;
   lastDownloadDir = localDir;
-  enqueue({
-    direction: "download",
-    name,
-    start: async (onProgress) => {
-      const saved = await invoke<string>("download", { remoteDir: dir, name, localDir, onProgress });
-      return t("transfers.downloaded", { path: saved });
+  await enqueue(
+    {
+      direction: "download",
+      name,
+      describe: (outcome) => t("transfers.downloaded", { path: "downloaded" in outcome ? outcome.downloaded : localDir }),
     },
-  });
+    (id) => invoke("add_download", { id, remoteDir: dir, name, localDir }),
+  );
 }
 
 // Arrastrar archivos o carpetas sobre la ventana los sube a la carpeta que se está viendo.
@@ -471,7 +552,7 @@ void getCurrentWebview().onDragDropEvent(({ payload }) => {
     return;
   }
   delete document.body.dataset.drop;
-  if (target !== undefined && payload.type === "drop") for (const path of payload.paths) queueUpload(path, target);
+  if (target !== undefined && payload.type === "drop") for (const path of payload.paths) void queueUpload(path, target);
 });
 
 /** Carpeta que contiene `path`, o `null` en la raíz. */
@@ -514,6 +595,7 @@ async function connect(state: AppState) {
   try {
     const listing = await invoke<Listing>("connect");
     showExplorer({ state, home: listing.path, listing });
+    resumeTransfers();
   } catch (code) {
     if (code === "connection.unauthorized") showKey(state, errorMessage(code));
     else showProblem(state, errorMessage(code));

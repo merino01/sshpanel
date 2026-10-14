@@ -48,7 +48,12 @@
   "transfers.uploaded": "Subido a {path}",
   "transfers.uploadedAs": "Subido a {path} como «{name}», porque ya había algo con ese nombre",
   "transfers.downloaded": "Guardado en {path}",
-  "transfers.lost": "Se ha cortado la conexión con el servidor y la transferencia no ha terminado. Vuelve a conectar y repítela.",
+  "transfers.lost": "Se ha cortado la conexión con el servidor. Seguirá donde se quedó en cuanto vuelvas a conectar.",
+  "transfers.cancelled": "Cancelada. No ha quedado nada a medias.",
+  "transfers.cancel": "Cancelar",
+  "transfers.cancelLabel": "Cancelar la transferencia de «{name}»",
+  "transfers.retry": "Reintentar",
+  "transfers.retryLabel": "Reintentar la transferencia de «{name}»",
   "transfers.dropHere": "Suelta aquí para subir a {path}",
   "transfers.uploadDialog": "Elige los archivos que quieres subir",
   "transfers.downloadDialog": "Elige dónde guardar «{name}»",
@@ -74,6 +79,7 @@
   "error.files.rename_failed": "No se ha podido cambiar el nombre. Inténtalo de nuevo.",
   "error.transfer.local_unreadable": "No se ha podido leer ese archivo o carpeta de tu equipo. Comprueba que sigue ahí y que puedes abrirlo.",
   "error.transfer.local_write_failed": "No se ha podido guardar en esa carpeta de tu equipo. Elige otra o comprueba que queda espacio libre.",
+  "error.transfer.cancelled": "La transferencia se ha cancelado.",
   "error.transfer.failed": "La transferencia no ha podido terminar. Puede que no quede espacio en el servidor. Inténtalo de nuevo.",
   "error.unknown": "Ha ocurrido un error inesperado. Inténtalo de nuevo."
 }
