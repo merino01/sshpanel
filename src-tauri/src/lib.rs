@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
-use sshpanel_core::{Core, Listing, Outcome, Profile, Progress, SystemSecretStore, Transfer};
+use sshpanel_core::{Core, Listing, Outcome, Profile, Progress, Restored, SystemSecretStore, Transfer, Trashed};
 use tauri::ipc::Channel;
 use tauri::{Manager, State};
 
@@ -57,6 +57,21 @@ async fn create_folder(parent: String, name: String, core: State<'_, Core>) -> R
 #[tauri::command]
 async fn rename(dir: String, from: String, to: String, core: State<'_, Core>) -> Result<(), String> {
     core.rename(&dir, &from, &to).await.map_err(code)
+}
+
+#[tauri::command]
+async fn trash(dir: String, name: String, core: State<'_, Core>) -> Result<(), String> {
+    core.trash(&dir, &name).await.map_err(code)
+}
+
+#[tauri::command]
+async fn list_trash(core: State<'_, Core>) -> Result<Vec<Trashed>, String> {
+    core.list_trash().await.map_err(code)
+}
+
+#[tauri::command]
+async fn restore(id: String, core: State<'_, Core>) -> Result<Restored, String> {
+    core.restore(&id).await.map_err(code)
 }
 
 /// Envía el avance por `channel`, sin saturar la interfaz: el primero, el
@@ -142,6 +157,9 @@ pub fn run() {
             list_dir,
             create_folder,
             rename,
+            trash,
+            list_trash,
+            restore,
             add_upload,
             add_download,
             run_transfer,

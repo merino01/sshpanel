@@ -29,6 +29,19 @@ interface Progress {
   done: number;
   total: number;
 }
+/** Un archivo o carpeta de la Papelera. */
+interface Trashed {
+  id: string;
+  name: string;
+  original_dir: string;
+  kind: Entry["kind"];
+  size: number;
+  deleted: number | null;
+}
+interface Restored {
+  dir: string;
+  name: string;
+}
 
 const app = document.querySelector<HTMLElement>("#app")!;
 document.title = branding.name;
@@ -173,7 +186,10 @@ interface Explorer {
   state: AppState;
   home: string;
   listing: Listing;
+  /** Error de la última operación. */
   message?: string;
+  /** Qué ha hecho la última operación. */
+  notice?: string;
   editing?: Editing;
 }
 
@@ -182,7 +198,6 @@ let current: Explorer | null = null;
 
 function showExplorer(ex: Explorer) {
   const { listing, editing } = ex;
-  const shared = ex.state.profile?.shared_folder;
   const parent = parentOf(listing.path);
 
   const up = el("button", { className: "secondary", textContent: t("explorer.up"), disabled: parent === null });
@@ -206,25 +221,38 @@ function showExplorer(ex: Explorer) {
 
   render(
     el("h1", {}, t("files.title")),
-    el(
-      "nav",
-      { className: "shortcuts" },
-      shortcut(ex, t("explorer.home"), ex.home),
-      ...(shared ? [shortcut(ex, t("explorer.shared"), shared)] : []),
-    ),
+    shortcuts(ex),
     el("div", { className: "toolbar" }, up, el("p", { className: "path" }, listing.path), newFolder, upload),
-    ...(ex.message ? [el("p", { className: "error", role: "alert" }, ex.message)] : []),
+    ...feedback(ex.notice, ex.message),
     folderArea,
   );
   current = ex;
   app.querySelector<HTMLInputElement>(".files input")?.focus();
 }
 
-function shortcut(ex: Explorer, label: string, path: string) {
-  const button = el("button", { className: "shortcut", textContent: label });
-  if (ex.listing.path === path) button.ariaCurrent = "location";
-  button.addEventListener("click", () => openFolder(ex, path));
-  return button;
+/** Accesos directos fijos: carpeta personal, Carpeta compartida si la hay y Papelera. */
+function shortcuts(ex: Explorer, inTrash = false) {
+  const shortcut = (label: string, current: boolean, action: () => void) => {
+    const button = el("button", { className: "shortcut", textContent: label });
+    if (current) button.ariaCurrent = "location";
+    button.addEventListener("click", action);
+    return button;
+  };
+  const folder = (label: string, path: string) => shortcut(label, !inTrash && ex.listing.path === path, () => openFolder(ex, path));
+  const shared = ex.state.profile?.shared_folder;
+  return el(
+    "nav",
+    { className: "shortcuts" },
+    folder(t("explorer.home"), ex.home),
+    ...(shared ? [folder(t("explorer.shared"), shared)] : []),
+    shortcut(t("trash.title"), inTrash, () => openTrash(ex)),
+  );
+}
+
+/** Qué ha hecho la última operación o, si ha fallado, por qué. */
+function feedback(notice?: string, message?: string): Node[] {
+  if (message) return [el("p", { className: "error", role: "alert" }, message)];
+  return notice ? [el("p", { className: "feedback", role: "status" }, notice)] : [];
 }
 
 function entryRow(ex: Explorer, entry: Entry) {
@@ -244,16 +272,18 @@ function entryRow(ex: Explorer, entry: Entry) {
     el("span", { className: "size" }, entry.kind === "file" ? formatSize(entry.size) : ""),
   );
   row.addEventListener("keydown", (event) => {
-    if (event.target === row && event.key === "Enter" && isDir) open();
+    if (event.target !== row) return;
+    if (event.key === "Enter" && isDir) open();
+    if (event.key === "Delete") confirmTrash(ex, entry, row);
   });
   row.addEventListener("contextmenu", (event) =>
-    showContextMenu(event, row, t("explorer.menuLabel", { name: entry.name }), entryMenuItems(ex, entry, open)),
+    showContextMenu(event, row, t("explorer.menuLabel", { name: entry.name }), entryMenuItems(ex, entry, open, row)),
   );
   return row;
 }
 
 /** Acciones del menú contextual de una fila. */
-function entryMenuItems(ex: Explorer, entry: Entry, open: () => void): MenuItem[] {
+function entryMenuItems(ex: Explorer, entry: Entry, open: () => void, row: HTMLElement): MenuItem[] {
   const items: MenuItem[] = [];
   if (entry.kind === "dir") items.push({ label: t("explorer.openShort"), action: open });
   // Un enlace roto no tiene nada que descargar.
@@ -261,15 +291,54 @@ function entryMenuItems(ex: Explorer, entry: Entry, open: () => void): MenuItem[
   items.push(
     {
       label: t("explorer.rename"),
-      action: () => showExplorer({ ...ex, message: undefined, editing: { kind: "rename", name: entry.name, value: entry.name } }),
+      action: () => showExplorer({ ...ex, message: undefined, notice: undefined, editing: { kind: "rename", name: entry.name, value: entry.name } }),
     },
     { label: t("explorer.newFolder"), action: () => startCreating(ex) },
+    { label: t("explorer.delete"), action: () => confirmTrash(ex, entry, row) },
   );
   return items;
 }
 
+/** Pide confirmación antes de mover `entry` a la Papelera. Si se cancela, el foco vuelve a `row`. */
+function confirmTrash(ex: Explorer, entry: Entry, row: HTMLElement) {
+  const confirm = el("button", { className: "primary", textContent: t("trash.confirm") });
+  const cancel = el("button", { className: "secondary", textContent: t("explorer.cancel") });
+  const dialog = el(
+    "dialog",
+    { className: "confirm" },
+    el("h2", {}, t("trash.confirmTitle", { name: entry.name })),
+    el("p", { className: "help" }, t("trash.confirmHelp")),
+    el("div", { className: "actions" }, cancel, confirm),
+  );
+  let confirmed = false;
+  confirm.addEventListener("click", () => {
+    confirmed = true;
+    dialog.close();
+  });
+  cancel.addEventListener("click", () => dialog.close());
+  // Escape también cierra el diálogo, sin confirmar.
+  dialog.addEventListener("close", () => {
+    dialog.remove();
+    if (confirmed) void trashEntry(ex, entry.name);
+    else row.focus();
+  });
+  document.body.append(dialog);
+  dialog.showModal();
+  cancel.focus();
+}
+
+async function trashEntry(ex: Explorer, name: string) {
+  const dir = ex.listing.path;
+  try {
+    await invoke("trash", { dir, name });
+  } catch (code) {
+    return fail(ex, code);
+  }
+  await openFolder(ex, dir, t("explorer.deleted", { name }));
+}
+
 function startCreating(ex: Explorer) {
-  showExplorer({ ...ex, message: undefined, editing: { kind: "create", value: "" } });
+  showExplorer({ ...ex, message: undefined, notice: undefined, editing: { kind: "create", value: "" } });
 }
 
 /** Fila con un campo para escribir el nombre de una carpeta nueva o el nuevo nombre de `entry`. */
@@ -282,7 +351,7 @@ function nameForm(ex: Explorer, editing: Editing, entry?: Entry) {
     textContent: editing.kind === "create" ? t("explorer.create") : t("explorer.save"),
   });
   const cancel = el("button", { type: "button", className: "link", textContent: t("explorer.cancel") });
-  const close = () => showExplorer({ ...ex, message: undefined, editing: undefined });
+  const close = () => showExplorer({ ...ex, message: undefined, notice: undefined, editing: undefined });
   cancel.addEventListener("click", close);
   input.addEventListener("keydown", (event) => event.key === "Escape" && close());
   // Al renombrar, selecciona el nombre sin la extensión.
@@ -313,10 +382,10 @@ function nameForm(ex: Explorer, editing: Editing, entry?: Entry) {
   );
 }
 
-async function openFolder(ex: Explorer, path: string) {
+async function openFolder(ex: Explorer, path: string, notice?: string) {
   try {
     const listing = await invoke<Listing>("list_dir", { path });
-    showExplorer({ state: ex.state, home: ex.home, listing });
+    showExplorer({ state: ex.state, home: ex.home, listing, notice });
   } catch (code) {
     fail(ex, code);
   }
@@ -325,7 +394,59 @@ async function openFolder(ex: Explorer, path: string) {
 /** Una operación del Explorador ha fallado: se explica sin salir de la carpeta, salvo si se ha caído la conexión. */
 function fail(ex: Explorer, code: unknown) {
   if (code === "connection.lost" || code === "connection.not_connected") showProblem(ex.state, errorMessage(code));
-  else showExplorer({ ...ex, message: errorMessage(code) });
+  else showExplorer({ ...ex, notice: undefined, message: errorMessage(code) });
+}
+
+/**
+ * Muestra la Papelera. `ex` es la carpeta que se estaba viendo, para volver a
+ * ella con los accesos directos.
+ */
+async function openTrash(ex: Explorer, notice?: string, message?: string) {
+  let items: Trashed[];
+  try {
+    items = await invoke<Trashed[]>("list_trash");
+  } catch (code) {
+    return fail(ex, code);
+  }
+  const rows = items.map((item) => trashRow(ex, item));
+  // Sin `current`, soltar archivos aquí no sube nada ni las Transferencias refrescan esta vista.
+  render(
+    el("h1", {}, t("trash.title")),
+    shortcuts(ex, true),
+    el("p", { className: "help" }, t("trash.help")),
+    ...feedback(notice, message),
+    rows.length ? el("ul", { className: "files" }, ...rows) : el("p", { className: "help empty" }, t("trash.empty")),
+  );
+}
+
+function trashRow(ex: Explorer, item: Trashed) {
+  const origin =
+    item.deleted === null
+      ? t("trash.from", { dir: item.original_dir })
+      : t("trash.fromOn", { dir: item.original_dir, date: new Date(item.deleted * 1000).toLocaleString() });
+  const row = el(
+    "li",
+    { className: `entry trashed ${item.kind}`, tabIndex: 0 },
+    el("span", { className: "icon", ariaHidden: "true" }, item.kind === "dir" ? "📁" : "📄"),
+    el("span", { className: "name", title: item.name }, item.name),
+    el("span", { className: "size" }, item.kind === "file" ? formatSize(item.size) : ""),
+    el("span", { className: "origin", title: origin }, origin),
+  );
+  row.addEventListener("contextmenu", (event) =>
+    showContextMenu(event, row, t("explorer.menuLabel", { name: item.name }), [{ label: t("trash.restore"), action: () => restore(ex, item) }]),
+  );
+  return row;
+}
+
+async function restore(ex: Explorer, item: Trashed) {
+  try {
+    const { dir, name } = await invoke<Restored>("restore", { id: item.id });
+    const notice = name === item.name ? t("trash.restored", { name, dir }) : t("trash.restoredAs", { original: item.name, name, dir });
+    await openTrash(ex, notice);
+  } catch (code) {
+    if (code === "connection.lost" || code === "connection.not_connected") showProblem(ex.state, errorMessage(code));
+    else await openTrash(ex, undefined, errorMessage(code));
+  }
 }
 
 /** Dónde ha quedado una Transferencia terminada. */

@@ -14,7 +14,7 @@ use tokio::sync::Mutex;
 
 use connection::{Connection, Reserved};
 
-pub use connection::{Entry, EntryKind, Listing, Outcome, Progress, Transfer};
+pub use connection::{Entry, EntryKind, Listing, Outcome, Progress, Restored, Transfer, Trashed};
 pub use error::{Error, Result};
 pub use profile::{Mode, Profile};
 pub use secrets::{MemorySecretStore, SecretStore, SystemSecretStore};
@@ -92,6 +92,24 @@ impl Core {
     /// moverlo de carpeta. Nunca sustituye algo que ya exista.
     pub async fn rename(&self, dir: &str, from: &str, to: &str) -> Result<()> {
         self.connection().await?.rename(dir, from, to).await
+    }
+
+    /// Mueve el archivo o carpeta `name` de la carpeta `dir` a la Papelera del
+    /// Miembro, recordando de dónde vino. Nunca elimina nada.
+    pub async fn trash(&self, dir: &str, name: &str) -> Result<()> {
+        self.connection().await?.trash(dir, name).await
+    }
+
+    /// Contenido de la Papelera, lo último borrado primero.
+    pub async fn list_trash(&self) -> Result<Vec<Trashed>> {
+        self.connection().await?.list_trash().await
+    }
+
+    /// Devuelve a su sitio el elemento `id` de la Papelera, volviendo a crear
+    /// su carpeta si ya no existe. Nunca sustituye nada: si el nombre está
+    /// ocupado usa `nombre (1)`, `nombre (2)`…
+    pub async fn restore(&self, id: &str) -> Result<Restored> {
+        self.connection().await?.restore(id, &self.reserved).await
     }
 
     /// Lanza una Transferencia, avisando a `progress` de cada avance, o la

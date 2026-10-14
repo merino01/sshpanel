@@ -216,6 +216,35 @@ button:disabled {
   background: var(--accent);
   color: white;
 }
+.entry .origin {
+  grid-column: 2 / -1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+dialog.confirm {
+  max-width: min(24rem, 90vw);
+  padding: 1.2rem 1.4rem;
+  border: 1px solid rgba(127, 127, 127, 0.3);
+  border-radius: 0.6rem;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+dialog.confirm::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+dialog.confirm h2 {
+  margin: 0 0 0.5rem;
+}
+dialog.confirm .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
 .help.empty {
   padding: 1.5rem 2rem;
 }

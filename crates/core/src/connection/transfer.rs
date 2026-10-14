@@ -172,7 +172,7 @@ impl Reserved {
 }
 
 /// Un destino reservado; se libera al soltarlo.
-struct Reservation {
+pub(super) struct Reservation {
     set: Reserved,
     place: Place,
 }
@@ -315,7 +315,7 @@ impl Connection {
         if !resuming {
             let name = local.file_name().and_then(|n| n.to_str()).filter(|n| is_single_name(n)).ok_or(Error::LocalUnreadable)?;
             let plan = local_plan(local).await?;
-            let (name, root) = self.free_remote_name(remote_dir, name, plan.is_dir(), reserved).await?;
+            let (name, root) = self.free_remote_name(remote_dir, name, plan.is_dir(), reserved, Error::TransferFailed).await?;
             *started = Some(Started::new(plan, name, root));
         }
         let started = started.as_mut().expect("empezada");
@@ -532,15 +532,23 @@ impl Connection {
         Ok(plan)
     }
 
-    /// Primer nombre libre para `name` en `dir`, reservado.
-    async fn free_remote_name(&self, dir: &str, name: &str, is_dir: bool, reserved: &Reserved) -> Result<(String, Reservation)> {
+    /// Primer nombre libre para `name` en `dir`, reservado. `fallback` es el
+    /// error de la operación que lo pide, si el Servidor falla sin más.
+    pub(super) async fn free_remote_name(
+        &self,
+        dir: &str,
+        name: &str,
+        is_dir: bool,
+        reserved: &Reserved,
+        fallback: Error,
+    ) -> Result<(String, Reservation)> {
         for candidate in numbered(name, is_dir) {
             let path = join(dir, &candidate);
             let Some(reservation) = reserved.reserve(Place { remote: true, path: path.clone() }) else { continue };
             match self.sftp.symlink_metadata(path).await {
                 Ok(_) => continue,
                 Err(SftpError::Status(s)) if s.status_code == StatusCode::NoSuchFile => return Ok((candidate, reservation)),
-                Err(e) => return Err(self.failure(e, Error::TransferFailed)),
+                Err(e) => return Err(self.failure(e, fallback)),
             }
         }
         Err(Error::AlreadyExists)
@@ -607,7 +615,7 @@ async fn free_local_path(dir: &Path, name: &str, is_dir: bool, reserved: &Reserv
 
 /// `name`, `name (1)`, `name (2)`… con el número antes de la extensión en los
 /// archivos (`foto (1).jpg`).
-fn numbered(name: &str, is_dir: bool) -> impl Iterator<Item = String> + '_ {
+pub(super) fn numbered(name: &str, is_dir: bool) -> impl Iterator<Item = String> + '_ {
     let (stem, ext) = match name.rfind('.') {
         Some(i) if i > 0 && !is_dir => name.split_at(i),
         _ => (name, ""),

@@ -13,9 +13,11 @@ use crate::error::{Error, Result};
 use crate::profile::Profile;
 
 mod transfer;
+mod trash;
 
 pub(crate) use transfer::{Reserved, discard, run};
 pub use transfer::{Outcome, Progress, Transfer};
+pub use trash::{Restored, Trashed};
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 

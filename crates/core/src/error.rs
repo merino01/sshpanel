@@ -1,6 +1,6 @@
 /// Errores del núcleo. La interfaz traduce cada [`Error::code`] a un mensaje
 /// en lenguaje simple; aquí solo viven descripciones técnicas.
-#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+#[derive(Debug, Clone, thiserror::Error, PartialEq, Eq)]
 pub enum Error {
     #[error("no se pudo leer el fichero del Perfil")]
     ProfileUnreadable,
@@ -40,6 +40,12 @@ pub enum Error {
     CreateFolderFailed,
     #[error("no se pudo renombrar")]
     RenameFailed,
+    #[error("no se pudo mover a la Papelera")]
+    TrashFailed,
+    #[error("no se puede mover a la Papelera la propia Papelera ni lo que la contiene")]
+    TrashProtected,
+    #[error("no se pudo restaurar desde la Papelera")]
+    RestoreFailed,
     #[error("no se pudo leer el archivo o carpeta del equipo")]
     LocalUnreadable,
     #[error("no se pudo escribir en la carpeta del equipo")]
@@ -73,6 +79,9 @@ impl Error {
             Self::InvalidName => "files.invalid_name",
             Self::CreateFolderFailed => "files.create_folder_failed",
             Self::RenameFailed => "files.rename_failed",
+            Self::TrashFailed => "files.trash_failed",
+            Self::TrashProtected => "files.trash_protected",
+            Self::RestoreFailed => "files.restore_failed",
             Self::LocalUnreadable => "transfer.local_unreadable",
             Self::LocalWriteFailed => "transfer.local_write_failed",
             Self::TransferFailed => "transfer.failed",

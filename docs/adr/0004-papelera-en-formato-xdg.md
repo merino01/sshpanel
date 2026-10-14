@@ -1,0 +1,5 @@
+# Papelera en formato freedesktop, en la carpeta personal
+
+La Papelera de cada Miembro es `~/.local/share/Trash` en el Servidor, con el formato de freedesktop.org: el elemento en `files/<id>` y su ruta original y fecha en `info/<id>.trashinfo`. Es un estándar que ya entienden `trash-cli` y `gio`, útil desde la Terminal y para vaciarla en Modo avanzado; un `.trashinfo` por elemento evita un índice común que dos equipos podrían pisarse, y crearlo en exclusiva reserva el nombre. Hay una Papelera por Miembro, sin campos nuevos en el Perfil ni permisos que coordinar: lo borrado de la Carpeta compartida va a la Papelera de quien lo borró, y solo esa persona puede restaurarlo.
+
+Consecuencias: `DeletionDate` se escribe en UTC, aunque el estándar pide hora local, porque el equipo y el Servidor pueden estar en zonas distintas; otras herramientas mostrarán la hora desplazada. Mover es un `rename` en el Servidor, así que si la Carpeta compartida está en otro disco que las carpetas personales, borrar falla con un mensaje claro en lugar de copiar.
