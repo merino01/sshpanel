@@ -49,4 +49,4 @@ Solo hace falta la primera vez.
 2. La app crea tu clave y te la enseña. Pulsa **Copiar mi clave pública** y envíasela al administrador. Es seguro compartirla: la parte secreta nunca sale de tu equipo.
 3. Cuando el administrador te avise de que ya tienes acceso, pulsa **Reintentar**.
 
-Desde entonces, la app entra directamente al abrirla. Si más adelante te envían otro perfil, haz doble clic en él: la app te preguntará antes de cambiar.
+Desde entonces, la app entra directamente al abrirla y te avisa cuando hay una versión nueva: pulsa **Actualizar** y se reinicia ya actualizada. Si más adelante te envían otro perfil, haz doble clic en él: la app te preguntará antes de cambiar.

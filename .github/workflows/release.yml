@@ -80,16 +80,28 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
       - run: npm ci
 
+      # Con la clave del actualizador, firma los instaladores y publica latest.json;
+      # sin ella (un fork que no la ha configurado), compila igual, sin actualizador.
+      - name: Firma del actualizador
+        id: signing
+        shell: bash
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then echo "args=--config src-tauri/tauri.release.conf.json" >> "$GITHUB_OUTPUT"; fi
+
       - name: Compilar y subir al borrador
         if: needs.draft.result == 'success'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           releaseId: ${{ needs.draft.outputs.id }}
           # Si no, ve pnpm-lock.yaml y usa pnpm, que no está en los runners.
           tauriScript: npx tauri
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} ${{ steps.signing.outputs.args }}
 
       - name: Compilar (prueba)
         if: needs.draft.result != 'success'

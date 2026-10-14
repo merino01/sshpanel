@@ -124,6 +124,13 @@
   "toast.undo": "Deshacer",
   "toast.close": "Cerrar aviso",
 
+  "update.available": "Hay una versión nueva ({version}).",
+  "update.install": "Actualizar",
+  "update.installing": "Actualizando a la versión {version}… La app se reiniciará sola.",
+  "update.confirmTitle": "¿Actualizar ahora?",
+  "update.confirmHelp": "Hay transferencias sin terminar. Si actualizas ahora, se cortan y tendrás que volver a lanzarlas cuando la app se reinicie.",
+  "update.download": "Descargar",
+
   "transfers.title": "Transferencias",
   "transfers.clear": "Quitar las terminadas",
   "transfers.upload": "Subida",
@@ -149,6 +156,8 @@
   "error.profile.unsupported_version": "Ese perfil es de una versión más nueva. Actualiza la aplicación o pide uno nuevo al administrador.",
   "error.profile.invalid_field": "El perfil tiene datos incorrectos. Pídele al administrador que te envíe uno nuevo.",
   "error.secrets.unavailable": "No se puede acceder al almacén seguro de tu equipo, donde se guarda tu clave. Comprueba que el llavero del sistema está activo.",
+  "error.update.failed": "No se ha podido actualizar. Descarga la versión nueva e instálala a mano.",
+  "error.update.unavailable": "Esa actualización ya no está disponible. Vuelve a abrir la app para buscar otra.",
   "error.storage.failed": "No se ha podido guardar la información en tu equipo. Inténtalo de nuevo.",
   "error.connection.no_profile": "Todavía no has importado ningún perfil.",
   "error.connection.fingerprint_mismatch": "No hemos podido comprobar que el servidor es el auténtico, así que no nos hemos conectado ni hemos enviado nada. Avisa al administrador.",

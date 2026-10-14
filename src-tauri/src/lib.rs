@@ -4,7 +4,7 @@ mod opened;
 use std::path::Path;
 
 use commands::transfers::Transfers;
-use commands::{files, profile, terminal, transfers, trash};
+use commands::{files, profile, terminal, transfers, trash, update};
 use opened::Opened;
 use sshpanel_core::{Core, SystemSecretStore};
 use tauri::Manager;
@@ -23,11 +23,13 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let secrets = SystemSecretStore::new(app.config().identifier.clone());
             app.manage(Core::new(data_dir, Box::new(secrets)));
             app.manage(Transfers::default());
+            update::manage(app.handle())?;
             let cwd = std::env::current_dir().unwrap_or_default();
             if let Some(path) = opened::profile_arg(std::env::args_os(), &opened::extension(app.handle()), &cwd) {
                 opened::deliver(app.handle(), path);
@@ -56,7 +58,10 @@ pub fn run() {
             transfers::add_upload,
             transfers::add_download,
             transfers::run_transfer,
-            transfers::cancel_transfer
+            transfers::cancel_transfer,
+            update::check_update,
+            update::install_update,
+            update::open_releases
         ])
         .build(tauri::generate_context!())
         .expect("error al iniciar la aplicación")

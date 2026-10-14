@@ -57,5 +57,5 @@ Subida o descarga de un archivo entre el equipo del Miembro y el Servidor, gesti
 _Avoid_: Upload, descarga/subida suelta
 
 **Branding**:
-Conjunto de cinco valores fijados al compilar (nombre, identificador, extensión del Perfil, icono y color de acento) que personalizan la app para una instancia concreta. "SSH Panel" es el Branding por defecto; cada instancia es un fork con el suyo.
+Conjunto de valores fijados al compilar (nombre, identificador, extensión del Perfil, icono, color de acento y, opcionalmente, el repositorio de releases y la clave pública del actualizador) que personalizan la app para una instancia concreta. "SSH Panel" es el Branding por defecto; cada instancia es un fork con el suyo.
 _Avoid_: Tema, skin, configuración

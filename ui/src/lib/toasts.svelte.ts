@@ -11,7 +11,7 @@ export interface ToastAction {
 
 export interface Toast {
   id: number;
-  kind: "success" | "error";
+  kind: "success" | "info" | "error";
   text: string;
   action?: ToastAction;
 }
@@ -26,7 +26,7 @@ interface Timer {
 /**
  * Avisos de lo que acaba de pasar, el más nuevo primero. Los de éxito se
  * cierran solos a los {@link SUCCESS_MS}, salvo en pausa (con el ratón o el
- * foco encima); los errores esperan a que se cierren.
+ * foco encima); los informativos y los errores esperan a que se cierren.
  */
 export class Toasts {
   items = $state<Toast[]>([]);
@@ -39,8 +39,13 @@ export class Toasts {
     return id;
   }
 
-  error(text: string): number {
-    return this.#add({ kind: "error", text });
+  /** Algo que conviene saber y no caduca, como que hay una versión nueva. */
+  info(text: string, action?: ToastAction): number {
+    return this.#add({ kind: "info", text, action });
+  }
+
+  error(text: string, action?: ToastAction): number {
+    return this.#add({ kind: "error", text, action });
   }
 
   dismiss(id: number) {

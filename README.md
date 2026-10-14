@@ -74,6 +74,33 @@ Para probar los instaladores sin publicar nada, lanza el workflow `Release` a ma
 
 Los instaladores no están firmados; la [guía de instalación](docs/guia-instalacion.md) explica cómo abrirlos pese a los avisos.
 
+## Actualizaciones
+
+Al arrancar, la app busca en las Releases una versión publicada más nueva y, si la hay, ofrece «Actualizar»: la descarga, la instala y se reinicia. Funciona en Windows, macOS y Linux (`.AppImage`, `.deb` y `.rpm`; en estos dos, el sistema pide la contraseña). Los borradores no se ofrecen a nadie hasta que los publicas.
+
+No necesita certificados de Microsoft ni de Apple: el actualizador tiene sus propias claves, gratuitas. La pública va dentro de la app y la privada firma los instaladores en el workflow `Release`; la app solo instala lo firmado con esa clave. Para configurarlas una vez:
+
+1. Genera las claves. Te pide una contraseña:
+
+   ```sh
+   npx tauri signer generate -w ~/.tauri/sshpanel.key
+   ```
+
+2. Guarda la clave privada y su contraseña como secrets del repositorio:
+
+   ```sh
+   gh secret set TAURI_SIGNING_PRIVATE_KEY < ~/.tauri/sshpanel.key
+   gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+   ```
+
+3. En `branding.toml`, pon tu repositorio en `releases_repo` y el contenido de `~/.tauri/sshpanel.key.pub` en `updater_pubkey`. Ejecuta `npm run branding` y commitea.
+
+Desde la siguiente versión que publiques, el workflow firma los instaladores y sube `latest.json`, el fichero que consulta la app. Las versiones anteriores no tienen actualizador: quien las tenga instala esa a mano una vez.
+
+Guarda la clave privada y su contraseña en lugar seguro, fuera del repositorio. Si las pierdes, las apps instaladas no aceptarán versiones firmadas con otra clave y habrá que reinstalarlas a mano.
+
+Sin los secrets ni esos dos campos, todo funciona igual, solo que la app no busca actualizaciones.
+
 ## Branding
 
 El nombre, el icono y los colores de la app salen de `branding.toml`:
@@ -85,6 +112,8 @@ El nombre, el icono y los colores de la app salen de `branding.toml`:
 | `profile_extension` | Extensión de los ficheros de perfil (por defecto, `sshpanel`). Solo minúsculas y dígitos. |
 | `icon` | Imagen PNG cuadrada de la que se generan todos los iconos. |
 | `accent_color` | Color de acento, en `#rrggbb`. |
+| `releases_repo` | Repositorio de GitHub (`dueño/repo`) de cuyas Releases se actualiza la app. Opcional (ver [Actualizaciones](#actualizaciones)). |
+| `updater_pubkey` | Clave pública con la que se comprueban las actualizaciones. Va junto a `releases_repo`. |
 
 Tras editarlo, aplica los cambios:
 
@@ -92,7 +121,7 @@ Tras editarlo, aplica los cambios:
 npm run branding
 ```
 
-Esto regenera `src-tauri/tauri.conf.json`, `ui/src/branding.generated.ts`, los ficheros de Linux de `src-tauri/linux/` (para abrir los perfiles con doble clic), la línea de los perfiles en `.gitignore` (para que nunca acaben en el repositorio) y los iconos de `src-tauri/icons/`; commitea el resultado. La CI comprueba que lo commiteado coincide con `branding.toml`.
+Esto regenera `src-tauri/tauri.conf.json` (con el actualizador, si está configurado), `ui/src/branding.generated.ts`, los ficheros de Linux de `src-tauri/linux/` (para abrir los perfiles con doble clic), la línea de los perfiles en `.gitignore` (para que nunca acaben en el repositorio) y los iconos de `src-tauri/icons/`; commitea el resultado. La CI comprueba que lo commiteado coincide con `branding.toml`.
 
 El identificador y la extensión se fijan al compilar ([ADR 0002](docs/adr/0002-proyecto-generico-con-branding-en-compilacion.md)). Si los cambias, es otra app: los perfiles y las claves guardadas con la anterior no se comparten.
 
@@ -101,7 +130,7 @@ El identificador y la extensión se fijan al compilar ([ADR 0002](docs/adr/0002-
 Para dar la app a tu grupo con vuestro nombre, icono y color:
 
 1. Haz un fork de este repositorio.
-2. En tu fork, edita `branding.toml`. Ponle un `identifier` propio: si usaras el de este proyecto, tu app y la genérica compartirían datos y clave en el mismo equipo.
+2. En tu fork, edita `branding.toml`. Ponle un `identifier` propio: si usaras el de este proyecto, tu app y la genérica compartirían datos y clave en el mismo equipo. Para el actualizador, genera tus propias claves y pon tu fork en `releases_repo` (ver [Actualizaciones](#actualizaciones)).
 3. Ejecuta `npm run branding` y commitea el resultado.
 4. Publica una versión como se explica en [Publicar una versión](#publicar-una-versión): el workflow de tu fork compila tus instaladores y los deja en tus Releases.
 

@@ -3,4 +3,5 @@ export const branding = {
   name: "SSH Panel",
   profileExtension: "sshpanel",
   accentColor: "#3b82f6",
+  updater: false,
 } as const;

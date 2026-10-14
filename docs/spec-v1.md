@@ -61,9 +61,9 @@ Una aplicación de escritorio multiplataforma (Linux, macOS, Windows) con interf
 - **Modos:** el modo se fija en el Perfil. El Modo simple no incluye la Terminal.
 - **Transferencias:** cola con progreso, cancelar, reintentar y varias en paralelo; la reanudación entra en la v1 si el coste es razonable.
 - **Administración:** pantalla mínima "Crear Perfil", visible solo con un Perfil de administrador, que calcula la Huella conectándose al Servidor. El resto de la administración del Servidor es manual, según la guía.
-- **Branding y genericidad (ADR 0002):** el proyecto se llama `sshpanel`. `branding.toml` contiene nombre, identificador, extensión, icono y color de acento, y un script lo vuelca en la configuración de Tauri. "SSH Panel" es el valor por defecto; cada instancia es un fork con su propio `branding.toml`. El código no contiene valores de ninguna instancia.
+- **Branding y genericidad (ADR 0002):** el proyecto se llama `sshpanel`. `branding.toml` contiene nombre, identificador, extensión, icono, color de acento y, opcionalmente, el repositorio de releases y la clave pública del actualizador, y un script lo vuelca en la configuración de Tauri. "SSH Panel" es el valor por defecto; cada instancia es un fork con su propio `branding.toml`. El código no contiene valores de ninguna instancia.
 - **Textos:** solo español en la v1, separados del código para poder traducir después.
-- **Distribución:** instaladores nativos (.msi/.exe, .dmg, .AppImage/.deb) generados con GitHub Actions, sin firma de código al principio. Actualizador integrado de Tauri sobre GitHub Releases si resulta viable sin firma.
+- **Distribución:** instaladores nativos (.msi/.exe, .dmg, .AppImage/.deb) generados con GitHub Actions, sin firma de código al principio. Actualizador integrado de Tauri sobre GitHub Releases: no necesita firma de código, solo sus propias claves (la pública en el Branding, la privada en los secrets del workflow).
 - **Repositorio:** público, licencia MIT. `.gitignore` excluye los Perfiles (`*.<extensión>`, al día con el Branding), `*.pem`, `id_*` y `.env`.
 - **Entregables no-código:** guía de configuración del servidor (con datos ficticios) y mini-guía de instalación.
 

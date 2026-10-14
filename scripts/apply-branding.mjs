@@ -22,6 +22,16 @@ if (!/^[a-z0-9]+$/.test(branding.profile_extension)) {
 if (!/^#[0-9a-fA-F]{6}$/.test(branding.accent_color)) {
   throw new Error("branding.toml: accent_color debe ser #rrggbb");
 }
+// El actualizador es opcional: necesita las dos cosas o ninguna.
+const releasesRepo = branding.releases_repo?.trim() ?? "";
+const updaterPubkey = branding.updater_pubkey?.trim() ?? "";
+if (releasesRepo && !/^[\w.-]+\/[\w.-]+$/.test(releasesRepo)) {
+  throw new Error("branding.toml: releases_repo debe ser dueño/repo");
+}
+if (Boolean(releasesRepo) !== Boolean(updaterPubkey)) {
+  throw new Error("branding.toml: el actualizador necesita releases_repo y updater_pubkey, o ninguno de los dos");
+}
+const updater = Boolean(releasesRepo);
 
 const confPath = resolve(root, "src-tauri/tauri.conf.json");
 const conf = JSON.parse(readFileSync(confPath, "utf8"));
@@ -46,6 +56,16 @@ const mimeType = conf.bundle.fileAssociations[0].mimeType;
 const mimeFile = `/usr/share/mime/packages/${branding.identifier}.xml`;
 const linux = { desktopTemplate: "linux/app.desktop", files: { [mimeFile]: "linux/mime.xml" } };
 conf.bundle.linux = { ...conf.bundle.linux, deb: { ...conf.bundle.linux?.deb, ...linux }, rpm: { ...conf.bundle.linux?.rpm, ...linux } };
+// Solo las Releases publicadas cuentan como `latest`: un borrador no se ofrece.
+const plugins = { ...conf.plugins };
+delete plugins.updater;
+if (updater) {
+  plugins.updater = {
+    pubkey: updaterPubkey,
+    endpoints: [`https://github.com/${releasesRepo}/releases/latest/download/latest.json`],
+  };
+}
+conf.plugins = plugins;
 writeFileSync(confPath, JSON.stringify(conf, null, 2) + "\n");
 
 const linuxDir = resolve(root, "src-tauri/linux");
@@ -85,6 +105,7 @@ export const branding = {
   name: ${JSON.stringify(branding.name)},
   profileExtension: ${JSON.stringify(branding.profile_extension)},
   accentColor: ${JSON.stringify(branding.accent_color)},
+  updater: ${updater},
 } as const;
 `;
 writeFileSync(resolve(root, "ui/src/branding.generated.ts"), generated);

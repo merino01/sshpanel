@@ -123,6 +123,12 @@ export const api = {
     return invoke<Outcome>("run_transfer", { id, onProgress: channel });
   },
   cancelTransfer: (id: number) => invoke<void>("cancel_transfer", { id }),
+  /** La versión nueva publicada en las Releases, o `null` si ya es la última. */
+  checkUpdate: () => invoke<{ version: string } | null>("check_update"),
+  /** Instala la versión que encontró `checkUpdate` y reinicia la app. */
+  installUpdate: () => invoke<void>("install_update"),
+  /** Abre en el navegador la página de la última Release. */
+  openReleases: () => invoke<void>("open_releases"),
 };
 
 export type Api = typeof api;

@@ -17,6 +17,19 @@ describe("Toasts", () => {
     expect(texts(toasts)).toEqual(["sin permiso"]);
   });
 
+  it("los informativos tampoco se cierran solos y llevan su botón", () => {
+    const toasts = new Toasts();
+    const run = vi.fn();
+    const id = toasts.info("versión nueva", { label: "Actualizar", run });
+
+    vi.advanceTimersByTime(SUCCESS_MS * 10);
+    expect(texts(toasts)).toEqual(["versión nueva"]);
+
+    toasts.act(id);
+    expect(run).toHaveBeenCalledOnce();
+    expect(texts(toasts)).toEqual([]);
+  });
+
   it("en pausa no corre el tiempo; al seguir, solo espera lo que quedaba", () => {
     const toasts = new Toasts();
     const id = toasts.success("borrado");

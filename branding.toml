@@ -6,3 +6,9 @@ identifier = "io.github.merino01.sshpanel"
 profile_extension = "sshpanel"
 icon = "assets/icon.png"
 accent_color = "#3b82f6"
+
+# Actualizador: las Releases de dónde se descargan las versiones nuevas y la
+# clave pública con que se firman (ver «Actualizaciones» en el README). Vacíos,
+# la app no busca actualizaciones.
+releases_repo = ""
+updater_pubkey = ""

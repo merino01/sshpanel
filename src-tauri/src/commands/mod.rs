@@ -6,6 +6,7 @@ pub mod profile;
 pub mod terminal;
 pub mod transfers;
 pub mod trash;
+pub mod update;
 
 fn code(err: sshpanel_core::Error) -> String {
     err.code().to_string()
