@@ -6,6 +6,7 @@ mod identity;
 mod profile;
 mod secrets;
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -30,13 +31,13 @@ pub struct Core {
     connection: Mutex<Option<Arc<Connection>>>,
     /// Destinos elegidos por las operaciones en curso.
     reserved: Reserved,
-    /// La Terminal abierta, si la hay; solo una a la vez.
-    terminal: Mutex<Option<Terminal>>,
+    /// Terminales abiertas, por el número que les da la interfaz.
+    terminals: Mutex<HashMap<u32, Arc<Terminal>>>,
 }
 
 impl Core {
     pub fn new(data_dir: impl Into<PathBuf>, secrets: Box<dyn SecretStore>) -> Self {
-        Self { data_dir: data_dir.into(), secrets, connection: Mutex::new(None), reserved: Reserved::default(), terminal: Mutex::new(None) }
+        Self { data_dir: data_dir.into(), secrets, connection: Mutex::new(None), reserved: Reserved::default(), terminals: Mutex::default() }
     }
 
     /// Importa un fichero de Perfil. Genera la identidad del Miembro si todavía
@@ -71,7 +72,7 @@ impl Core {
     pub async fn connect(&self) -> Result<Listing> {
         let profile = self.current_profile()?.ok_or(Error::NoProfile)?;
         let private_key = identity::private_key(self.secrets.as_ref())?;
-        self.close_terminal().await;
+        self.close_all_terminals().await;
         let mut slot = self.connection.lock().await;
         *slot = None;
         let connection = Connection::open(&profile, &private_key).await?;
@@ -125,34 +126,47 @@ impl Core {
         self.connection().await?.empty_trash().await
     }
 
-    /// Abre una Terminal en el Servidor de `cols` columnas y `rows` filas,
-    /// cerrando la que hubiera. Lo que responde el Servidor, y el cierre de la
-    /// sesión, llegan por `on_event`. Solo en Modo avanzado.
-    pub async fn open_terminal(&self, cols: u32, rows: u32, on_event: impl FnMut(TerminalEvent) + Send + 'static) -> Result<()> {
+    /// Abre la Terminal `id` en el Servidor, de `cols` columnas y `rows`
+    /// filas, cerrando la que tuviera ese número. Lo que responde el Servidor,
+    /// y el cierre de la sesión, llegan por `on_event`. Puede haber varias a la
+    /// vez sobre la misma conexión. Solo en Modo avanzado.
+    pub async fn open_terminal(&self, id: u32, cols: u32, rows: u32, on_event: impl FnMut(TerminalEvent) + Send + 'static) -> Result<()> {
         let connection = self.connection().await?;
-        let mut slot = self.terminal.lock().await;
-        if let Some(old) = slot.take() {
+        self.close_terminal(id).await;
+        let terminal = connection.open_terminal(cols, rows, on_event).await?;
+        if let Some(old) = self.terminals.lock().await.insert(id, Arc::new(terminal)) {
             old.close().await;
         }
-        *slot = Some(connection.open_terminal(cols, rows, on_event).await?);
         Ok(())
     }
 
-    /// Envía a la Terminal lo que teclea el Miembro.
-    pub async fn terminal_input(&self, data: &[u8]) -> Result<()> {
-        self.terminal.lock().await.as_ref().ok_or(Error::NotConnected)?.input(data).await
+    /// Envía a la Terminal `id` lo que teclea el Miembro.
+    pub async fn terminal_input(&self, id: u32, data: &[u8]) -> Result<()> {
+        self.terminal(id).await?.input(data).await
     }
 
-    /// Cambia el tamaño de la Terminal, en columnas y filas.
-    pub async fn resize_terminal(&self, cols: u32, rows: u32) -> Result<()> {
-        self.terminal.lock().await.as_ref().ok_or(Error::NotConnected)?.resize(cols, rows).await
+    /// Cambia el tamaño de la Terminal `id`, en columnas y filas.
+    pub async fn resize_terminal(&self, id: u32, cols: u32, rows: u32) -> Result<()> {
+        self.terminal(id).await?.resize(cols, rows).await
     }
 
-    /// Cierra la Terminal, si hay una abierta.
-    pub async fn close_terminal(&self) {
-        if let Some(terminal) = self.terminal.lock().await.take() {
+    /// Cierra la Terminal `id`, si está abierta.
+    pub async fn close_terminal(&self, id: u32) {
+        let terminal = self.terminals.lock().await.remove(&id);
+        if let Some(terminal) = terminal {
             terminal.close().await;
         }
+    }
+
+    async fn close_all_terminals(&self) {
+        let terminals: Vec<_> = self.terminals.lock().await.drain().map(|(_, t)| t).collect();
+        for terminal in terminals {
+            terminal.close().await;
+        }
+    }
+
+    async fn terminal(&self, id: u32) -> Result<Arc<Terminal>> {
+        self.terminals.lock().await.get(&id).cloned().ok_or(Error::NotConnected)
     }
 
     /// Lanza una Transferencia, avisando a `progress` de cada avance, o la

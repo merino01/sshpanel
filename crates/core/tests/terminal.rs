@@ -44,9 +44,9 @@ struct Screen {
 }
 
 impl Screen {
-    async fn open(core: &Core) -> Self {
+    async fn open(core: &Core, id: u32) -> Self {
         let (tx, events) = unbounded_channel();
-        core.open_terminal(80, 24, move |event| {
+        core.open_terminal(id, 80, 24, move |event| {
             let _ = tx.send(event);
         })
         .await
@@ -86,10 +86,10 @@ async fn runs_commands_and_shows_their_output() {
     let server = TestServer::start();
     server.put_file("alice", "notas.txt", "hola");
     let s = connect(&server, "advanced").await;
-    let mut screen = Screen::open(&s.core).await;
+    let mut screen = Screen::open(&s.core, 1).await;
 
     // Lo tecleado vuelve como eco; el resultado no coincide con lo tecleado.
-    s.core.terminal_input(b"echo $((6*7)); cat notas.txt | tr a-z A-Z\n").await.unwrap();
+    s.core.terminal_input(1, b"echo $((6*7)); cat notas.txt | tr a-z A-Z\n").await.unwrap();
     screen.wait_for("42").await;
     screen.wait_for("HOLA").await;
 }
@@ -98,10 +98,10 @@ async fn runs_commands_and_shows_their_output() {
 async fn resizing_reaches_the_server() {
     let server = TestServer::start();
     let s = connect(&server, "advanced").await;
-    let mut screen = Screen::open(&s.core).await;
+    let mut screen = Screen::open(&s.core, 1).await;
 
-    s.core.resize_terminal(100, 30).await.unwrap();
-    s.core.terminal_input(b"stty size\n").await.unwrap();
+    s.core.resize_terminal(1, 100, 30).await.unwrap();
+    s.core.terminal_input(1, b"stty size\n").await.unwrap();
     screen.wait_for("30 100").await;
 }
 
@@ -109,24 +109,48 @@ async fn resizing_reaches_the_server() {
 async fn exiting_closes_the_session() {
     let server = TestServer::start();
     let s = connect(&server, "advanced").await;
-    let mut screen = Screen::open(&s.core).await;
+    let mut screen = Screen::open(&s.core, 1).await;
 
-    s.core.terminal_input(b"exit\n").await.unwrap();
+    s.core.terminal_input(1, b"exit\n").await.unwrap();
     screen.wait_closed().await;
 }
 
 #[tokio::test]
-async fn reconnecting_or_opening_another_closes_the_previous_one() {
+async fn several_terminals_work_side_by_side() {
+    let server = TestServer::start();
+    let s = connect(&server, "advanced").await;
+    let mut one = Screen::open(&s.core, 1).await;
+    let mut two = Screen::open(&s.core, 2).await;
+
+    s.core.terminal_input(1, b"cd /tmp && echo uno-$((1+1))\n").await.unwrap();
+    s.core.terminal_input(2, b"echo dos-$((2+2)); pwd\n").await.unwrap();
+    one.wait_for("uno-2").await;
+    two.wait_for("dos-4").await;
+    two.wait_for("/home/alice").await;
+    assert!(!one.text.contains("dos-4") && !two.text.contains("uno-2"));
+
+    s.core.close_terminal(1).await;
+    one.wait_closed().await;
+    assert_eq!(s.core.terminal_input(1, b"ls\n").await.unwrap_err(), Error::NotConnected);
+    s.core.terminal_input(2, b"echo sigo-$((3+3))\n").await.unwrap();
+    two.wait_for("sigo-6").await;
+}
+
+#[tokio::test]
+async fn reopening_a_number_or_reconnecting_closes_the_previous_ones() {
     let server = TestServer::start();
     let s = connect(&server, "advanced").await;
 
-    let mut first = Screen::open(&s.core).await;
-    let mut second = Screen::open(&s.core).await;
+    let mut first = Screen::open(&s.core, 1).await;
+    let mut again = Screen::open(&s.core, 1).await;
+    let mut other = Screen::open(&s.core, 2).await;
     first.wait_closed().await;
 
     s.core.connect().await.unwrap();
-    second.wait_closed().await;
-    assert_eq!(s.core.terminal_input(b"ls\n").await.unwrap_err(), Error::NotConnected);
+    again.wait_closed().await;
+    other.wait_closed().await;
+    assert_eq!(s.core.terminal_input(1, b"ls\n").await.unwrap_err(), Error::NotConnected);
+    assert_eq!(s.core.terminal_input(2, b"ls\n").await.unwrap_err(), Error::NotConnected);
 }
 
 #[tokio::test]
@@ -134,6 +158,6 @@ async fn needs_a_connection() {
     let dir = TempDir::new().unwrap();
     let core = Core::new(dir.path().join("data"), Box::new(MemorySecretStore::default()));
 
-    assert_eq!(core.open_terminal(80, 24, |_| {}).await.unwrap_err(), Error::NotConnected);
-    assert_eq!(core.terminal_input(b"ls\n").await.unwrap_err(), Error::NotConnected);
+    assert_eq!(core.open_terminal(1, 80, 24, |_| {}).await.unwrap_err(), Error::NotConnected);
+    assert_eq!(core.terminal_input(1, b"ls\n").await.unwrap_err(), Error::NotConnected);
 }

@@ -1,4 +1,5 @@
-//! Terminal: abrirla, escribirle, cambiar su tamaño y cerrarla.
+//! Terminales: abrirlas, escribirles, cambiar su tamaño y cerrarlas. La
+//! interfaz da a cada una su número.
 
 use sshpanel_core::{Core, TerminalEvent};
 use tauri::State;
@@ -6,10 +7,11 @@ use tauri::ipc::{Channel, Response};
 
 use super::code;
 
-/// Abre la Terminal. Lo que escribe el Servidor llega por `on_output` como
+/// Abre la Terminal `id`. Lo que escribe el Servidor llega por `on_output` como
 /// bytes, sin pasar por JSON; el fin de la sesión, por `on_closed`.
 #[tauri::command]
 pub async fn open_terminal(
+    id: u32,
     cols: u32,
     rows: u32,
     on_output: Channel<Response>,
@@ -24,21 +26,21 @@ pub async fn open_terminal(
             let _ = on_closed.send(());
         }
     };
-    core.open_terminal(cols, rows, on_event).await.map_err(code)
+    core.open_terminal(id, cols, rows, on_event).await.map_err(code)
 }
 
 #[tauri::command]
-pub async fn terminal_input(data: String, core: State<'_, Core>) -> Result<(), String> {
-    core.terminal_input(data.as_bytes()).await.map_err(code)
+pub async fn terminal_input(id: u32, data: String, core: State<'_, Core>) -> Result<(), String> {
+    core.terminal_input(id, data.as_bytes()).await.map_err(code)
 }
 
 #[tauri::command]
-pub async fn resize_terminal(cols: u32, rows: u32, core: State<'_, Core>) -> Result<(), String> {
-    core.resize_terminal(cols, rows).await.map_err(code)
+pub async fn resize_terminal(id: u32, cols: u32, rows: u32, core: State<'_, Core>) -> Result<(), String> {
+    core.resize_terminal(id, cols, rows).await.map_err(code)
 }
 
 #[tauri::command]
-pub async fn close_terminal(core: State<'_, Core>) -> Result<(), String> {
-    core.close_terminal().await;
+pub async fn close_terminal(id: u32, core: State<'_, Core>) -> Result<(), String> {
+    core.close_terminal(id).await;
     Ok(())
 }

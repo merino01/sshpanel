@@ -5,7 +5,7 @@ import { errorMessage, t } from "../i18n";
 import { api, type AppState } from "../lib/api";
 import { enterExplorer } from "./explorer.svelte";
 import { closeMenu } from "./menu.svelte";
-import { resetTerminal } from "./terminal.svelte";
+import { resetTerminals } from "./terminal.svelte";
 import { transfers } from "./transfers.svelte";
 
 export type Screen =
@@ -49,7 +49,7 @@ export async function start() {
 
 export async function connect() {
   show({ name: "connecting" });
-  resetTerminal();
+  resetTerminals();
   try {
     enterExplorer(await api.connect());
     transfers.resume();

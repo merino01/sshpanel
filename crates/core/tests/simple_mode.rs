@@ -108,8 +108,8 @@ async fn has_no_terminal_nor_deleting_forever() {
     s.core.trash(HOME, "notas.txt").await.unwrap();
     let id = s.core.list_trash().await.unwrap()[0].id.clone();
 
-    assert_eq!(s.core.open_terminal(80, 24, |_| {}).await.unwrap_err(), Error::AdvancedOnly);
-    assert_eq!(s.core.terminal_input(b"ls\n").await.unwrap_err(), Error::NotConnected);
+    assert_eq!(s.core.open_terminal(1, 80, 24, |_| {}).await.unwrap_err(), Error::AdvancedOnly);
+    assert_eq!(s.core.terminal_input(1, b"ls\n").await.unwrap_err(), Error::NotConnected);
     assert_eq!(s.core.delete_forever(&id).await.unwrap_err(), Error::AdvancedOnly);
     assert_eq!(s.core.empty_trash().await.unwrap_err(), Error::AdvancedOnly);
     assert_eq!(s.core.list_trash().await.unwrap().len(), 1);

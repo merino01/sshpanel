@@ -1,73 +1,60 @@
 <!--
-  Terminal (solo en Modo avanzado): xterm.js conectado a una consola del
-  Servidor. Sigue montada, oculta, mientras se usan el Explorador o la Papelera,
-  para no perder la sesión ni lo que se ve en ella.
+  Terminales (solo en Modo avanzado): pestañas con «+» para abrir otra y, debajo,
+  la Terminal de la pestaña activa. Atajos: Ctrl+Mayús+T abre una nueva desde
+  cualquier pantalla; Ctrl+Mayús+W cierra la actual y Ctrl+RePág / Ctrl+AvPág
+  cambian de pestaña.
 -->
 <script lang="ts">
-  import { FitAddon } from "@xterm/addon-fit";
-  import { Terminal } from "@xterm/xterm";
-  import "@xterm/xterm/css/xterm.css";
-  import { onMount } from "svelte";
   import { t } from "../../i18n";
-  import { reopenTerminal, resize, sendInput, setOutput, startTerminal, terminal } from "../../state/terminal.svelte";
+  import { shortcutFor } from "../../lib/terminalTabs";
+  import { closeTerminal, cycleTerminal, newTerminal, selectTerminal, terminals } from "../../state/terminal.svelte";
+  import TerminalView from "./TerminalView.svelte";
 
   let { visible }: { visible: boolean } = $props();
-  let container = $state<HTMLDivElement>();
-  let xterm = $state<Terminal>();
-  const fit = new FitAddon();
 
-  onMount(() => {
-    const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
-    const term = new Terminal({
-      cursorBlink: true,
-      fontFamily: "ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace",
-      fontSize: 14,
-      theme: { background: "#1e1e1e", foreground: "#e5e5e5", cursor: accent || "#e5e5e5", selectionBackground: "#ffffff40" },
-    });
-    term.loadAddon(fit);
-    term.open(container!);
-    setOutput((data) => term.write(data));
-    const input = term.onData(sendInput);
-    const resized = term.onResize(({ cols, rows }) => resize(cols, rows));
-    // Oculta mide 0: solo se ajusta cuando se ve.
-    const observer = new ResizeObserver(() => container?.offsetParent && fit.fit());
-    observer.observe(container!);
-    xterm = term;
-    return () => {
-      observer.disconnect();
-      input.dispose();
-      resized.dispose();
-      setOutput(null);
-      term.dispose();
-    };
-  });
-
-  // Al verse: se ajusta al hueco, se abre la sesión si no hay ninguna y recibe el foco.
-  $effect(() => {
-    if (!visible || !xterm) return;
-    fit.fit();
-    if (terminal.status === "idle") {
-      xterm.reset();
-      void startTerminal(xterm.cols, xterm.rows);
-    }
-    xterm.focus();
-  });
+  function onkeydown(event: KeyboardEvent) {
+    const shortcut = shortcutFor(event);
+    if (!shortcut || (shortcut !== "new" && !visible)) return;
+    event.preventDefault();
+    if (shortcut === "new") newTerminal();
+    else if (shortcut === "close" && terminals.active !== null) closeTerminal(terminals.active);
+    else if (shortcut === "next") cycleTerminal(1);
+    else if (shortcut === "previous") cycleTerminal(-1);
+  }
 </script>
+
+<svelte:window {onkeydown} />
 
 <section hidden={!visible}>
   <header>
-    <h1>{t("terminal.title")}</h1>
-    {#if terminal.status === "opening"}
-      <p class="help">{t("terminal.opening")}</p>
-    {/if}
-  </header>
-  {#if terminal.status === "closed"}
-    <div class="closed" role="status">
-      <p>{terminal.message ?? t("terminal.closed")}</p>
-      <button class="primary" onclick={reopenTerminal}>{t("terminal.reopen")}</button>
+    <div class="tabs" role="tablist" aria-label={t("terminal.tabs")}>
+      {#each terminals.tabs as tab (tab.id)}
+        {@const label = t("terminal.tab", { number: String(tab.number) })}
+        <div class="tab" class:active={tab.id === terminals.active} class:ended={tab.status === "closed"}>
+          <button
+            role="tab"
+            aria-selected={tab.id === terminals.active}
+            aria-controls="terminal-{tab.id}"
+            onclick={() => selectTerminal(tab.id)}
+          >
+            {label}
+          </button>
+          <button
+            class="close"
+            aria-label={t("terminal.close", { number: String(tab.number) })}
+            title={t("terminal.close", { number: String(tab.number) })}
+            onclick={() => closeTerminal(tab.id)}
+          >
+            ×
+          </button>
+        </div>
+      {/each}
     </div>
-  {/if}
-  <div class="screen" role="region" aria-label={t("terminal.label")} bind:this={container}></div>
+    <button class="new" aria-label={t("terminal.new")} title={t("terminal.new")} onclick={newTerminal}>+</button>
+  </header>
+  {#each terminals.tabs as tab (tab.id)}
+    <TerminalView {tab} visible={visible && tab.id === terminals.active} />
+  {/each}
 </section>
 
 <style>
@@ -82,32 +69,62 @@
   }
   header {
     display: flex;
-    gap: 1rem;
-    align-items: baseline;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
-  }
-  h1 {
-    margin: 0;
-    font-size: 1.2rem;
-  }
-  header .help {
-    margin: 0;
-  }
-  .closed {
-    display: flex;
-    gap: 1rem;
+    gap: 0.4rem;
     align-items: center;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 1rem 0;
     border-bottom: 1px solid rgba(127, 127, 127, 0.25);
   }
-  .closed p {
-    margin: 0;
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    min-width: 0;
+    overflow-x: auto;
   }
-  .screen {
-    flex: 1;
-    min-height: 0;
-    padding: 0.5rem;
-    background: #1e1e1e;
+  .tab {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    border-radius: 0.4rem 0.4rem 0 0;
+  }
+  .tab.active {
+    border-color: rgba(127, 127, 127, 0.3);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .tab.ended button[role="tab"] {
+    opacity: 0.6;
+  }
+  .tab button {
+    border: 0;
+    background: none;
+    color: inherit;
+  }
+  button[role="tab"] {
+    padding: 0.4rem 0.3rem 0.4rem 0.7rem;
+  }
+  .tab.active button[role="tab"] {
+    font-weight: 600;
+  }
+  .close {
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.3rem;
+    line-height: 1;
+  }
+  .close:hover,
+  .new:hover {
+    color: var(--accent);
+  }
+  .new {
+    flex-shrink: 0;
+    width: 1.8rem;
+    height: 1.8rem;
+    margin-bottom: 0.2rem;
+    border: 1px solid rgba(127, 127, 127, 0.4);
+    border-radius: 0.4rem;
+    background: none;
+    color: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
   }
 </style>

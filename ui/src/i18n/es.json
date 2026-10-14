@@ -67,7 +67,11 @@
   "trash.deletedForever": "«{name}» se ha eliminado para siempre.",
 
   "terminal.title": "Terminal",
-  "terminal.label": "Terminal del servidor",
+  "terminal.tab": "Terminal {number}",
+  "terminal.tabs": "Terminales abiertas",
+  "terminal.new": "Nueva Terminal (Ctrl+Mayús+T)",
+  "terminal.close": "Cerrar Terminal {number} (Ctrl+Mayús+W)",
+  "terminal.label": "Terminal {number} del servidor",
   "terminal.opening": "Abriendo la Terminal…",
   "terminal.closed": "La sesión de Terminal ha terminado.",
   "terminal.reopen": "Abrir otra",

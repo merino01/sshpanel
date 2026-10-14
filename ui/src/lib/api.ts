@@ -74,17 +74,20 @@ export const api = {
   /** Solo en Modo avanzado. */
   emptyTrash: () => invoke<void>("empty_trash"),
 
-  /** Abre la Terminal (solo en Modo avanzado). Lo que escribe el Servidor llega a `onOutput` en bytes. */
-  openTerminal: (cols: number, rows: number, onOutput: (data: Uint8Array) => void, onClosed: () => void) => {
+  /**
+   * Abre la Terminal `id` (solo en Modo avanzado); puede haber varias. Lo que
+   * escribe el Servidor llega a `onOutput` en bytes.
+   */
+  openTerminal: (id: number, cols: number, rows: number, onOutput: (data: Uint8Array) => void, onClosed: () => void) => {
     const output = new Channel<ArrayBuffer>();
     output.onmessage = (data) => onOutput(new Uint8Array(data));
     const closed = new Channel<null>();
     closed.onmessage = onClosed;
-    return invoke<void>("open_terminal", { cols, rows, onOutput: output, onClosed: closed });
+    return invoke<void>("open_terminal", { id, cols, rows, onOutput: output, onClosed: closed });
   },
-  terminalInput: (data: string) => invoke<void>("terminal_input", { data }),
-  resizeTerminal: (cols: number, rows: number) => invoke<void>("resize_terminal", { cols, rows }),
-  closeTerminal: () => invoke<void>("close_terminal"),
+  terminalInput: (id: number, data: string) => invoke<void>("terminal_input", { id, data }),
+  resizeTerminal: (id: number, cols: number, rows: number) => invoke<void>("resize_terminal", { id, cols, rows }),
+  closeTerminal: (id: number) => invoke<void>("close_terminal", { id }),
 
   addUpload: (id: number, local: string, remoteDir: string) => invoke<void>("add_upload", { id, local, remoteDir }),
   addDownload: (id: number, remoteDir: string, name: string, localDir: string) =>
