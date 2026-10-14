@@ -19,6 +19,7 @@ pub fn run() {
             profile::app_state,
             profile::import_profile,
             profile::connect,
+            profile::create_profile,
             files::list_dir,
             files::create_folder,
             files::rename,

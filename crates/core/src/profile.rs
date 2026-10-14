@@ -20,6 +20,20 @@ pub struct Profile {
     pub fingerprint: String,
     pub mode: Mode,
     pub shared_folder: Option<String>,
+    /// Perfil de un Administrador: la app le ofrece «Crear perfil».
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub admin: bool,
+}
+
+/// Lo que elige el Administrador al crear un Perfil; la Huella la calcula la app.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct NewProfile {
+    pub host: String,
+    pub port: u16,
+    pub username: String,
+    pub mode: Mode,
+    pub shared_folder: Option<String>,
+    pub admin: bool,
 }
 
 #[derive(Deserialize)]
@@ -33,6 +47,8 @@ struct RawProfile {
     mode: Mode,
     #[serde(default)]
     shared_folder: Option<String>,
+    #[serde(default)]
+    admin: bool,
 }
 
 fn default_port() -> u16 {
@@ -53,7 +69,30 @@ impl Profile {
             fingerprint: raw.fingerprint.trim().to_string(),
             mode: raw.mode,
             shared_folder: raw.shared_folder.map(|f| f.trim().to_string()).filter(|f| !f.is_empty()),
+            admin: raw.admin,
         };
+        profile.validate()?;
+        Ok(profile)
+    }
+
+    /// Perfil a partir de lo que elige el Administrador, aún sin la Huella,
+    /// que se pone con [`Profile::with_fingerprint`] tras conectar.
+    pub(crate) fn from_new(new: NewProfile) -> Result<Self> {
+        let profile = Self {
+            host: new.host.trim().to_string(),
+            port: new.port,
+            username: new.username.trim().to_string(),
+            fingerprint: String::new(),
+            mode: new.mode,
+            shared_folder: new.shared_folder.map(|f| f.trim().to_string()).filter(|f| !f.is_empty()),
+            admin: new.admin,
+        };
+        profile.validate_except_fingerprint()?;
+        Ok(profile)
+    }
+
+    pub(crate) fn with_fingerprint(self, fingerprint: String) -> Result<Self> {
+        let profile = Self { fingerprint, ..self };
         profile.validate()?;
         Ok(profile)
     }
@@ -71,6 +110,14 @@ impl Profile {
     }
 
     fn validate(&self) -> Result<()> {
+        self.validate_except_fingerprint()?;
+        if !is_sha256_fingerprint(&self.fingerprint) {
+            return Err(Error::ProfileInvalidField("fingerprint"));
+        }
+        Ok(())
+    }
+
+    fn validate_except_fingerprint(&self) -> Result<()> {
         if self.host.is_empty() || self.host.chars().any(|c| c.is_whitespace() || c == '/') {
             return Err(Error::ProfileInvalidField("host"));
         }
@@ -79,9 +126,6 @@ impl Profile {
         }
         if !is_unix_username(&self.username) {
             return Err(Error::ProfileInvalidField("username"));
-        }
-        if !is_sha256_fingerprint(&self.fingerprint) {
-            return Err(Error::ProfileInvalidField("fingerprint"));
         }
         if let Some(folder) = &self.shared_folder {
             if !folder.starts_with('/') {

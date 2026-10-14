@@ -13,7 +13,7 @@ Persona del grupo que usa la app para conectarse al Servidor con su propia ident
 _Avoid_: Cliente, usuario (ambiguo con usuario Linux)
 
 **Administrador**:
-Miembro que configura el Servidor, autoriza a otros Miembros y genera sus Perfiles.
+Miembro que configura el Servidor, autoriza a otros Miembros y genera sus Perfiles. Su Perfil lleva la marca de administrador, que le muestra «Crear perfil» en la app.
 _Avoid_: Owner, root
 
 **Perfil**:

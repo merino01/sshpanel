@@ -8,6 +8,7 @@
   import ContextMenu from "./components/ContextMenu.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import Connecting from "./screens/Connecting.svelte";
+  import CreateProfile from "./screens/CreateProfile.svelte";
   import Explorer from "./screens/explorer/Explorer.svelte";
   import Problem from "./screens/Problem.svelte";
   import TerminalScreen from "./screens/terminal/Terminal.svelte";
@@ -38,6 +39,8 @@
     <Explorer />
   {:else if session.screen.name === "trash"}
     <Trash />
+  {:else if session.screen.name === "createProfile"}
+    <CreateProfile />
   {/if}
   {#if workspace && isAdvanced()}
     <TerminalScreen visible={session.screen.name === "terminal"} />

@@ -18,14 +18,17 @@ export type Screen =
   | { name: "explorer" }
   | { name: "trash" }
   /** Solo en Modo avanzado. */
-  | { name: "terminal" };
+  | { name: "terminal" }
+  /** Para el Administrador; `back` es la pantalla a la que se vuelve. */
+  | { name: "createProfile"; back: Screen };
 
 /**
  * Si cada pantalla es de trabajo con el Servidor conectado: llevan la barra
- * lateral y, si se cae la conexión, se sale de ellas a «Reintentar». Al añadir
+ * lateral, las Terminales siguen abiertas y, si se cae la conexión, se sale de
+ * ellas a «Reintentar». Si depende de cómo se llegó, es una función. Al añadir
  * una pantalla, TypeScript obliga a decidirlo aquí.
  */
-const WORKSPACE: Record<Screen["name"], boolean> = {
+const WORKSPACE: Record<Screen["name"], boolean | ((screen: Screen) => boolean)> = {
   starting: false,
   welcome: false,
   key: false,
@@ -34,13 +37,20 @@ const WORKSPACE: Record<Screen["name"], boolean> = {
   explorer: true,
   trash: true,
   terminal: true,
+  // Se llega desde la barra lateral o desde la Bienvenida, sin Perfil.
+  createProfile: (screen) => screen.name === "createProfile" && isWorkspace(screen.back),
 };
+
+function isWorkspace(screen: Screen): boolean {
+  const workspace = WORKSPACE[screen.name];
+  return typeof workspace === "function" ? workspace(screen) : workspace;
+}
 
 export const session = $state<{ screen: Screen; appState: AppState | null }>({ screen: { name: "starting" }, appState: null });
 
 /** Si se está en una pantalla de trabajo con el Servidor conectado (Explorador, Papelera, Terminal…). */
 export function inWorkspace(): boolean {
-  return WORKSPACE[session.screen.name];
+  return isWorkspace(session.screen);
 }
 
 /** Si el Perfil es de Modo avanzado: Terminal y borrar para siempre de la Papelera. */

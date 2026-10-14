@@ -7,9 +7,23 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 
 export interface Profile {
   host: string;
+  port: number;
   username: string;
+  fingerprint: string;
   mode: "simple" | "advanced";
   shared_folder: string | null;
+  /** Perfil de un Administrador: puede crear Perfiles. Falta si es `false`. */
+  admin?: boolean;
+}
+
+/** Lo que elige el Administrador al crear un Perfil; la Huella la calcula el núcleo. */
+export interface NewProfile {
+  host: string;
+  port: number;
+  username: string;
+  mode: Profile["mode"];
+  shared_folder: string | null;
+  admin: boolean;
 }
 
 export interface AppState {
@@ -61,6 +75,8 @@ export const api = {
   appState: () => invoke<AppState>("app_state"),
   importProfile: (path: string) => invoke<AppState>("import_profile", { path }),
   connect: () => invoke<Listing>("connect"),
+  /** Crea el fichero de Perfil `path`, conectando con el Servidor para calcular su Huella. */
+  createProfile: (profile: NewProfile, path: string) => invoke<Profile>("create_profile", { profile, path }),
 
   listDir: (path: string) => invoke<Listing>("list_dir", { path }),
   createFolder: (parent: string, name: string) => invoke<void>("create_folder", { parent, name }),

@@ -17,7 +17,7 @@ use connection::{Connection, Reserved, Terminal};
 
 pub use connection::{Entry, EntryKind, Listing, Outcome, Progress, Restored, TerminalEvent, Transfer, Trashed};
 pub use error::{Error, Result};
-pub use profile::{Mode, Profile};
+pub use profile::{Mode, NewProfile, Profile};
 pub use secrets::{MemorySecretStore, SecretStore, SystemSecretStore};
 
 const PROFILE_FILE: &str = "profile.json";
@@ -58,6 +58,17 @@ impl Core {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
             Err(_) => Err(Error::Storage),
         }
+    }
+
+    /// Crea el fichero de Perfil `file` para un Miembro. La Huella la calcula
+    /// conectándose al Servidor, sin autenticarse; si no se puede contactar con
+    /// él no se escribe nada. El Perfil nunca contiene claves.
+    pub async fn create_profile(&self, new: NewProfile, file: &Path) -> Result<Profile> {
+        let profile = Profile::from_new(new)?;
+        let fingerprint = connection::server_fingerprint(&profile.host, profile.port).await?;
+        let profile = profile.with_fingerprint(fingerprint)?;
+        fs::write(file, profile.to_json()).map_err(|_| Error::Storage)?;
+        Ok(profile)
     }
 
     /// Clave pública del Miembro, en formato `authorized_keys`. Es la única

@@ -56,6 +56,33 @@ impl client::Handler for Verifier {
     }
 }
 
+/// Apunta la Huella del Servidor y corta la conexión antes de autenticarse.
+struct FingerprintReader {
+    fingerprint: Arc<std::sync::Mutex<Option<String>>>,
+}
+
+impl client::Handler for FingerprintReader {
+    type Error = russh::Error;
+
+    async fn check_server_key(&mut self, server_key: &PublicKeyOrCertificate) -> std::result::Result<bool, Self::Error> {
+        if let PublicKeyOrCertificate::PublicKey { key, .. } = server_key {
+            *self.fingerprint.lock().unwrap() = Some(key.fingerprint(HashAlg::Sha256).to_string());
+        }
+        Ok(false)
+    }
+}
+
+/// Huella SHA256 de la clave del Servidor en `host:port`, en el formato de
+/// `ssh-keygen -l`. No se autentica ni envía ningún usuario ni clave.
+pub(crate) async fn server_fingerprint(host: &str, port: u16) -> Result<String> {
+    let fingerprint = Arc::new(std::sync::Mutex::new(None));
+    let reader = FingerprintReader { fingerprint: fingerprint.clone() };
+    let handshake = client::connect(Arc::new(client::Config::default()), (host, port), reader);
+    // Siempre falla, porque se rechaza la clave a propósito.
+    let _ = tokio::time::timeout(CONNECT_TIMEOUT, handshake).await;
+    fingerprint.lock().unwrap().take().ok_or(Error::Unreachable)
+}
+
 /// Sesión SFTP abierta con el Servidor.
 pub(crate) struct Connection {
     ssh: Handle<Verifier>,

@@ -55,7 +55,7 @@ fn importing_a_valid_profile_makes_it_the_current_one() {
 }
 
 #[test]
-fn port_defaults_to_22_and_shared_folder_is_optional() {
+fn port_defaults_to_22_and_shared_folder_and_admin_are_optional() {
     let fx = Fixture::new();
     let file = fx.profile_file(&profile_json(""));
 
@@ -63,6 +63,7 @@ fn port_defaults_to_22_and_shared_folder_is_optional() {
 
     assert_eq!(profile.port, 22);
     assert_eq!(profile.shared_folder, None);
+    assert!(!profile.admin);
 }
 
 #[test]
