@@ -9,4 +9,4 @@ Icon={{icon}}
 Name={{name}}
 Terminal=false
 Type=Application
-MimeType=application/x-dbdesp;
+MimeType=application/x-sshpanel;

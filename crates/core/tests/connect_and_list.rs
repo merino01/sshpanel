@@ -26,7 +26,7 @@ impl Fixture {
 
     /// Importa un Perfil de `alice` para el servidor dado.
     fn import(&self, host: &str, port: u16, fingerprint: &str) {
-        let path = self.dir.path().join("perfil.dbdesp");
+        let path = self.dir.path().join("perfil.sshpanel");
         fs::write(
             &path,
             format!(

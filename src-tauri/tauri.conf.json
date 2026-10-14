@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "DBDesp Panel",
+  "productName": "SSH Panel",
   "version": "0.1.0",
-  "identifier": "com.dbdesp.panel",
+  "identifier": "io.github.merino01.sshpanel",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "DBDesp Panel",
+        "title": "SSH Panel",
         "width": 1000,
         "height": 680,
         "minWidth": 720,
@@ -36,14 +36,14 @@
     "fileAssociations": [
       {
         "ext": [
-          "dbdesp"
+          "sshpanel"
         ],
-        "name": "Perfil de DBDesp Panel",
-        "description": "Perfil de DBDesp Panel",
+        "name": "Perfil de SSH Panel",
+        "description": "Perfil de SSH Panel",
         "role": "Editor",
-        "mimeType": "application/x-dbdesp",
+        "mimeType": "application/x-sshpanel",
         "exportedType": {
-          "identifier": "com.dbdesp.panel.profile",
+          "identifier": "io.github.merino01.sshpanel.profile",
           "conformsTo": [
             "public.json"
           ]
@@ -54,13 +54,13 @@
       "deb": {
         "desktopTemplate": "linux/app.desktop",
         "files": {
-          "/usr/share/mime/packages/com.dbdesp.panel.xml": "linux/mime.xml"
+          "/usr/share/mime/packages/io.github.merino01.sshpanel.xml": "linux/mime.xml"
         }
       },
       "rpm": {
         "desktopTemplate": "linux/app.desktop",
         "files": {
-          "/usr/share/mime/packages/com.dbdesp.panel.xml": "linux/mime.xml"
+          "/usr/share/mime/packages/io.github.merino01.sshpanel.xml": "linux/mime.xml"
         }
       }
     }

@@ -40,7 +40,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           npm run branding
-          git diff --exit-code src-tauri/tauri.conf.json src-tauri/linux ui/src/branding.generated.ts
+          git diff --exit-code src-tauri/tauri.conf.json src-tauri/linux ui/src/branding.generated.ts .gitignore
           test -z "$(git status --porcelain src-tauri/linux)"
       - run: npm test
       - run: npm run build

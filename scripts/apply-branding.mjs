@@ -1,5 +1,5 @@
 // Vuelca branding.toml en la configuración de Tauri, la interfaz, los ficheros
-// de Linux (src-tauri/linux/) y los iconos.
+// de Linux (src-tauri/linux/), la línea de los Perfiles de .gitignore y los iconos.
 // Ejecutar con `npm run branding` tras editar branding.toml.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -88,6 +88,15 @@ export const branding = {
 } as const;
 `;
 writeFileSync(resolve(root, "ui/src/branding.generated.ts"), generated);
+
+// Los Perfiles llevan el servidor y su Huella: que nunca acaben en el repo,
+// sea cual sea la extensión.
+const gitignorePath = resolve(root, ".gitignore");
+const gitignore = readFileSync(gitignorePath, "utf8").split("\n");
+const marker = gitignore.findIndex((line) => line.includes("scripts/apply-branding.mjs"));
+if (marker === -1) throw new Error(".gitignore: falta el comentario que marca la línea de los Perfiles");
+gitignore[marker + 1] = `*.${branding.profile_extension}`;
+writeFileSync(gitignorePath, gitignore.join("\n"));
 
 execFileSync(
   "npx",

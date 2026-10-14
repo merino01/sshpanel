@@ -29,7 +29,7 @@ fn new_profile(server: &TestServer, username: &str) -> NewProfile {
 async fn computes_the_fingerprint_and_writes_an_importable_profile() {
     let server = TestServer::start();
     let dir = TempDir::new().unwrap();
-    let file = dir.path().join("alice.dbdesp");
+    let file = dir.path().join("alice.sshpanel");
 
     let profile = core(&dir, "admin").create_profile(new_profile(&server, "alice"), &file).await.unwrap();
 
@@ -45,7 +45,7 @@ async fn the_profile_contains_no_keys_and_marks_administrators() {
     let server = TestServer::start();
     let dir = TempDir::new().unwrap();
     let admin = core(&dir, "admin");
-    let (member_file, admin_file) = (dir.path().join("alice.dbdesp"), dir.path().join("bob.dbdesp"));
+    let (member_file, admin_file) = (dir.path().join("alice.sshpanel"), dir.path().join("bob.sshpanel"));
 
     admin.create_profile(new_profile(&server, "alice"), &member_file).await.unwrap();
     let new = NewProfile { mode: Mode::Advanced, shared_folder: None, admin: true, ..new_profile(&server, "bob") };
@@ -64,7 +64,7 @@ async fn does_not_authenticate_to_compute_the_fingerprint() {
     let server = TestServer::start();
     let dir = TempDir::new().unwrap();
 
-    core(&dir, "admin").create_profile(new_profile(&server, "alice"), &dir.path().join("alice.dbdesp")).await.unwrap();
+    core(&dir, "admin").create_profile(new_profile(&server, "alice"), &dir.path().join("alice.sshpanel")).await.unwrap();
 
     let logs = server.logs();
     assert!(!logs.contains("alice"), "no se envía el usuario:\n{logs}");
@@ -74,7 +74,7 @@ async fn does_not_authenticate_to_compute_the_fingerprint() {
 async fn an_unreachable_server_writes_nothing() {
     let dir = TempDir::new().unwrap();
     let port = std::net::TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port();
-    let file = dir.path().join("alice.dbdesp");
+    let file = dir.path().join("alice.sshpanel");
     let new = NewProfile { host: "127.0.0.1".into(), port, username: "alice".into(), mode: Mode::Simple, shared_folder: None, admin: false };
 
     assert_eq!(core(&dir, "admin").create_profile(new, &file).await.unwrap_err(), Error::Unreachable);
@@ -85,7 +85,7 @@ async fn an_unreachable_server_writes_nothing() {
 async fn invalid_choices_are_refused_before_connecting() {
     let dir = TempDir::new().unwrap();
     let admin = core(&dir, "admin");
-    let file = dir.path().join("x.dbdesp");
+    let file = dir.path().join("x.sshpanel");
     // Nadie escucha en esta dirección: si llegara a conectar, el error sería otro.
     let base = NewProfile { host: "192.0.2.1".into(), port: 22, username: "alice".into(), mode: Mode::Simple, shared_folder: None, admin: false };
 

@@ -32,7 +32,7 @@ impl Session {
 async fn connect(server: &TestServer) -> Session {
     let dir = TempDir::new().unwrap();
     let core = Core::new(dir.path().join(".data"), Box::new(MemorySecretStore::default()));
-    let path = dir.path().join(".perfil.dbdesp");
+    let path = dir.path().join(".perfil.sshpanel");
     fs::write(
         &path,
         format!(
@@ -185,7 +185,7 @@ async fn leaves_no_partial_files_after_a_transfer() {
     download(&s.core, HOME, "a.txt", s.local()).await.unwrap();
 
     assert_eq!(remote_home(&server), "a.txt\nb.txt");
-    assert_eq!(local_names(s.local()), [".data", ".perfil.dbdesp", "a.txt", "b.txt"]);
+    assert_eq!(local_names(s.local()), [".data", ".perfil.sshpanel", "a.txt", "b.txt"]);
 }
 
 #[tokio::test]
@@ -246,7 +246,7 @@ async fn cancelling_a_download_midway_leaves_nothing() {
     let result = s.core.run(&transfer, |p| if p.done > 0 { transfer.cancel() }).await;
 
     assert_eq!(result.unwrap_err(), Error::Cancelled);
-    assert_eq!(local_names(s.local()), [".data", ".perfil.dbdesp"]);
+    assert_eq!(local_names(s.local()), [".data", ".perfil.sshpanel"]);
 }
 
 #[tokio::test]
@@ -311,7 +311,7 @@ async fn a_cut_download_resumes_where_it_stopped() {
     assert_eq!(second, downloaded(s.local().join("grande.bin")));
     assert!(reports[0].done >= CUT_AT, "sigue donde se quedó: {:?}", reports[0]);
     assert_eq!(local_sha256(&s.local().join("grande.bin")), remote_sha256(&server, "/home/alice/grande.bin"));
-    assert_eq!(local_names(s.local()), [".data", ".perfil.dbdesp", "grande.bin"]);
+    assert_eq!(local_names(s.local()), [".data", ".perfil.sshpanel", "grande.bin"]);
 }
 
 #[tokio::test]
@@ -399,7 +399,7 @@ async fn discarding_a_cut_transfer_removes_what_it_left() {
 
     s.core.discard(&transfer).await;
 
-    assert_eq!(local_names(s.local()), [".data", ".perfil.dbdesp"]);
+    assert_eq!(local_names(s.local()), [".data", ".perfil.sshpanel"]);
     assert_eq!(s.core.run(&transfer, |_| {}).await.unwrap_err(), Error::Cancelled);
 }
 

@@ -20,7 +20,7 @@ struct Session {
 async fn connect(server: &TestServer, mode: &str) -> Session {
     let dir = TempDir::new().unwrap();
     let core = Core::new(dir.path().join("data"), Box::new(MemorySecretStore::default()));
-    let path = dir.path().join("perfil.dbdesp");
+    let path = dir.path().join("perfil.sshpanel");
     fs::write(
         &path,
         format!(

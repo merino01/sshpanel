@@ -33,7 +33,7 @@ impl Fixture {
     }
 
     fn profile_file(&self, content: &str) -> std::path::PathBuf {
-        let path = self.dir.path().join("perfil.dbdesp");
+        let path = self.dir.path().join("perfil.sshpanel");
         fs::write(&path, content).unwrap();
         path
     }
@@ -100,7 +100,7 @@ fn invalid_profiles_are_rejected_and_nothing_is_saved() {
 fn a_missing_file_is_reported_as_unreadable() {
     let fx = Fixture::new();
 
-    let err = fx.core.import_profile(Path::new("/no/existe.dbdesp")).unwrap_err();
+    let err = fx.core.import_profile(Path::new("/no/existe.sshpanel")).unwrap_err();
 
     assert_eq!(err, Error::ProfileUnreadable);
 }
@@ -110,14 +110,14 @@ fn reading_a_profile_shows_it_without_importing_it() {
     let fx = Fixture::new();
     let current = fx.profile_file(&profile_json(""));
     let imported = fx.core.import_profile(&current).unwrap();
-    let other = fx.dir.path().join("otro.dbdesp");
+    let other = fx.dir.path().join("otro.sshpanel");
     fs::write(&other, profile_json("").replace("usuario1", "usuario2")).unwrap();
 
     let read = fx.core.read_profile(&other).unwrap();
 
     assert_eq!(read.username, "usuario2");
     assert_eq!(fx.core.current_profile().unwrap(), Some(imported));
-    assert_eq!(fx.core.read_profile(Path::new("/no/existe.dbdesp")).unwrap_err(), Error::ProfileUnreadable);
+    assert_eq!(fx.core.read_profile(Path::new("/no/existe.sshpanel")).unwrap_err(), Error::ProfileUnreadable);
 }
 
 #[test]

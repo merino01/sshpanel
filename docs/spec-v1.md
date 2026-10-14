@@ -54,17 +54,17 @@ Una aplicación de escritorio multiplataforma (Linux, macOS, Windows) con interf
 - **Marco de UI:** Tauri, con frontend en TypeScript y backend en Rust (ADR 0001). La terminal usa xterm.js.
 - **Núcleo Rust:** un módulo único, independiente de la interfaz, que expone al frontend comandos de alto nivel: importar Perfil, generar identidad, conectar, listar, transferir, borrar a la Papelera, restaurar, abrir Terminal y crear Perfil. La lógica SSH/SFTP está detrás de esa interfaz. La biblioteca concreta (`russh` o `ssh2`) se decide al implementar.
 - **Identidad:** el par de claves lo genera la app en el equipo del Miembro. La clave privada se guarda en el almacén seguro del sistema (Keychain, Credential Manager, Secret Service), sin passphrase adicional. Solo la clave pública se entrega al Administrador.
-- **Perfil:** fichero importable (extensión por defecto `.dbdesp`, definida por el Branding) con dirección, usuario, Huella, modo (simple o avanzado) y, opcionalmente, Carpeta compartida. No contiene claves privadas. El formato exacto se define al implementar.
+- **Perfil:** fichero importable (extensión por defecto `.sshpanel`, definida por el Branding) con dirección, usuario, Huella, modo (simple o avanzado) y, opcionalmente, Carpeta compartida. No contiene claves privadas. El formato exacto se define al implementar.
 - **Verificación del Servidor:** la Huella va en el Perfil. La app la comprueba en cada conexión y rechaza la conexión si no coincide, sin preguntar al usuario.
 - **Explorador:** arranca en la carpeta personal del Miembro y permite navegar donde los permisos del usuario Linux lo permitan. La app no gestiona permisos.
 - **Papelera:** los borrados desde la app mueven los archivos a una carpeta de la Papelera en el Servidor, tras confirmación. Solo el Modo avanzado puede vaciarla.
 - **Modos:** el modo se fija en el Perfil. El Modo simple no incluye la Terminal.
 - **Transferencias:** cola con progreso, cancelar, reintentar y varias en paralelo; la reanudación entra en la v1 si el coste es razonable.
 - **Administración:** pantalla mínima "Crear Perfil", visible solo con un Perfil de administrador, que calcula la Huella conectándose al Servidor. El resto de la administración del Servidor es manual, según la guía.
-- **Branding y genericidad (ADR 0002):** el proyecto se llama `sshpanel`. `branding.toml` contiene nombre, identificador, extensión, icono y color de acento, y un script lo vuelca en la configuración de Tauri. "DBDesp Panel" es el valor por defecto. El código no contiene valores de ninguna instancia.
+- **Branding y genericidad (ADR 0002):** el proyecto se llama `sshpanel`. `branding.toml` contiene nombre, identificador, extensión, icono y color de acento, y un script lo vuelca en la configuración de Tauri. "SSH Panel" es el valor por defecto; cada instancia es un fork con su propio `branding.toml`. El código no contiene valores de ninguna instancia.
 - **Textos:** solo español en la v1, separados del código para poder traducir después.
 - **Distribución:** instaladores nativos (.msi/.exe, .dmg, .AppImage/.deb) generados con GitHub Actions, sin firma de código al principio. Actualizador integrado de Tauri sobre GitHub Releases si resulta viable sin firma.
-- **Repositorio:** público, licencia MIT. `.gitignore` excluye `*.dbdesp`, `*.pem`, `id_*` y `.env`.
+- **Repositorio:** público, licencia MIT. `.gitignore` excluye los Perfiles (`*.<extensión>`, al día con el Branding), `*.pem`, `id_*` y `.env`.
 - **Entregables no-código:** guía de configuración del servidor (con datos ficticios) y mini-guía de instalación.
 
 ## Testing Decisions

@@ -4,7 +4,7 @@ App de escritorio (Linux, macOS y Windows) para que un grupo de personas use un 
 
 El administrador del servidor le da a cada persona un fichero de perfil. Ella lo importa y entra: la app genera y guarda su clave, comprueba que el servidor es el auténtico y nunca le pide configurar nada.
 
-El proyecto es genérico. «DBDesp Panel» es solo el nombre por defecto: cualquiera puede clonarlo y compilar su propia versión con su nombre, icono y color (ver [Branding](#branding)).
+El proyecto es genérico: cualquiera puede hacer un fork y publicar su propia versión, con su nombre, icono y color (ver [Tu propia versión](#tu-propia-versión)).
 
 ## Qué hace
 
@@ -81,8 +81,8 @@ El nombre, el icono y los colores de la app salen de `branding.toml`:
 | Campo | Qué es |
 | --- | --- |
 | `name` | Nombre de la app, en la ventana, los instaladores y los textos. |
-| `identifier` | Identificador único de la app, en formato de dominio al revés (`com.example.panel`). |
-| `profile_extension` | Extensión de los ficheros de perfil (`dbdesp`). Solo minúsculas y dígitos. |
+| `identifier` | Identificador único de la app, en formato de dominio al revés (`com.example.panel`). Cada versión debe tener el suyo. |
+| `profile_extension` | Extensión de los ficheros de perfil (por defecto, `sshpanel`). Solo minúsculas y dígitos. |
 | `icon` | Imagen PNG cuadrada de la que se generan todos los iconos. |
 | `accent_color` | Color de acento, en `#rrggbb`. |
 
@@ -92,9 +92,20 @@ Tras editarlo, aplica los cambios:
 npm run branding
 ```
 
-Esto regenera `src-tauri/tauri.conf.json`, `ui/src/branding.generated.ts`, los ficheros de Linux de `src-tauri/linux/` (para abrir los perfiles con doble clic) y los iconos de `src-tauri/icons/`; commitea el resultado. La CI comprueba que lo commiteado coincide con `branding.toml`.
+Esto regenera `src-tauri/tauri.conf.json`, `ui/src/branding.generated.ts`, los ficheros de Linux de `src-tauri/linux/` (para abrir los perfiles con doble clic), la línea de los perfiles en `.gitignore` (para que nunca acaben en el repositorio) y los iconos de `src-tauri/icons/`; commitea el resultado. La CI comprueba que lo commiteado coincide con `branding.toml`.
 
 El identificador y la extensión se fijan al compilar ([ADR 0002](docs/adr/0002-proyecto-generico-con-branding-en-compilacion.md)). Si los cambias, es otra app: los perfiles y las claves guardadas con la anterior no se comparten.
+
+## Tu propia versión
+
+Para dar la app a tu grupo con vuestro nombre, icono y color:
+
+1. Haz un fork de este repositorio.
+2. En tu fork, edita `branding.toml`. Ponle un `identifier` propio: si usaras el de este proyecto, tu app y la genérica compartirían datos y clave en el mismo equipo.
+3. Ejecuta `npm run branding` y commitea el resultado.
+4. Publica una versión como se explica en [Publicar una versión](#publicar-una-versión): el workflow de tu fork compila tus instaladores y los deja en tus Releases.
+
+Para traer las mejoras de este repositorio, sincroniza tu fork: solo cambian tus valores de `branding.toml` y los ficheros que genera.
 
 ## Licencia
 

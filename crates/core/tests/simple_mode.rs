@@ -23,7 +23,7 @@ async fn connect(server: &TestServer, mode: &str) -> Session {
     server.sh("mkdir -p /srv/compartida /srv/otra && chmod 777 /srv/compartida /srv/otra");
     let dir = TempDir::new().unwrap();
     let core = Core::new(dir.path().join(".data"), Box::new(MemorySecretStore::default()));
-    let path = dir.path().join("perfil.dbdesp");
+    let path = dir.path().join("perfil.sshpanel");
     fs::write(
         &path,
         format!(

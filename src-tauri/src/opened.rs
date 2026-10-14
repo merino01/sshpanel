@@ -58,19 +58,19 @@ mod tests {
     #[test]
     fn finds_the_profile_among_the_arguments() {
         let cwd = Path::new("/home/alice/Descargas");
-        let args = |list: &[&str]| profile_arg(list.iter().copied(), "dbdesp", cwd);
+        let args = |list: &[&str]| profile_arg(list.iter().copied(), "sshpanel", cwd);
 
-        assert_eq!(args(&["/usr/bin/app", "/tmp/alice.dbdesp"]), Some(PathBuf::from("/tmp/alice.dbdesp")));
-        assert_eq!(args(&["app", "--flag", "alice.DBDESP"]), Some(PathBuf::from("/home/alice/Descargas/alice.DBDESP")));
-        assert_eq!(args(&["app", "notas.txt", "b.dbdesp"]), Some(PathBuf::from("/home/alice/Descargas/b.dbdesp")));
+        assert_eq!(args(&["/usr/bin/app", "/tmp/alice.sshpanel"]), Some(PathBuf::from("/tmp/alice.sshpanel")));
+        assert_eq!(args(&["app", "--flag", "alice.SSHPANEL"]), Some(PathBuf::from("/home/alice/Descargas/alice.SSHPANEL")));
+        assert_eq!(args(&["app", "notas.txt", "b.sshpanel"]), Some(PathBuf::from("/home/alice/Descargas/b.sshpanel")));
     }
 
     #[test]
     fn ignores_the_program_and_other_files() {
         let cwd = Path::new("/");
 
-        assert_eq!(profile_arg(["/opt/app.dbdesp"], "dbdesp", cwd), None);
-        assert_eq!(profile_arg(["app", "notas.txt", "dbdesp"], "dbdesp", cwd), None);
-        assert_eq!(profile_arg(["app", "a.dbdesp"], "", cwd), None);
+        assert_eq!(profile_arg(["/opt/app.sshpanel"], "sshpanel", cwd), None);
+        assert_eq!(profile_arg(["app", "notas.txt", "sshpanel"], "sshpanel", cwd), None);
+        assert_eq!(profile_arg(["app", "a.sshpanel"], "", cwd), None);
     }
 }

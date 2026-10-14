@@ -1,7 +1,8 @@
 /target
 
-# Perfiles y claves: nunca al repo (es público)
-*.dbdesp
+# Perfiles y claves: nunca al repo (es público). La línea siguiente, la de los
+# Perfiles, la mantiene scripts/apply-branding.mjs con la extensión del Branding.
+*.sshpanel
 *.pem
 id_*
 .env

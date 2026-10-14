@@ -21,7 +21,7 @@ Descarga el instalador de tu sistema desde la página de versiones (Releases) de
 3. Si en cambio dice que la app **está dañada** y propone moverla a la papelera, no está dañada: es el mismo aviso, más tajante. Abre la app **Terminal** y escribe esto, cambiando el nombre por el de la app si es otro:
 
    ```sh
-   xattr -dr com.apple.quarantine "/Applications/DBDesp Panel.app"
+   xattr -dr com.apple.quarantine "/Applications/SSH Panel.app"
    ```
 
    Luego ábrela con normalidad.
