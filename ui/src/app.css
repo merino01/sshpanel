@@ -31,6 +31,19 @@ main {
   padding: 1rem;
   text-align: center;
 }
+main.workspace {
+  display: grid;
+  grid-template-columns: 13rem 1fr;
+  place-content: stretch;
+  justify-items: stretch;
+  gap: 0;
+  max-width: none;
+  height: 100vh;
+  min-height: 0;
+  padding: 0;
+  box-sizing: border-box;
+  text-align: left;
+}
 h1 {
   color: var(--accent);
 }
@@ -82,30 +95,45 @@ button.link {
   padding: 1.5rem 2rem;
 }
 
-/* Listas de archivos: Explorador y Papelera. */
+/*
+ * Listas de archivos: Explorador y Papelera. Cada pantalla define sus columnas
+ * con `--columns`; la cabecera (.columns) y las filas (.entry) las comparten.
+ */
 .files {
-  width: min(30rem, 90vw);
-  margin: 0.5rem 0 0;
+  width: 100%;
+  margin: 0;
   padding: 0;
   list-style: none;
   text-align: left;
 }
-.entry {
+.entry,
+.columns {
   display: grid;
-  grid-template-columns: 1.5rem 1fr auto;
+  grid-template-columns: var(--columns, 1.5rem 1fr auto);
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.5rem;
+  gap: 0.75rem;
+  padding: 0.45rem 0.75rem;
+}
+.entry {
   border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+}
+.columns {
+  border-bottom: 1px solid rgba(127, 127, 127, 0.35);
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.entry .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.6;
+  font-size: 0.85rem;
 }
 .entry .name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.entry .size {
-  opacity: 0.6;
-  font-size: 0.85rem;
 }
 .entry:focus-visible {
   outline: 2px solid var(--accent);

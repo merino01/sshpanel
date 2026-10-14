@@ -1,22 +1,60 @@
 <!-- Papelera: lo borrado desde la app, con de dónde vino y cuándo se borró. -->
 <script lang="ts">
   import Feedback from "../../components/Feedback.svelte";
-  import Shortcuts from "../../components/Shortcuts.svelte";
   import { t } from "../../i18n";
   import { trashView } from "../../state/trash.svelte";
   import TrashRow from "./TrashRow.svelte";
 </script>
 
-<h1>{t("trash.title")}</h1>
-<Shortcuts />
-<p class="help">{t("trash.help")}</p>
-<Feedback notice={trashView.notice} message={trashView.message} />
-{#if trashView.items.length}
-  <ul class="files">
-    {#each trashView.items as item (item.id)}
-      <TrashRow {item} />
-    {/each}
-  </ul>
-{:else}
-  <p class="help empty">{t("trash.empty")}</p>
-{/if}
+<section>
+  <header>
+    <h1>{t("trash.title")}</h1>
+    <p class="help">{t("trash.help")}</p>
+  </header>
+  <Feedback notice={trashView.notice} message={trashView.message} />
+  <div class="columns" aria-hidden="true">
+    <span></span>
+    <span>{t("explorer.nameColumn")}</span>
+    <span>{t("trash.originColumn")}</span>
+    <span>{t("trash.deletedColumn")}</span>
+    <span>{t("explorer.sizeColumn")}</span>
+  </div>
+  <div class="items">
+    {#if trashView.items.length}
+      <ul class="files">
+        {#each trashView.items as item (item.id)}
+          <TrashRow {item} />
+        {/each}
+      </ul>
+    {:else}
+      <p class="help empty">{t("trash.empty")}</p>
+    {/if}
+  </div>
+</section>
+
+<style>
+  section {
+    --columns: 1.5rem minmax(0, 1fr) minmax(0, 1fr) 10rem 7rem;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+  }
+  h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.2rem;
+  }
+  section > :global(.error),
+  section > :global(.feedback) {
+    padding: 0.5rem 1rem 0;
+  }
+  .items {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+</style>

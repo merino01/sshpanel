@@ -6,6 +6,7 @@
 <script lang="ts">
   import ConfirmDialog from "./components/ConfirmDialog.svelte";
   import ContextMenu from "./components/ContextMenu.svelte";
+  import Sidebar from "./components/Sidebar.svelte";
   import Connecting from "./screens/Connecting.svelte";
   import Explorer from "./screens/explorer/Explorer.svelte";
   import Problem from "./screens/Problem.svelte";
@@ -15,9 +16,15 @@
   import Trash from "./screens/trash/Trash.svelte";
   import Welcome from "./screens/Welcome.svelte";
   import { session } from "./state/session.svelte";
+
+  // El Explorador y la Papelera ocupan toda la ventana, con la barra lateral; el resto va centrado.
+  const workspace = $derived(session.screen.name === "explorer" || session.screen.name === "trash");
 </script>
 
-<main>
+<main class:workspace>
+  {#if workspace}
+    <Sidebar />
+  {/if}
   {#if session.screen.name === "welcome"}
     <Welcome error={session.screen.error} />
   {:else if session.screen.name === "key"}

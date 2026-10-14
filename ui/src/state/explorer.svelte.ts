@@ -11,6 +11,8 @@ interface Explorer {
   /** Carpeta personal del Miembro en el Servidor. */
   home: string;
   listing: Listing;
+  /** Carpetas visitadas antes de la actual, para volver con «Carpeta anterior». */
+  history: string[];
   /** Qué ha hecho la última operación. */
   notice?: string;
   /** Error de la última operación. */
@@ -18,15 +20,20 @@ interface Explorer {
   editing?: Editing;
 }
 
-export const explorer = $state<Explorer>({ home: "", listing: { path: "", entries: [] } });
+export const explorer = $state<Explorer>({ home: "", listing: { path: "", entries: [] }, history: [] });
 
 /** Recién conectado: `listing` es la carpeta personal. */
 export function enterExplorer(listing: Listing) {
   explorer.home = listing.path;
+  explorer.history = [];
+  explorer.listing = listing;
   showListing(listing);
 }
 
-function showListing(listing: Listing, notice?: string) {
+/** Muestra `listing`. Si es otra carpeta, la que se veía pasa al historial, salvo al volver atrás. */
+function showListing(listing: Listing, notice?: string, back = false) {
+  const previous = explorer.listing.path;
+  if (!back && previous && previous !== listing.path) explorer.history.push(previous);
   Object.assign(explorer, { listing, notice, message: undefined, editing: undefined });
   show({ name: "explorer" });
 }
@@ -34,6 +41,17 @@ function showListing(listing: Listing, notice?: string) {
 export async function openFolder(path: string, notice?: string) {
   try {
     showListing(await api.listDir(path), notice);
+  } catch (code) {
+    fail(code);
+  }
+}
+
+/** Vuelve a la carpeta que se veía antes de la actual. */
+export async function goBack() {
+  const path = explorer.history.pop();
+  if (path === undefined) return;
+  try {
+    showListing(await api.listDir(path), undefined, true);
   } catch (code) {
     fail(code);
   }

@@ -1,20 +1,24 @@
-<!-- Explorador: barra de herramientas y contenido de la carpeta en pantalla. -->
+<!--
+  Explorador: barra con «Carpeta anterior», «Carpeta superior», la ruta y
+  «Subir archivos», y debajo el contenido de la carpeta a todo el ancho.
+-->
 <script lang="ts">
   import Feedback from "../../components/Feedback.svelte";
-  import Shortcuts from "../../components/Shortcuts.svelte";
   import { t } from "../../i18n";
   import { parentOf } from "../../lib/paths";
-  import { explorer, openFolder, startCreating } from "../../state/explorer.svelte";
+  import { explorer, goBack, openFolder, startCreating } from "../../state/explorer.svelte";
   import { openMenu } from "../../state/menu.svelte";
   import { pickUploads } from "../../state/transfers.svelte";
+  import Breadcrumbs from "./Breadcrumbs.svelte";
   import EntryRow from "./EntryRow.svelte";
   import NameForm from "./NameForm.svelte";
 
   const parent = $derived(parentOf(explorer.listing.path));
   const editing = $derived(explorer.editing);
 
-  // Clic derecho en el hueco de la carpeta, fuera de cualquier fila; con el
-  // teclado, tecla Menú o Shift+F10 con el hueco enfocado.
+  // Clic derecho en el espacio libre de la carpeta, fuera de cualquier fila; con
+  // el teclado, tecla Menú o Shift+F10 con el espacio libre enfocado. La barra y
+  // la cabecera de columnas quedan fuera.
   function onFolderMenu(event: MouseEvent) {
     if ((event.target as Element).closest("li")) return;
     openMenu(event, event.currentTarget as HTMLElement, t("explorer.menuFolderLabel"), [
@@ -24,17 +28,30 @@
   }
 </script>
 
-<div class="explorer">
-  <h1>{t("files.title")}</h1>
-  <Shortcuts />
-  <div class="toolbar">
-    <button class="secondary" disabled={parent === null} onclick={() => parent !== null && openFolder(parent)}>{t("explorer.up")}</button>
-    <p class="path">{explorer.listing.path}</p>
+<section>
+  <header>
+    <button class="icon" aria-label={t("explorer.back")} title={t("explorer.back")} disabled={!explorer.history.length} onclick={goBack}>
+      ←
+    </button>
+    <button
+      class="icon"
+      aria-label={t("explorer.up")}
+      title={t("explorer.up")}
+      disabled={parent === null}
+      onclick={() => parent !== null && openFolder(parent)}
+    >
+      ↑
+    </button>
+    <Breadcrumbs />
     <button class="secondary" onclick={() => pickUploads(explorer.listing.path)}>{t("explorer.upload")}</button>
-  </div>
+  </header>
   <Feedback notice={explorer.notice} message={explorer.message} />
-  <!-- El hueco ocupa el resto de la ventana, para que siempre haya dónde abrir su menú. Se
-       enfoca con Tab para abrirlo también con el teclado (tecla Menú o Shift+F10). -->
+  <div class="columns" aria-hidden="true">
+    <span></span>
+    <span>{t("explorer.nameColumn")}</span>
+    <span>{t("explorer.sizeColumn")}</span>
+    <span>{t("explorer.modifiedColumn")}</span>
+  </div>
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <div class="folder" role="region" tabindex="0" aria-label={t("explorer.folderLabel")} oncontextmenu={onFolderMenu}>
     {#if editing || explorer.listing.entries.length}
@@ -54,48 +71,53 @@
       <p class="help empty">{t("files.empty")}</p>
     {/if}
   </div>
-</div>
+</section>
 
 <style>
-  /* Arriba en vez de centrado, con el hueco de la carpeta hasta el final de la ventana. */
-  .explorer {
+  section {
+    --columns: 1.5rem minmax(0, 1fr) 7rem 10rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    width: min(30rem, 90vw);
-    min-height: calc(100vh - 2rem);
+    min-width: 0;
+    min-height: 0;
   }
-  .explorer h1 {
-    margin-bottom: 0;
+  header {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+  }
+  header :global(button.secondary) {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  .icon {
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid rgba(127, 127, 127, 0.4);
+    border-radius: 0.4rem;
+    background: none;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .icon:not(:disabled):hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  section > :global(.error),
+  section > :global(.feedback) {
+    padding: 0.5rem 1rem 0;
   }
   .folder {
     flex: 1;
-    width: 100%;
-    border-radius: 0.4rem;
+    min-height: 0;
+    overflow-y: auto;
   }
   .folder:focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  .toolbar {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 0.5rem;
-    align-items: center;
-    width: 100%;
-  }
-  .path {
-    margin: 0;
-    overflow: hidden;
-    opacity: 0.7;
-    font-family: ui-monospace, monospace;
-    font-size: 0.85rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .toolbar :global(button.secondary) {
-    padding: 0.35rem 0.8rem;
-    font-size: 0.9rem;
+    outline-offset: -2px;
   }
 </style>

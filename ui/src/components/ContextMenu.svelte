@@ -14,6 +14,7 @@
   }
 
   // Junto al puntero o, si se abrió con el teclado, bajo el elemento; sin salirse de la ventana.
+  // Con el ratón no se marca ninguna opción; con el teclado, la primera.
   $effect(() => {
     const current = menu.current;
     if (!current || !list) return;
@@ -22,7 +23,8 @@
     const y = current.pointer?.y ?? rect.bottom;
     list.style.left = `${Math.max(4, Math.min(x, innerWidth - list.offsetWidth - 4))}px`;
     list.style.top = `${Math.max(4, Math.min(y, innerHeight - list.offsetHeight - 4))}px`;
-    buttons()[0]?.focus();
+    if (current.pointer) list.focus();
+    else buttons()[0]?.focus();
   });
 
   function choose(item: MenuItem) {
@@ -33,7 +35,9 @@
   function onkeydown(event: KeyboardEvent) {
     const all = buttons();
     const focused = all.indexOf(document.activeElement as HTMLButtonElement);
-    const target = { ArrowDown: focused + 1, ArrowUp: focused - 1, Home: 0, End: all.length - 1 }[event.key];
+    // Sin ninguna marcada (abierto con el ratón), ↓ va a la primera y ↑ a la última.
+    const up = focused === -1 ? all.length - 1 : focused - 1;
+    const target = { ArrowDown: focused + 1, ArrowUp: up, Home: 0, End: all.length - 1 }[event.key];
     if (target !== undefined) {
       event.preventDefault();
       all[(target + all.length) % all.length].focus();
@@ -76,6 +80,9 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
     list-style: none;
     text-align: left;
+  }
+  .context-menu:focus {
+    outline: none;
   }
   [role="menuitem"] {
     display: block;

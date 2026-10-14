@@ -6,10 +6,10 @@
 <script lang="ts">
   import { t } from "../../i18n";
   import type { Entry } from "../../lib/api";
-  import { formatSize } from "../../lib/format";
+  import { formatDate, formatSize } from "../../lib/format";
   import { joinPath } from "../../lib/paths";
   import { confirm } from "../../state/confirm.svelte";
-  import { explorer, openFolder, startCreating, startRenaming, trashEntry } from "../../state/explorer.svelte";
+  import { explorer, openFolder, startRenaming, trashEntry } from "../../state/explorer.svelte";
   import { openMenu, type MenuItem } from "../../state/menu.svelte";
   import { pickDownload } from "../../state/transfers.svelte";
 
@@ -40,7 +40,6 @@
     if (entry.kind !== "symlink") items.push({ label: t("explorer.download"), action: () => pickDownload(explorer.listing.path, entry.name) });
     items.push(
       { label: t("explorer.rename"), action: () => startRenaming(entry) },
-      { label: t("explorer.newFolder"), action: startCreating },
       { label: t("explorer.delete"), action: askToTrash },
     );
     return items;
@@ -69,7 +68,8 @@
 >
   <span class="icon" aria-hidden="true">{isDir ? "📁" : "📄"}</span>
   <span class="name">{entry.name}</span>
-  <span class="size">{entry.kind === "file" ? formatSize(entry.size) : ""}</span>
+  <span class="muted">{entry.kind === "file" ? formatSize(entry.size) : ""}</span>
+  <span class="muted">{entry.modified === null ? "" : formatDate(entry.modified)}</span>
 </li>
 
 <style>

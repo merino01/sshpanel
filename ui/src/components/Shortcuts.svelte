@@ -25,17 +25,21 @@
 <style>
   nav {
     display: flex;
-    gap: 0.4rem;
+    flex-direction: column;
+    gap: 0.2rem;
   }
   button {
-    padding: 0.35rem 0.9rem;
-    border: 1px solid rgba(127, 127, 127, 0.4);
-    border-radius: 999px;
+    padding: 0.45rem 0.6rem;
+    border: 0;
+    border-radius: 0.4rem;
     background: none;
     color: inherit;
+    text-align: left;
+  }
+  button:hover {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
   }
   button[aria-current] {
-    border-color: var(--accent);
     background: var(--accent);
     color: white;
   }
