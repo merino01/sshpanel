@@ -5,15 +5,20 @@
 <script lang="ts">
   import Feedback from "../../components/Feedback.svelte";
   import { t } from "../../i18n";
-  import { parentOf } from "../../lib/paths";
-  import { explorer, goBack, openFolder, startCreating } from "../../state/explorer.svelte";
+  import { isWithin, parentOf } from "../../lib/paths";
+  import { allowedPlaces, explorer, goBack, openFolder, startCreating } from "../../state/explorer.svelte";
   import { openMenu } from "../../state/menu.svelte";
   import { pickUploads } from "../../state/transfers.svelte";
   import Breadcrumbs from "./Breadcrumbs.svelte";
   import EntryRow from "./EntryRow.svelte";
   import NameForm from "./NameForm.svelte";
 
-  const parent = $derived(parentOf(explorer.listing.path));
+  // En Modo simple, no se sube más allá de la carpeta personal o la Carpeta compartida.
+  const parent = $derived.by(() => {
+    const path = parentOf(explorer.listing.path);
+    const places = allowedPlaces();
+    return path !== null && (!places || places.some((place) => isWithin(path, place.path))) ? path : null;
+  });
   const editing = $derived(explorer.editing);
 
   // Clic derecho en el espacio libre de la carpeta, fuera de cualquier fila; con

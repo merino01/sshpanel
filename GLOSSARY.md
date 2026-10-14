@@ -21,7 +21,7 @@ Fichero importable que contiene los datos para que un Miembro se conecte al Serv
 _Avoid_: Config, ajustes de conexión
 
 **Modo simple**:
-Nivel de la app que solo muestra el explorador de archivos y acciones con nombres claros, sin terminal.
+Nivel de la app que solo muestra el explorador de archivos y acciones con nombres claros, sin terminal, y limitado a la carpeta personal del Miembro y la Carpeta compartida.
 _Avoid_: Modo básico, modo fácil
 
 **Modo avanzado**:

@@ -54,6 +54,7 @@ impl Connection {
     }
 
     pub(crate) async fn trash(&self, dir: &str, name: &str) -> Result<()> {
+        self.check_allowed(dir)?;
         if !is_single_name(name) {
             return Err(Error::InvalidName);
         }
@@ -149,6 +150,7 @@ impl Connection {
         let text = self.sftp.read(info_path.as_str()).await.map_err(|e| self.failure(e, Error::RestoreFailed))?;
         let (path, _) = parse_info(&String::from_utf8_lossy(&text)).ok_or(Error::RestoreFailed)?;
         let (dir, name) = split_path(&path).ok_or(Error::RestoreFailed)?;
+        self.check_allowed(dir)?;
         let source = join(&self.trash_dir("files"), id);
         let meta = self.sftp.symlink_metadata(source.as_str()).await.map_err(|e| self.failure(e, Error::RestoreFailed))?;
 

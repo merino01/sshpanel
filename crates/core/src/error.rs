@@ -46,6 +46,8 @@ pub enum Error {
     TrashProtected,
     #[error("no se pudo restaurar desde la Papelera")]
     RestoreFailed,
+    #[error("en Modo simple solo se puede usar la carpeta personal y la Carpeta compartida")]
+    OutsideAllowed,
     #[error("no se pudo leer el archivo o carpeta del equipo")]
     LocalUnreadable,
     #[error("no se pudo escribir en la carpeta del equipo")]
@@ -82,6 +84,7 @@ impl Error {
             Self::TrashFailed => "files.trash_failed",
             Self::TrashProtected => "files.trash_protected",
             Self::RestoreFailed => "files.restore_failed",
+            Self::OutsideAllowed => "files.outside_allowed",
             Self::LocalUnreadable => "transfer.local_unreadable",
             Self::LocalWriteFailed => "transfer.local_write_failed",
             Self::TransferFailed => "transfer.failed",

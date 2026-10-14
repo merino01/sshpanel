@@ -98,6 +98,7 @@
   "error.files.rename_failed": "No se ha podido cambiar el nombre. Inténtalo de nuevo.",
   "error.files.trash_failed": "No se ha podido mover a la Papelera, así que no se ha borrado nada. Inténtalo de nuevo y, si sigue fallando, avisa al administrador.",
   "error.files.trash_protected": "Eso no se puede borrar porque es la Papelera o la contiene.",
+  "error.files.outside_allowed": "Esa carpeta queda fuera de tu carpeta personal y de la carpeta compartida, así que no se puede usar desde aquí.",
   "error.files.restore_failed": "No se ha podido restaurar; sigue en la Papelera. Inténtalo de nuevo.",
   "error.transfer.local_unreadable": "No se ha podido leer ese archivo o carpeta de tu equipo. Comprueba que sigue ahí y que puedes abrirlo.",
   "error.transfer.local_write_failed": "No se ha podido guardar en esa carpeta de tu equipo. Elige otra o comprueba que queda espacio libre.",

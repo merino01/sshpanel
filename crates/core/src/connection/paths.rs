@@ -23,6 +23,16 @@ pub(super) fn split_path(path: &str) -> Option<(&str, &str)> {
     (path.starts_with('/') && is_single_name(name)).then_some((dir, name))
 }
 
+/// Si `path` es `root` o está dentro de ella. Una ruta con `.` o `..` nunca
+/// cuenta como dentro, porque podría salir de `root`.
+pub(super) fn is_within(path: &str, root: &str) -> bool {
+    if path.split('/').any(|part| part == "." || part == "..") {
+        return false;
+    }
+    let (path, root) = (path.trim_end_matches('/'), root.trim_end_matches('/'));
+    path.strip_prefix(root).is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
+}
+
 /// Si una ruta es la otra o está dentro de ella.
 pub(super) fn overlaps(a: &str, b: &str) -> bool {
     let (a, b) = (a.trim_end_matches('/'), b.trim_end_matches('/'));
@@ -41,6 +51,18 @@ mod tests {
         assert_eq!(split_path("notas"), None);
         assert_eq!(split_path("/home/"), None);
         assert_eq!(split_path("/home/.."), None);
+    }
+
+    #[test]
+    fn knows_what_is_inside_a_folder() {
+        assert!(is_within("/home/alice", "/home/alice"));
+        assert!(is_within("/home/alice/fotos/", "/home/alice"));
+        assert!(is_within("/srv/compartida/actas", "/srv/compartida/"));
+        assert!(is_within("/etc", "/"));
+        assert!(!is_within("/home/alicia", "/home/alice"));
+        assert!(!is_within("/home", "/home/alice"));
+        assert!(!is_within("/home/alice/../bob", "/home/alice"));
+        assert!(!is_within("/home/alice/./x", "/home/alice"));
     }
 
     #[test]

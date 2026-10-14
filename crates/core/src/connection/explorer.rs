@@ -35,6 +35,7 @@ impl Connection {
     /// Lista una carpeta. Los enlaces se muestran como lo que apuntan, para
     /// poder entrar en un enlace a una carpeta; un enlace roto queda como enlace.
     pub(crate) async fn list(&self, path: &str) -> Result<Listing> {
+        self.check_allowed(path)?;
         let dir = self.sftp.read_dir(path).await.map_err(|e| self.failure(e, Error::ListFailed))?;
         let mut entries = Vec::new();
         for e in dir.filter(|e| !matches!(e.file_name().as_str(), "." | "..")) {
@@ -56,12 +57,14 @@ impl Connection {
     }
 
     pub(crate) async fn create_folder(&self, parent: &str, name: &str) -> Result<()> {
+        self.check_allowed(parent)?;
         let path = join(parent, new_name(name)?);
         self.ensure_free(&path).await?;
         self.sftp.create_dir(path).await.map_err(|e| self.failure(e, Error::CreateFolderFailed))
     }
 
     pub(crate) async fn rename(&self, dir: &str, from: &str, to: &str) -> Result<()> {
+        self.check_allowed(dir)?;
         if !is_single_name(from) {
             return Err(Error::InvalidName);
         }

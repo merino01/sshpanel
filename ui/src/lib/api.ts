@@ -8,6 +8,7 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 export interface Profile {
   host: string;
   username: string;
+  mode: "simple" | "advanced";
   shared_folder: string | null;
 }
 

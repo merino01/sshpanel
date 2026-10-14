@@ -4,11 +4,16 @@
 -->
 <script lang="ts">
   import { t } from "../../i18n";
-  import { breadcrumbs } from "../../lib/paths";
-  import { explorer, openFolder } from "../../state/explorer.svelte";
+  import { breadcrumbs, placeOf } from "../../lib/paths";
+  import { allowedPlaces, explorer, openFolder } from "../../state/explorer.svelte";
 
   let list = $state<HTMLOListElement>();
-  const parts = $derived(breadcrumbs(explorer.listing.path));
+  // En Modo simple, la ruta empieza en «Mi carpeta» o «Carpeta compartida».
+  const parts = $derived.by(() => {
+    const path = explorer.listing.path;
+    const places = allowedPlaces();
+    return breadcrumbs(path, places ? placeOf(path, places) : undefined);
+  });
 
   // Al cambiar de carpeta, que se vea la actual aunque la ruta sea larga.
   $effect(() => {

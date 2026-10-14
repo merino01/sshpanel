@@ -27,6 +27,8 @@ impl Session {
     }
 }
 
+/// `alice` conectada al servidor de prueba, en Modo avanzado para poder probar
+/// también lo que el Servidor permite fuera de su carpeta personal.
 async fn connect(server: &TestServer) -> Session {
     let dir = TempDir::new().unwrap();
     let core = Core::new(dir.path().join(".data"), Box::new(MemorySecretStore::default()));
@@ -34,7 +36,7 @@ async fn connect(server: &TestServer) -> Session {
     fs::write(
         &path,
         format!(
-            r#"{{"version":1,"host":"{}","port":{},"username":"alice","fingerprint":"{}","mode":"simple"}}"#,
+            r#"{{"version":1,"host":"{}","port":{},"username":"alice","fingerprint":"{}","mode":"advanced"}}"#,
             server.host(),
             server.port(),
             server.fingerprint()

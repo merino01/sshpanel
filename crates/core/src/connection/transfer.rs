@@ -198,6 +198,10 @@ impl Connection {
         cancelled: &AtomicBool,
         report: Report<'_>,
     ) -> Result<Outcome> {
+        let remote_dir = match job {
+            Job::Upload { remote_dir, .. } | Job::Download { remote_dir, .. } => remote_dir,
+        };
+        self.check_allowed(remote_dir)?;
         let mut counter = Counter { done: 0, total: 0, report, cancelled };
         match job {
             Job::Upload { local, remote_dir } => {

@@ -12,7 +12,7 @@ use russh_sftp::client::error::Error as SftpError;
 use russh_sftp::protocol::StatusCode;
 
 use crate::error::{Error, Result};
-use crate::profile::Profile;
+use crate::profile::{Mode, Profile};
 
 mod explorer;
 mod naming;
@@ -22,6 +22,7 @@ mod trash;
 
 pub use explorer::{Entry, EntryKind, Listing};
 pub(crate) use naming::Reserved;
+use paths::is_within;
 pub(crate) use transfer::{discard, run};
 pub use transfer::{Outcome, Progress, Transfer};
 pub use trash::{Restored, Trashed};
@@ -57,6 +58,9 @@ pub(crate) struct Connection {
     ssh: Handle<Verifier>,
     sftp: SftpSession,
     pub(crate) home: String,
+    /// En Modo simple, las únicas carpetas que se pueden usar (con todo lo que
+    /// contienen): la personal y la Carpeta compartida. `None` en Modo avanzado.
+    allowed: Option<Vec<String>>,
 }
 
 impl Connection {
@@ -87,7 +91,21 @@ impl Connection {
         };
         let sftp = tokio::time::timeout(CONNECT_TIMEOUT, sftp).await.ok().flatten().ok_or(Error::ConnectionLost)?;
         let home = sftp.canonicalize(".").await.map_err(|_| Error::ConnectionLost)?;
-        Ok(Self { ssh, sftp, home })
+        let allowed = match profile.mode {
+            Mode::Simple => Some([Some(home.clone()), profile.shared_folder.clone()].into_iter().flatten().collect()),
+            Mode::Advanced => None,
+        };
+        Ok(Self { ssh, sftp, home, allowed })
+    }
+
+    /// En Modo simple, falla si `dir` queda fuera de la carpeta personal y de
+    /// la Carpeta compartida. Es una ayuda para no perderse ni tocar lo que no
+    /// toca, no una barrera de seguridad: eso se configura en el Servidor.
+    fn check_allowed(&self, dir: &str) -> Result<()> {
+        match &self.allowed {
+            Some(roots) if !roots.iter().any(|root| is_within(dir, root)) => Err(Error::OutsideAllowed),
+            _ => Ok(()),
+        }
     }
 
     /// Falla si ya hay algo en `path`. El Servidor sustituiría sin avisar una

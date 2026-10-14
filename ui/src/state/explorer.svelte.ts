@@ -1,6 +1,7 @@
 /** Explorador: la carpeta en pantalla y lo que se hace en ella. */
 import { errorMessage, t } from "../i18n";
 import { api, type Entry, type Listing } from "../lib/api";
+import type { Place } from "../lib/paths";
 import { isConnectionError } from "../lib/errors";
 import { show, showConnectionLost, session } from "./session.svelte";
 
@@ -21,6 +22,18 @@ interface Explorer {
 }
 
 export const explorer = $state<Explorer>({ home: "", listing: { path: "", entries: [] }, history: [] });
+
+/**
+ * En Modo simple, las únicas carpetas que se pueden usar: la personal y la
+ * Carpeta compartida. `null` en Modo avanzado, sin límite. El núcleo también lo
+ * comprueba; aquí sirve para no ofrecer lo que no se puede hacer.
+ */
+export function allowedPlaces(): Place[] | null {
+  const profile = session.appState?.profile;
+  if (profile?.mode !== "simple") return null;
+  const shared = profile.shared_folder;
+  return [{ name: t("explorer.home"), path: explorer.home }, ...(shared ? [{ name: t("explorer.shared"), path: shared }] : [])];
+}
 
 /** Recién conectado: `listing` es la carpeta personal. */
 export function enterExplorer(listing: Listing) {
