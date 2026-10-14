@@ -9,24 +9,24 @@
 //! siguiente intento sigue donde se quedó, aprovechando los provisionales; si
 //! se cancela, se borra lo que ha creado.
 
-use std::collections::HashSet;
-use std::io::{self, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex as SyncMutex};
 
-use russh_sftp::client::error::Error as SftpError;
-use russh_sftp::protocol::{OpenFlags, StatusCode};
 use serde::Serialize;
 use tokio::fs;
-use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::Mutex;
 
-use super::{Connection, is_single_name, join};
+use super::Connection;
+use super::naming::{Reservation, Reserved, free_local_path};
+use super::paths::{is_single_name, join};
 use crate::error::{Error, Result};
 
-const CHUNK: usize = 256 * 1024;
-const MAX_NUMBERED: u32 = 1000;
+mod file_copy;
+mod plan;
+
+use file_copy::{Counter, partial_name};
+use plan::{Plan, local_plan};
 
 /// Avance de una Transferencia, en bytes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -105,104 +105,12 @@ impl Started {
     }
 
     fn root(&self) -> &str {
-        &self.root.place.path
+        self.root.path()
     }
 
     /// Bytes de los archivos ya completos.
     fn copied(&self) -> u64 {
         self.plan.items.iter().zip(&self.done).filter(|(_, done)| **done).filter_map(|(item, _)| item.size).sum()
-    }
-}
-
-/// Algo que copiar, por su ruta dentro de la Transferencia (vacía para la
-/// raíz). `size` es `None` para las carpetas.
-struct Item {
-    path: Vec<String>,
-    size: Option<u64>,
-}
-
-impl Item {
-    fn remote(&self, root: &str) -> String {
-        self.path.iter().fold(root.to_string(), |p, c| join(&p, c))
-    }
-
-    fn local(&self, root: &Path) -> PathBuf {
-        self.path.iter().fold(root.to_path_buf(), |p, c| p.join(c))
-    }
-}
-
-/// Lo que hay que copiar, cada carpeta antes que su contenido.
-struct Plan {
-    items: Vec<Item>,
-    total: u64,
-}
-
-impl Plan {
-    fn new(root: Option<u64>) -> Self {
-        Self { items: vec![Item { path: Vec::new(), size: root }], total: root.unwrap_or(0) }
-    }
-
-    fn is_dir(&self) -> bool {
-        self.items[0].size.is_none()
-    }
-
-    fn push(&mut self, path: Vec<String>, size: Option<u64>) {
-        self.total += size.unwrap_or(0);
-        self.items.push(Item { path, size });
-    }
-}
-
-/// Un destino en el Servidor o en el equipo.
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct Place {
-    remote: bool,
-    path: String,
-}
-
-/// Destinos de las Transferencias empezadas, para que dos en paralelo con el
-/// mismo nombre no elijan el mismo.
-#[derive(Clone, Default)]
-pub(crate) struct Reserved(Arc<SyncMutex<HashSet<Place>>>);
-
-impl Reserved {
-    fn reserve(&self, place: Place) -> Option<Reservation> {
-        let mut set = self.0.lock().unwrap();
-        set.insert(place.clone()).then(|| Reservation { set: self.clone(), place })
-    }
-}
-
-/// Un destino reservado; se libera al soltarlo.
-pub(super) struct Reservation {
-    set: Reserved,
-    place: Place,
-}
-
-impl Drop for Reservation {
-    fn drop(&mut self) {
-        self.set.0.lock().unwrap().remove(&self.place);
-    }
-}
-
-struct Counter<'a> {
-    done: u64,
-    total: u64,
-    report: Report<'a>,
-    cancelled: &'a AtomicBool,
-}
-
-impl Counter<'_> {
-    fn report(&mut self) {
-        (self.report)(Progress { done: self.done, total: self.total });
-    }
-
-    fn add(&mut self, bytes: usize) -> Result<()> {
-        self.done += bytes as u64;
-        self.report();
-        self.check()
-    }
-
-    fn check(&self) -> Result<()> {
-        if self.cancelled.load(Ordering::SeqCst) { Err(Error::Cancelled) } else { Ok(()) }
     }
 }
 
@@ -420,211 +328,4 @@ impl Connection {
         }
         Ok(started)
     }
-
-    /// Copia `local` a `remote` pasando por el provisional, continuando desde
-    /// el byte `offset` si un intento anterior lo dejó a medias.
-    async fn upload_file(&self, local: &Path, remote: &str, offset: u64, counter: &mut Counter<'_>) -> Result<()> {
-        let partial = partial_name(remote);
-        let result = async {
-            let mut source = fs::File::open(local).await.map_err(|_| Error::LocalUnreadable)?;
-            let mut target = if offset > 0 {
-                source.seek(SeekFrom::Start(offset)).await.map_err(|_| Error::LocalUnreadable)?;
-                let mut target = self.sftp.open_with_flags(partial.as_str(), OpenFlags::WRITE).await.map_err(|e| self.failure(e, Error::TransferFailed))?;
-                target.seek(SeekFrom::Start(offset)).await.map_err(|e| self.io_failure(e))?;
-                target
-            } else {
-                self.sftp.create(partial.as_str()).await.map_err(|e| self.failure(e, Error::TransferFailed))?
-            };
-            let mut buf = vec![0; CHUNK];
-            loop {
-                let n = source.read(&mut buf).await.map_err(|_| Error::LocalUnreadable)?;
-                if n == 0 {
-                    break;
-                }
-                target.write_all(&buf[..n]).await.map_err(|e| self.io_failure(e))?;
-                counter.add(n)?;
-            }
-            target.shutdown().await.map_err(|e| self.io_failure(e))?;
-            self.ensure_free(remote).await?;
-            self.sftp.rename(partial.as_str(), remote).await.map_err(|e| self.failure(e, Error::TransferFailed))
-        }
-        .await;
-        // Sin conexión no se puede limpiar, y el provisional sirve para reanudar.
-        if result.as_ref().is_err_and(|e| *e != Error::ConnectionLost) {
-            let _ = self.sftp.remove_file(partial).await;
-        }
-        result
-    }
-
-    /// Copia `remote` a `local` pasando por el provisional, continuando desde
-    /// el byte `offset` si un intento anterior lo dejó a medias.
-    async fn download_file(&self, remote: &str, local: &Path, offset: u64, counter: &mut Counter<'_>) -> Result<()> {
-        let partial = PathBuf::from(partial_name(local.to_str().ok_or(Error::LocalWriteFailed)?));
-        let result = async {
-            let mut source = self.sftp.open(remote).await.map_err(|e| self.failure(e, Error::TransferFailed))?;
-            let mut target = if offset > 0 {
-                source.seek(SeekFrom::Start(offset)).await.map_err(|e| self.io_failure(e))?;
-                let mut target = fs::OpenOptions::new().write(true).open(&partial).await.map_err(|_| Error::LocalWriteFailed)?;
-                target.seek(SeekFrom::Start(offset)).await.map_err(|_| Error::LocalWriteFailed)?;
-                target
-            } else {
-                fs::File::create(&partial).await.map_err(|_| Error::LocalWriteFailed)?
-            };
-            let mut buf = vec![0; CHUNK];
-            let copied = async {
-                loop {
-                    let n = source.read(&mut buf).await.map_err(|e| self.io_failure(e))?;
-                    if n == 0 {
-                        return Ok(());
-                    }
-                    target.write_all(&buf[..n]).await.map_err(|_| Error::LocalWriteFailed)?;
-                    counter.add(n)?;
-                }
-            }
-            .await;
-            // Lo recibido queda escrito aunque falle, para poder reanudar.
-            target.sync_all().await.map_err(|_| Error::LocalWriteFailed)?;
-            drop(target);
-            copied?;
-            if fs::try_exists(local).await.unwrap_or(true) {
-                return Err(Error::AlreadyExists);
-            }
-            fs::rename(&partial, local).await.map_err(|_| Error::LocalWriteFailed)
-        }
-        .await;
-        if result.as_ref().is_err_and(|e| *e != Error::ConnectionLost) {
-            let _ = fs::remove_file(&partial).await;
-        }
-        result
-    }
-
-    /// Recorre lo que hay que descargar. Dentro de una carpeta, los enlaces a
-    /// carpetas y los enlaces rotos se omiten para no entrar en bucles.
-    async fn remote_plan(&self, source: &str) -> Result<Plan> {
-        let meta = self.sftp.metadata(source).await.map_err(|e| self.failure(e, Error::TransferFailed))?;
-        if !meta.is_dir() {
-            return Ok(Plan::new(Some(meta.len())));
-        }
-        let mut plan = Plan::new(None);
-        let mut pending = vec![Vec::new()];
-        while let Some(dir) = pending.pop() {
-            let path = dir.iter().fold(source.to_string(), |p: String, c: &String| join(&p, c));
-            let entries = self.sftp.read_dir(path.as_str()).await.map_err(|e| self.failure(e, Error::TransferFailed))?;
-            for e in entries.filter(|e| !matches!(e.file_name().as_str(), "." | "..")) {
-                let mut child = dir.clone();
-                child.push(e.file_name());
-                let meta = if e.file_type().is_symlink() {
-                    match self.sftp.metadata(join(&path, &e.file_name())).await {
-                        Ok(target) if !target.is_dir() => target,
-                        _ => continue,
-                    }
-                } else {
-                    e.metadata()
-                };
-                if meta.is_dir() {
-                    pending.push(child.clone());
-                    plan.push(child, None);
-                } else {
-                    plan.push(child, Some(meta.len()));
-                }
-            }
-        }
-        Ok(plan)
-    }
-
-    /// Primer nombre libre para `name` en `dir`, reservado. `fallback` es el
-    /// error de la operación que lo pide, si el Servidor falla sin más.
-    pub(super) async fn free_remote_name(
-        &self,
-        dir: &str,
-        name: &str,
-        is_dir: bool,
-        reserved: &Reserved,
-        fallback: Error,
-    ) -> Result<(String, Reservation)> {
-        for candidate in numbered(name, is_dir) {
-            let path = join(dir, &candidate);
-            let Some(reservation) = reserved.reserve(Place { remote: true, path: path.clone() }) else { continue };
-            match self.sftp.symlink_metadata(path).await {
-                Ok(_) => continue,
-                Err(SftpError::Status(s)) if s.status_code == StatusCode::NoSuchFile => return Ok((candidate, reservation)),
-                Err(e) => return Err(self.failure(e, fallback)),
-            }
-        }
-        Err(Error::AlreadyExists)
-    }
-
-    /// Traduce un error de lectura o escritura en un archivo remoto.
-    fn io_failure(&self, err: io::Error) -> Error {
-        match err.into_inner().map(|inner| inner.downcast::<SftpError>()) {
-            Some(Ok(sftp)) => self.failure(*sftp, Error::TransferFailed),
-            _ if self.ssh.is_closed() => Error::ConnectionLost,
-            // Estado de error del Servidor sin código, como un disco lleno.
-            _ => Error::TransferFailed,
-        }
-    }
-}
-
-/// Recorre lo que hay que subir, siguiendo los enlaces salvo los que llevan a
-/// carpetas dentro de una carpeta, para no entrar en bucles.
-async fn local_plan(local: &Path) -> Result<Plan> {
-    let meta = fs::metadata(local).await.map_err(|_| Error::LocalUnreadable)?;
-    if !meta.is_dir() {
-        return Ok(Plan::new(Some(meta.len())));
-    }
-    let mut plan = Plan::new(None);
-    let mut pending = vec![Vec::new()];
-    while let Some(dir) = pending.pop() {
-        let path = dir.iter().fold(local.to_path_buf(), |p: PathBuf, c: &String| p.join(c));
-        let mut entries = fs::read_dir(&path).await.map_err(|_| Error::LocalUnreadable)?;
-        while let Some(e) = entries.next_entry().await.map_err(|_| Error::LocalUnreadable)? {
-            let name = e.file_name().into_string().map_err(|_| Error::LocalUnreadable)?;
-            let link = e.file_type().await.map_err(|_| Error::LocalUnreadable)?.is_symlink();
-            let Ok(meta) = fs::metadata(e.path()).await else {
-                if link {
-                    continue; // enlace roto
-                }
-                return Err(Error::LocalUnreadable);
-            };
-            let mut child = dir.clone();
-            child.push(name);
-            if meta.is_dir() {
-                if !link {
-                    pending.push(child.clone());
-                    plan.push(child, None);
-                }
-            } else {
-                plan.push(child, Some(meta.len()));
-            }
-        }
-    }
-    Ok(plan)
-}
-
-/// Primer nombre libre para `name` en la carpeta `dir` del equipo, reservado.
-async fn free_local_path(dir: &Path, name: &str, is_dir: bool, reserved: &Reserved) -> Result<(String, Reservation)> {
-    for candidate in numbered(name, is_dir) {
-        let path = dir.join(&candidate).into_os_string().into_string().map_err(|_| Error::LocalWriteFailed)?;
-        let Some(reservation) = reserved.reserve(Place { remote: false, path: path.clone() }) else { continue };
-        if !fs::try_exists(&path).await.map_err(|_| Error::LocalWriteFailed)? {
-            return Ok((candidate, reservation));
-        }
-    }
-    Err(Error::AlreadyExists)
-}
-
-/// `name`, `name (1)`, `name (2)`… con el número antes de la extensión en los
-/// archivos (`foto (1).jpg`).
-pub(super) fn numbered(name: &str, is_dir: bool) -> impl Iterator<Item = String> + '_ {
-    let (stem, ext) = match name.rfind('.') {
-        Some(i) if i > 0 && !is_dir => name.split_at(i),
-        _ => (name, ""),
-    };
-    std::iter::once(name.to_string()).chain((1..MAX_NUMBERED).map(move |n| format!("{stem} ({n}){ext}")))
-}
-
-/// Nombre provisional, oculto, de un archivo a medio copiar: `dir/.nombre.part`.
-fn partial_name(path: &str) -> String {
-    let split = path.rfind(['/', '\\']).map_or(0, |i| i + 1);
-    format!("{}.{}.part", &path[..split], &path[split..])
 }

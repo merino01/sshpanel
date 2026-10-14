@@ -28,7 +28,7 @@ pub struct Core {
     secrets: Box<dyn SecretStore>,
     /// Compartida, para que una Transferencia larga no bloquee el Explorador.
     connection: Mutex<Option<Arc<Connection>>>,
-    /// Destinos de las Transferencias empezadas.
+    /// Destinos elegidos por las operaciones en curso.
     reserved: Reserved,
 }
 
