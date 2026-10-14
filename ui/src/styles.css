@@ -1,0 +1,27 @@
+:root {
+  --accent: #3b82f6; /* sobrescrito desde branding.toml */
+  --bg: #ffffff;
+  --fg: #1f2937;
+  font-family: system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111827;
+    --fg: #f3f4f6;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+main {
+  display: grid;
+  place-content: center;
+  min-height: 100vh;
+  text-align: center;
+  gap: 0.5rem;
+}
+h1 {
+  color: var(--accent);
+}

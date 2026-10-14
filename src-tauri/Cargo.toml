@@ -1,0 +1,17 @@
+[package]
+name = "sshpanel"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "SSH Panel: gestor de archivos y terminal remotos para un VPS compartido"
+
+[build-dependencies]
+tauri-build = { version = "2.7.2", features = [] }
+
+[dependencies]
+sshpanel-core = { path = "../crates/core" }
+tauri = { version = "2.12.3", features = [] }
+
+[lib]
+name = "sshpanel"
+crate-type = ["staticlib", "cdylib", "rlib"]

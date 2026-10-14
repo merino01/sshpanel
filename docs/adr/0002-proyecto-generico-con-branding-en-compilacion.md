@@ -1,0 +1,3 @@
+# Proyecto genérico con branding fijado en compilación
+
+El proyecto se llama `sshpanel` y no contiene ningún valor de una instancia concreta (host, usuarios, huellas, claves). Nombre, identificador, extensión del Perfil, icono y color de acento viven en `branding.toml`, que un script vuelca en la configuración de Tauri; "DBDesp Panel" es solo el valor por defecto. La extensión no puede cambiarse en runtime porque el sistema operativo la asocia a la app al instalar, así que cada fork edita `branding.toml` y compila; el actualizador exige además sus propias claves de firma y repositorio de releases. Licencia MIT.

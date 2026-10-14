@@ -1,0 +1,9 @@
+/target
+
+# Perfiles y claves: nunca al repo (es público)
+*.dbdesp
+*.pem
+id_*
+.env
+node_modules
+ui/dist

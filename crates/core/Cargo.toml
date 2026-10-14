@@ -1,0 +1,8 @@
+[package]
+name = "sshpanel-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Núcleo de SSH Panel: lógica de Perfil, identidad, SSH/SFTP, independiente de la interfaz"
+
+[dependencies]

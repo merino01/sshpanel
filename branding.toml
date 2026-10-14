@@ -1,0 +1,7 @@
+# Branding de esta instancia. Cámbialo y ejecuta `npm run branding`.
+# La extensión del Perfil y el identificador solo pueden cambiarse al compilar.
+name = "DBDesp Panel"
+identifier = "com.dbdesp.panel"
+profile_extension = "dbdesp"
+icon = "assets/icon.png"
+accent_color = "#3b82f6"
