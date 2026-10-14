@@ -13,19 +13,19 @@ Persona del grupo que usa la app para conectarse al Servidor con su propia ident
 _Avoid_: Cliente, usuario (ambiguo con usuario Linux)
 
 **Administrador**:
-Miembro que configura el Servidor, autoriza a otros Miembros y genera sus Perfiles. Su Perfil lleva la marca de administrador, que le muestra «Crear perfil» en la app.
+Miembro que configura el Servidor, autoriza a otros Miembros y genera sus Perfiles. Su Perfil lleva la marca de administrador, que solo le muestra «Crear perfil» en la app: su poder real es editar los `authorized_keys` del Servidor.
 _Avoid_: Owner, root
 
 **Perfil**:
-Fichero importable que contiene los datos para que un Miembro se conecte al Servidor (dirección, usuario y clave).
+Fichero importable que contiene los datos para que un Miembro se conecte al Servidor (dirección, usuario, Huella y modo). Nunca contiene claves y solo configura la app: lo que el Miembro puede hacer lo decide el Servidor (ADR 0006).
 _Avoid_: Config, ajustes de conexión
 
 **Modo simple**:
-Nivel de la app que solo muestra el explorador de archivos y acciones con nombres claros, sin terminal, y limitado a la carpeta personal del Miembro y la Carpeta compartida.
+Nivel de la app que solo muestra el explorador de archivos y acciones con nombres claros, sin terminal, y limitado a la carpeta personal del Miembro y la Carpeta compartida. Lo hace cumplir el Servidor si el Administrador autoriza la clave con las opciones de este modo.
 _Avoid_: Modo básico, modo fácil
 
 **Modo avanzado**:
-Nivel de la app que añade la Terminal al explorador de archivos. Se elige al configurar el Perfil.
+Nivel de la app que añade la Terminal al explorador de archivos. Se elige al configurar el Perfil, y el Servidor solo permite la Terminal si la clave está autorizada con las opciones de este modo.
 _Avoid_: Modo experto, modo pro
 
 **Explorador**:

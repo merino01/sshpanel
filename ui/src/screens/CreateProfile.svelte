@@ -1,11 +1,13 @@
 <!--
   «Crear perfil» (Administrador): servidor, usuario, modo y Carpeta compartida
   de un Miembro. La Huella no se escribe: la app la calcula conectándose al
-  Servidor. Al terminar dice dónde ha quedado el fichero para enviárselo.
+  Servidor. Al terminar dice dónde ha quedado el fichero para enviárselo. Debajo,
+  «Autorizar clave» da la línea de `authorized_keys` de cada Miembro.
 -->
 <script lang="ts">
   import { t } from "../i18n";
   import type { ProfileField } from "../lib/profileForm";
+  import AuthorizeKey from "./AuthorizeKey.svelte";
   import { createAnother, createForm, leaveCreateProfile, submitProfile } from "../state/createProfile.svelte";
 
   const form = $derived(createForm.form);
@@ -80,6 +82,7 @@
       </div>
     </form>
   {/if}
+  <AuthorizeKey />
 </section>
 
 <style>

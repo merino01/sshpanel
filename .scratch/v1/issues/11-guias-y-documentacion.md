@@ -16,3 +16,4 @@
 
 - 2026-10-14: En Modo simple la app solo deja usar la carpeta personal y la Carpeta compartida (lo comprueba el núcleo), pero no es una barrera de seguridad: el Miembro tiene su clave y puede usar cualquier cliente SFTP. La guía debe explicar cómo restringirlo en el Servidor si hace falta.
 - 2026-10-14: Desde el ticket 10: la guía del servidor debe explicar cómo crea el primer Administrador su Perfil (enlace «¿Eres el administrador? Crea un perfil» en la Bienvenida, marcando «Perfil de administrador») y cómo crea luego los de los Miembros.
+- 2026-10-14: Desde la ADR 0006: la guía del servidor debe explicar que el modo lo hace cumplir el Servidor con las opciones de `authorized_keys` (`restrict,command="internal-sftp"` para el Modo simple, `restrict,pty` para el avanzado; las genera «Autorizar clave» en «Crear perfil»), `ChrootDirectory` para encerrar el Modo simple, y que «admin» y el modo del Perfil no son permisos.

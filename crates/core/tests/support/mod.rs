@@ -119,8 +119,15 @@ impl TestServer {
 
     /// Autoriza una clave pública para `user`.
     pub fn authorize(&self, user: &str, public_key: &str) {
+        self.authorize_with(user, "", public_key);
+    }
+
+    /// Autoriza una clave pública para `user` con opciones de `authorized_keys`
+    /// delante, como `restrict,command="internal-sftp"`. Vacío: sin opciones.
+    pub fn authorize_with(&self, user: &str, options: &str, public_key: &str) {
+        let line = if options.is_empty() { public_key.to_string() } else { format!("{options} {public_key}") };
         let script = format!(
-            "echo '{public_key}' >> /home/{user}/.ssh/authorized_keys \
+            "echo '{line}' >> /home/{user}/.ssh/authorized_keys \
              && chown {user}:{user} /home/{user}/.ssh/authorized_keys \
              && chmod 600 /home/{user}/.ssh/authorized_keys"
         );
