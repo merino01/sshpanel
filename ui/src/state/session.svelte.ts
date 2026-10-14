@@ -20,7 +20,28 @@ export type Screen =
   /** Solo en Modo avanzado. */
   | { name: "terminal" };
 
+/**
+ * Si cada pantalla es de trabajo con el Servidor conectado: llevan la barra
+ * lateral y, si se cae la conexión, se sale de ellas a «Reintentar». Al añadir
+ * una pantalla, TypeScript obliga a decidirlo aquí.
+ */
+const WORKSPACE: Record<Screen["name"], boolean> = {
+  starting: false,
+  welcome: false,
+  key: false,
+  connecting: false,
+  problem: false,
+  explorer: true,
+  trash: true,
+  terminal: true,
+};
+
 export const session = $state<{ screen: Screen; appState: AppState | null }>({ screen: { name: "starting" }, appState: null });
+
+/** Si se está en una pantalla de trabajo con el Servidor conectado (Explorador, Papelera, Terminal…). */
+export function inWorkspace(): boolean {
+  return WORKSPACE[session.screen.name];
+}
 
 /** Si el Perfil es de Modo avanzado: Terminal y borrar para siempre de la Papelera. */
 export function isAdvanced(): boolean {

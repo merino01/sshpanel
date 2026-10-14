@@ -7,13 +7,13 @@ import { api } from "../lib/api";
 import { baseName } from "../lib/paths";
 import { TransferQueue } from "../lib/transferQueue.svelte";
 import { explorer, refresh } from "./explorer.svelte";
-import { session, showConnectionLost } from "./session.svelte";
+import { inWorkspace, session, showConnectionLost } from "./session.svelte";
 
 export const transfers = new TransferQueue({
   api,
   onChanged: (dir) => refresh(dir),
   onLost: (code) => {
-    if (session.screen.name === "explorer" || session.screen.name === "trash") showConnectionLost(code);
+    if (inWorkspace()) showConnectionLost(code);
   },
 });
 

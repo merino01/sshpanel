@@ -16,10 +16,10 @@
   import TransferPanel from "./screens/transfers/TransferPanel.svelte";
   import Trash from "./screens/trash/Trash.svelte";
   import Welcome from "./screens/Welcome.svelte";
-  import { isAdvanced, session } from "./state/session.svelte";
+  import { inWorkspace, isAdvanced, session } from "./state/session.svelte";
 
-  // El Explorador, la Papelera y la Terminal ocupan toda la ventana, con la barra lateral; el resto va centrado.
-  const workspace = $derived(["explorer", "trash", "terminal"].includes(session.screen.name));
+  // Las pantallas de trabajo ocupan toda la ventana, con la barra lateral; el resto va centrado.
+  const workspace = $derived(inWorkspace());
 </script>
 
 <main class:workspace>
