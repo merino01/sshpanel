@@ -4,8 +4,12 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** in-progress
+**Status:** done
 
 - [x] Una prueba de ejemplo levanta el contenedor, se conecta por SFTP con una clave de prueba y lo apaga
 - [x] El arnés expone la Huella del servidor de prueba y permite autorizar y revocar claves
-- [ ] Funciona en la CI sin intervención manual (job escrito; falta verlo ejecutar en GitHub)
+- [x] Funciona en la CI sin intervención manual
+
+## Comments
+
+- 2026-10-14: El usuario confirma que las GitHub Actions están en verde.
