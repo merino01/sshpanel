@@ -1,13 +1,26 @@
 /** Las preferencias del Miembro en esta ventana: se cargan al abrirla y siguen los cambios hechos en cualquier otra. */
+import { branding } from "../branding.generated";
 import { errorMessage, t } from "../i18n";
 import { api } from "../lib/api";
 import { DEFAULT_PREFERENCES, withDefaults, type Preferences } from "../lib/preferences";
+import { cssVariables, resolveTheme, type ThemePalette } from "../lib/themes";
 import { toasts } from "./toasts.svelte";
 
 export const preferences = $state<Preferences>({ ...DEFAULT_PREFERENCES });
 
+const darkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+// Con Sistema, el Tema cambia en cuanto el equipo pasa a claro u oscuro.
+darkScheme.addEventListener("change", () => apply(preferences));
+
+/** La paleta del Tema que se ve ahora (con Sistema, la de Claro u Oscuro), para lo que no se pinta con CSS: la Terminal. */
+export const activeTheme = $state<{ palette: ThemePalette }>({
+  palette: resolveTheme(DEFAULT_PREFERENCES.theme, darkScheme.matches),
+});
+
 /** Carga las preferencias y escucha los cambios; aplica el Tema cada vez. */
 export async function loadPreferences() {
+  // Mientras se lee el fichero, los valores por defecto: la ventana no se pinta nunca sin colores.
+  apply(preferences);
   void api.onPreferencesChanged((raw) => apply(withDefaults(raw)));
   apply(withDefaults(await api.readPreferences().catch(() => null)));
 }
@@ -27,9 +40,12 @@ export function openSettings() {
   api.openSettings(t("settings.title")).catch((code) => toasts.error(errorMessage(code)));
 }
 
+/** Guarda las preferencias en el estado y pinta el Tema como variables CSS en `:root`. */
 function apply(next: Preferences) {
   Object.assign(preferences, next);
-  // Sin atributo, el Tema Sistema: lo resuelve `prefers-color-scheme` en app.css.
-  if (next.theme === "system") delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = next.theme;
+  const palette = resolveTheme(next.theme, darkScheme.matches);
+  activeTheme.palette = palette;
+  const root = document.documentElement.style;
+  for (const [name, value] of Object.entries(cssVariables(palette, branding.accentColor))) root.setProperty(name, value);
+  root.colorScheme = palette.scheme;
 }

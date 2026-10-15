@@ -8,8 +8,11 @@
   import { Terminal } from "@xterm/xterm";
   import "@xterm/xterm/css/xterm.css";
   import { onMount } from "svelte";
+  import { branding } from "../../branding.generated";
   import { t } from "../../i18n";
   import { shortcutFor } from "../../lib/terminalTabs";
+  import { xtermTheme } from "../../lib/themes";
+  import { activeTheme } from "../../state/preferences.svelte";
   import { reopenTerminal, resize, sendInput, setOutput, startTerminal, type TerminalTab } from "../../state/terminal.svelte";
 
   let { tab, visible }: { tab: TerminalTab; visible: boolean } = $props();
@@ -19,12 +22,10 @@
 
   onMount(() => {
     const id = tab.id;
-    const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
     const term = new Terminal({
       cursorBlink: true,
       fontFamily: "ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace",
       fontSize: 14,
-      theme: { background: "#1e1e1e", foreground: "#e5e5e5", cursor: accent || "#e5e5e5", selectionBackground: "#ffffff40" },
     });
     term.loadAddon(fit);
     term.open(container!);
@@ -44,6 +45,11 @@
       setOutput(id, null);
       term.dispose();
     };
+  });
+
+  // Los colores del Tema, también cuando el Miembro lo cambia con la Terminal abierta.
+  $effect(() => {
+    if (xterm) xterm.options.theme = xtermTheme(activeTheme.palette, branding.accentColor);
   });
 
   // Al verse: se ajusta al hueco, se abre la sesión si no hay ninguna y recibe el foco.
@@ -83,7 +89,7 @@
   .notice {
     margin: 0;
     padding: 0.5rem 1rem;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+    border-bottom: 1px solid var(--border);
   }
   .closed {
     display: flex;
@@ -97,6 +103,6 @@
     flex: 1;
     min-height: 0;
     padding: 0.5rem;
-    background: #1e1e1e;
+    background: var(--terminal-bg);
   }
 </style>

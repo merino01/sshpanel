@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PREFERENCES, withDefaults } from "./preferences";
+import { themeIds } from "./themes";
 
 describe("withDefaults", () => {
   it("sin fichero o con uno que no es un objeto, usa los valores por defecto", () => {
@@ -16,10 +17,15 @@ describe("withDefaults", () => {
   it("cambia por el valor por defecto lo que no vale", () => {
     expect(withDefaults({ theme: "purple" }).theme).toBe("system");
     expect(withDefaults({ theme: 3 }).theme).toBe("system");
+    expect(withDefaults({ theme: "toString" }).theme).toBe("system");
   });
 
   it("mantiene lo guardado", () => {
+    expect(withDefaults({ theme: "system" }).theme).toBe("system");
     expect(withDefaults({ theme: "dark" }).theme).toBe("dark");
-    expect(withDefaults({ theme: "light" }).theme).toBe("light");
+  });
+
+  it("acepta cualquier Tema descubierto", () => {
+    for (const id of themeIds) expect(withDefaults({ theme: id }).theme).toBe(id);
   });
 });

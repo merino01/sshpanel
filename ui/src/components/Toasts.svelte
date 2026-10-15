@@ -57,13 +57,13 @@
     border-radius: 0.5rem;
     background: var(--fg);
     color: var(--bg);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 6px 20px var(--shadow);
     pointer-events: auto;
     text-align: left;
   }
   .toast.error {
-    background: color-mix(in srgb, #dc2626 82%, var(--fg));
-    color: white;
+    background: var(--error);
+    color: var(--bg);
   }
   p {
     flex: 1;

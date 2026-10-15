@@ -15,12 +15,12 @@
     flex-direction: column;
     gap: 1rem;
     padding: 1rem 0.75rem;
-    border-right: 1px solid rgba(127, 127, 127, 0.25);
-    background: color-mix(in srgb, var(--fg) 4%, var(--bg));
+    border-right: 1px solid var(--border);
+    background: var(--surface);
   }
   .brand {
     margin: 0 0.5rem;
-    color: var(--accent);
+    color: var(--accent-text);
     font-weight: 700;
   }
 </style>

@@ -39,8 +39,8 @@
     gap: 1rem;
     min-height: 2.5rem;
     padding: 0 0.75rem 0 1rem;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
-    background: color-mix(in srgb, var(--fg) 4%, var(--bg));
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
     font-size: 0.875rem;
   }
   .identity {
@@ -96,6 +96,6 @@
   }
   button[aria-current] {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
   }
 </style>

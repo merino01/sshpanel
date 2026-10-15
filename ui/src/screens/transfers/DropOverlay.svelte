@@ -18,7 +18,7 @@
     border: 3px dashed var(--accent);
     border-radius: 0.8rem;
     background: color-mix(in srgb, var(--bg) 85%, transparent);
-    color: var(--accent);
+    color: var(--accent-text);
     font-size: 1.3rem;
     font-weight: 600;
     pointer-events: none;

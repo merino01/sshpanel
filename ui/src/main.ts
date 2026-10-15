@@ -11,7 +11,6 @@ import { listenForDrops } from "./state/transfers.svelte";
 import { checkForUpdate } from "./state/update.svelte";
 
 document.title = branding.name;
-document.documentElement.style.setProperty("--accent", branding.accentColor);
 
 // El menú nativo de la webview («Recargar», «Inspeccionar») no pinta nada en la app;
 // solo se deja en los campos de texto, para poder pegar.

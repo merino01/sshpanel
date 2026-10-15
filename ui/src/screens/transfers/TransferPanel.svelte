@@ -32,10 +32,10 @@
     max-height: 40vh;
     overflow-y: auto;
     padding: 0.6rem 0.8rem;
-    border: 1px solid rgba(127, 127, 127, 0.3);
+    border: 1px solid var(--border);
     border-radius: 0.5rem;
     background: var(--bg);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px var(--shadow);
     text-align: left;
   }
   header {

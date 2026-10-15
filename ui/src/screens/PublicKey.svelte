@@ -36,14 +36,14 @@
   .notice {
     padding: 0.6rem 0.8rem;
     border-radius: 0.4rem;
-    background: rgba(234, 179, 8, 0.15);
+    background: color-mix(in srgb, var(--warning) 15%, transparent);
   }
   .key {
     display: block;
     max-width: 100%;
     padding: 0.6rem;
     border-radius: 0.4rem;
-    background: rgba(127, 127, 127, 0.15);
+    background: var(--subtle);
     overflow-wrap: anywhere;
     user-select: all;
     font-size: 0.8rem;

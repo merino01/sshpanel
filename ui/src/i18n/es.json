@@ -23,6 +23,7 @@
   "settings.theme.system": "Sistema",
   "settings.theme.light": "Claro",
   "settings.theme.dark": "Oscuro",
+  "settings.theme.high-contrast": "Alto contraste",
 
   "create.title": "Crear perfil",
   "create.help": "Rellena los datos de la persona que va a usar la app. La huella del servidor la calculamos nosotros al conectar; no tienes que copiarla.",

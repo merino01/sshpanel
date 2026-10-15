@@ -74,10 +74,10 @@
     min-width: 11rem;
     margin: 0;
     padding: 0.3rem;
-    border: 1px solid rgba(127, 127, 127, 0.3);
+    border: 1px solid var(--border);
     border-radius: 0.5rem;
     background: var(--bg);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 6px 20px var(--shadow);
     list-style: none;
     text-align: left;
   }
@@ -98,6 +98,6 @@
   [role="menuitem"]:focus {
     outline: none;
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
   }
 </style>

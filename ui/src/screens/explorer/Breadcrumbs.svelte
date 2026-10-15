@@ -66,7 +66,7 @@
     opacity: 0.7;
   }
   button:hover {
-    color: var(--accent);
+    color: var(--accent-text);
     opacity: 1;
     text-decoration: underline;
   }

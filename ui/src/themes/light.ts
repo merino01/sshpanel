@@ -1,0 +1,41 @@
+/** Claro: fondo blanco y texto casi negro; también es el Tema Sistema con el equipo en modo claro. */
+import type { ThemePalette } from "../lib/themes";
+
+export default {
+  scheme: "light",
+  colors: {
+    bg: "#ffffff",
+    fg: "#1f2937",
+    surface: "#f6f7f8",
+    border: "#e0e2e6",
+    borderStrong: "#a9aeb6",
+    subtle: "#eef0f2",
+    shadow: "rgba(0, 0, 0, 0.25)",
+    backdrop: "rgba(0, 0, 0, 0.4)",
+    onAccent: "#ffffff",
+    error: "#dc2626",
+    success: "#15803d",
+    warning: "#ca8a04",
+  },
+  terminal: {
+    background: "#fbfbfc",
+    foreground: "#1f2937",
+    selection: "rgba(59, 130, 246, 0.25)",
+    black: "#1f2937",
+    red: "#c01c28",
+    green: "#1a7f37",
+    yellow: "#9a6700",
+    blue: "#1d4ed8",
+    magenta: "#a21caf",
+    cyan: "#0e7490",
+    white: "#6b7280",
+    brightBlack: "#4b5563",
+    brightRed: "#dc2626",
+    brightGreen: "#16a34a",
+    brightYellow: "#b45309",
+    brightBlue: "#2563eb",
+    brightMagenta: "#c026d3",
+    brightCyan: "#0891b2",
+    brightWhite: "#9ca3af",
+  },
+} satisfies ThemePalette;

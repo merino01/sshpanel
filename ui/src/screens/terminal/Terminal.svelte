@@ -72,7 +72,7 @@
     gap: 0.4rem;
     align-items: center;
     padding: 0.5rem 1rem 0;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+    border-bottom: 1px solid var(--border);
   }
   .tabs {
     display: flex;
@@ -89,7 +89,7 @@
     border-radius: 0.4rem 0.4rem 0 0;
   }
   .tab.active {
-    border-color: rgba(127, 127, 127, 0.3);
+    border-color: var(--border);
     background: color-mix(in srgb, var(--accent) 12%, transparent);
   }
   .tab.ended button[role="tab"] {
@@ -113,14 +113,14 @@
   }
   .close:hover,
   .new:hover {
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .new {
     flex-shrink: 0;
     width: 1.8rem;
     height: 1.8rem;
     margin-bottom: 0.2rem;
-    border: 1px solid rgba(127, 127, 127, 0.4);
+    border: 1px solid var(--border-strong);
     border-radius: 0.4rem;
     background: none;
     color: inherit;

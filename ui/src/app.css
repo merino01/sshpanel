@@ -1,26 +1,11 @@
 /*
- * Estilos globales: colores (Tema Sistema, Claro u Oscuro según `data-theme`), tipografía, botones, mensajes y las listas de
- * archivos que comparten el Explorador y la Papelera. Lo propio de cada
- * componente va en su bloque <style>.
+ * Estilos globales: tipografía, botones, mensajes y las listas de archivos que
+ * comparten el Explorador y la Papelera. Los colores son variables del Tema
+ * (`--bg`, `--fg`, `--accent`…), que pone en `:root` el estado de las
+ * preferencias (ver lib/themes). Lo propio de cada componente va en su bloque <style>.
  */
 :root {
-  --accent: #3b82f6; /* sobrescrito desde branding.toml */
-  --bg: #ffffff;
-  --fg: #1f2937;
-  color-scheme: light;
   font-family: system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #111827;
-    --fg: #f3f4f6;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #111827;
-  --fg: #f3f4f6;
-  color-scheme: dark;
 }
 body {
   margin: 0;
@@ -64,7 +49,7 @@ main.workspace {
   text-align: left;
 }
 h1 {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 h2 {
   margin: 1rem 0 0;
@@ -84,7 +69,7 @@ button.primary {
   border: 0;
   border-radius: 0.5rem;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   font-weight: 600;
 }
 button.secondary {
@@ -92,18 +77,18 @@ button.secondary {
   border: 1px solid var(--accent);
   border-radius: 0.5rem;
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 button.link {
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
 }
 
 .error {
-  color: #dc2626;
+  color: var(--error);
 }
 .help,
 .feedback {
@@ -134,10 +119,10 @@ button.link {
   padding: 0.45rem 0.75rem;
 }
 .entry {
-  border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+  border-bottom: 1px solid var(--border);
 }
 .columns {
-  border-bottom: 1px solid rgba(127, 127, 127, 0.35);
+  border-bottom: 1px solid var(--border-strong);
   font-size: 0.8rem;
   font-weight: 600;
   opacity: 0.7;

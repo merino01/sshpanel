@@ -50,7 +50,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+    border-bottom: 1px solid var(--border);
   }
   header :global(button.secondary) {
     flex-shrink: 0;

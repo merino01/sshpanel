@@ -56,7 +56,7 @@
     grid-template-columns: 1.2rem 1fr auto;
     gap: 0.15rem 0.4rem;
     padding: 0.4rem 0;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+    border-bottom: 1px solid var(--border);
     font-size: 0.9rem;
   }
   li:last-child {
@@ -89,6 +89,6 @@
     opacity: 1;
   }
   .icon.done {
-    color: var(--accent);
+    color: var(--accent-text);
   }
 </style>

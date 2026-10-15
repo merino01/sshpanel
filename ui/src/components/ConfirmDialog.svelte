@@ -46,14 +46,14 @@
   dialog {
     max-width: min(24rem, 90vw);
     padding: 1.2rem 1.4rem;
-    border: 1px solid rgba(127, 127, 127, 0.3);
+    border: 1px solid var(--border);
     border-radius: 0.6rem;
     background: var(--bg);
     color: var(--fg);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px var(--shadow);
   }
   dialog::backdrop {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--backdrop);
   }
   h2 {
     margin: 0 0 0.5rem;

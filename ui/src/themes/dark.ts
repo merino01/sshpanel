@@ -1,0 +1,41 @@
+/** Oscuro: fondo azul noche y texto casi blanco; también es el Tema Sistema con el equipo en modo oscuro. */
+import type { ThemePalette } from "../lib/themes";
+
+export default {
+  scheme: "dark",
+  colors: {
+    bg: "#111827",
+    fg: "#f3f4f6",
+    surface: "#171e2c",
+    border: "#2d3442",
+    borderStrong: "#4b5363",
+    subtle: "#222937",
+    shadow: "rgba(0, 0, 0, 0.5)",
+    backdrop: "rgba(0, 0, 0, 0.55)",
+    onAccent: "#ffffff",
+    error: "#f87171",
+    success: "#4ade80",
+    warning: "#facc15",
+  },
+  terminal: {
+    background: "#0b111d",
+    foreground: "#e5e7eb",
+    selection: "rgba(148, 163, 184, 0.35)",
+    black: "#1f2937",
+    red: "#f87171",
+    green: "#4ade80",
+    yellow: "#facc15",
+    blue: "#60a5fa",
+    magenta: "#e879f9",
+    cyan: "#22d3ee",
+    white: "#d1d5db",
+    brightBlack: "#6b7280",
+    brightRed: "#fca5a5",
+    brightGreen: "#86efac",
+    brightYellow: "#fde047",
+    brightBlue: "#93c5fd",
+    brightMagenta: "#f0abfc",
+    brightCyan: "#67e8f9",
+    brightWhite: "#f9fafb",
+  },
+} satisfies ThemePalette;

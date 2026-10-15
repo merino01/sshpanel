@@ -46,6 +46,6 @@
   }
   button[aria-current] {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
   }
 </style>

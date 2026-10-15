@@ -77,7 +77,7 @@
     cursor: pointer;
   }
   li:hover .name {
-    color: var(--accent);
+    color: var(--accent-text);
     text-decoration: underline;
   }
 </style>

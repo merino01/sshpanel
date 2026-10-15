@@ -90,7 +90,7 @@
     gap: 0.4rem;
     align-items: center;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+    border-bottom: 1px solid var(--border);
   }
   header :global(button.secondary) {
     padding: 0.35rem 0.8rem;
@@ -99,7 +99,7 @@
   .icon {
     width: 2rem;
     height: 2rem;
-    border: 1px solid rgba(127, 127, 127, 0.4);
+    border: 1px solid var(--border-strong);
     border-radius: 0.4rem;
     background: none;
     color: inherit;
@@ -108,7 +108,7 @@
   }
   .icon:not(:disabled):hover {
     border-color: var(--accent);
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .folder {
     flex: 1;

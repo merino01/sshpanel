@@ -65,7 +65,7 @@
     width: min(28rem, 100%);
     margin-top: 1.5rem;
     padding-top: 1.2rem;
-    border-top: 1px solid rgba(127, 127, 127, 0.3);
+    border-top: 1px solid var(--border);
     text-align: left;
   }
   h2 {
@@ -84,7 +84,7 @@
   textarea,
   input[type="text"] {
     padding: 0.45rem 0.6rem;
-    border: 1px solid rgba(127, 127, 127, 0.5);
+    border: 1px solid var(--border-strong);
     border-radius: 0.4rem;
     background: var(--bg);
     color: var(--fg);
@@ -112,7 +112,7 @@
   .line {
     padding: 0.5rem 0.7rem;
     border-radius: 0.4rem;
-    background: rgba(127, 127, 127, 0.15);
+    background: var(--subtle);
     overflow-wrap: anywhere;
     user-select: all;
     font-size: 0.8rem;
