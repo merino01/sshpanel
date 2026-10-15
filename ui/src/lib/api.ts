@@ -4,7 +4,8 @@
  * cambia aquí. Los errores llegan como el código del núcleo (`files.not_found`…).
  */
 import { Channel, invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, emitTo, listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Preferences } from "./preferences";
 
 export interface Profile {
@@ -70,6 +71,25 @@ export interface Progress {
   total: number;
 }
 
+/** Tamaño y fecha de modificación de un archivo al leerlo o guardarlo en el Editor. */
+export interface Stamp {
+  size: number;
+  /** Segundos desde la época Unix. */
+  modified: number | null;
+}
+
+/** El principio de un archivo (como mucho 8 KB) y su tamaño entero. */
+export interface Head {
+  bytes: number[];
+  size: number;
+}
+
+/** Un archivo de texto leído entero. */
+export interface TextFile {
+  text: string;
+  stamp: Stamp;
+}
+
 /** Dónde ha quedado una Transferencia terminada. */
 export type Outcome = { uploaded: string } | { downloaded: string };
 
@@ -89,6 +109,35 @@ export const api = {
   listDir: (path: string) => invoke<Listing>("list_dir", { path }),
   createFolder: (parent: string, name: string) => invoke<void>("create_folder", { parent, name }),
   rename: (dir: string, from: string, to: string) => invoke<void>("rename", { dir, from, to }),
+
+  /** El principio del archivo `path`, para saber si es de texto (ver `lib/textFile`) antes de abrirlo. */
+  readHead: (path: string) => invoke<Head>("read_head", { path }),
+  /** Lee entero un archivo de texto; falla con `editor.not_text` si no es UTF-8. */
+  readText: (path: string) => invoke<TextFile>("read_text", { path }),
+  /** Guarda `text` en el archivo `path`, que tiene que existir, y devuelve su `Stamp` nuevo. */
+  writeText: (path: string, text: string) => invoke<Stamp>("write_text", { path, text }),
+  /** Abre `path` en su propia ventana del Editor, o la pone delante si ya está abierta. */
+  openEditor: (path: string, title: string) => invoke<void>("open_editor", { path, title }),
+  /** El archivo que tiene abierto esta ventana del Editor. */
+  editorFile: () => invoke<string | null>("editor_file"),
+  /** Apunta si esta ventana del Editor tiene cambios sin guardar. */
+  setUnsaved: (unsaved: boolean) => invoke<void>("set_unsaved", { unsaved }),
+  /** Cuántas ventanas del Editor tienen cambios sin guardar. */
+  unsavedEditors: () => invoke<number>("unsaved_editors"),
+  /** Cierra todas las ventanas del Editor, sin preguntar. */
+  closeEditors: () => invoke<void>("close_editors"),
+  /** Antes de cerrar esta ventana pregunta a `allow`; si responde `false`, no se cierra. */
+  guardClose: (allow: () => Promise<boolean>) =>
+    getCurrentWindow().onCloseRequested(async (event) => {
+      if (!(await allow())) event.preventDefault();
+    }),
+  /** Avisa a todas las ventanas de que la principal acaba de conectar con el Servidor. */
+  announceConnected: () => emit("connected"),
+  onConnected: (handler: () => void) => listen("connected", handler),
+  /** Desde el Editor: avisa a la ventana principal de que se ha caído la conexión, con el código del error. */
+  reportConnectionLost: (code: unknown) => emitTo("main", "editor-connection-lost", String(code)),
+  onEditorConnectionLost: (handler: (code: string) => void) =>
+    listen<string>("editor-connection-lost", (event) => handler(event.payload)),
 
   /** Devuelve su id en la Papelera, para deshacerlo con `restore`. */
   trash: (dir: string, name: string) => invoke<string>("trash", { dir, name }),
@@ -139,6 +188,8 @@ export const api = {
     listen<unknown>("preferences-changed", (event) => handler(event.payload)),
   /** Abre la ventana de Ajustes, o la pone delante si ya está abierta. */
   openSettings: (title: string) => invoke<void>("open_settings", { title }),
+  /** Cambia el título de esta ventana, para que siga al idioma activo. */
+  setWindowTitle: (title: string) => getCurrentWindow().setTitle(title),
 };
 
 export type Api = typeof api;

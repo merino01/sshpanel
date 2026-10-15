@@ -1,7 +1,9 @@
 /** Las preferencias del Miembro en esta ventana: se cargan al abrirla y siguen los cambios hechos en cualquier otra. */
 import { branding } from "../branding.generated";
 import { errorMessage, t } from "../i18n";
+import { locale, systemLanguage } from "../i18n/locale.svelte";
 import { api } from "../lib/api";
+import { resolveLanguage } from "../lib/language";
 import { DEFAULT_PREFERENCES, withDefaults, type Preferences } from "../lib/preferences";
 import { cssVariables, resolveTheme, type ThemePalette } from "../lib/themes";
 import { toasts } from "./toasts.svelte";
@@ -17,7 +19,7 @@ export const activeTheme = $state<{ palette: ThemePalette }>({
   palette: resolveTheme(DEFAULT_PREFERENCES.theme, darkScheme.matches),
 });
 
-/** Carga las preferencias y escucha los cambios; aplica el Tema cada vez. */
+/** Carga las preferencias y escucha los cambios; aplica el Tema y el idioma cada vez. */
 export async function loadPreferences() {
   // Mientras se lee el fichero, los valores por defecto: la ventana no se pinta nunca sin colores.
   apply(preferences);
@@ -40,9 +42,14 @@ export function openSettings() {
   api.openSettings(t("settings.title")).catch((code) => toasts.error(errorMessage(code)));
 }
 
-/** Guarda las preferencias en el estado y pinta el Tema como variables CSS en `:root`. */
+/**
+ * Guarda las preferencias en el estado, pinta el Tema como variables CSS en
+ * `:root` y cambia el idioma: los textos de la ventana se traducen solos.
+ */
 function apply(next: Preferences) {
   Object.assign(preferences, next);
+  locale.current = resolveLanguage(next.language, systemLanguage);
+  document.documentElement.lang = locale.current;
   const palette = resolveTheme(next.theme, darkScheme.matches);
   activeTheme.palette = palette;
   const root = document.documentElement.style;

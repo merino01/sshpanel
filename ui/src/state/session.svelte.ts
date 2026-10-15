@@ -4,6 +4,7 @@ import { branding } from "../branding.generated";
 import { errorMessage, t } from "../i18n";
 import { api, type AppState } from "../lib/api";
 import { confirm } from "./confirm.svelte";
+import { closeEditors, watchEditors } from "./editorWindows.svelte";
 import { enterExplorer } from "./explorer.svelte";
 import { closeMenu } from "./menu.svelte";
 import { resetTerminals } from "./terminal.svelte";
@@ -72,6 +73,7 @@ export function showConnectionLost(code: unknown) {
 
 export async function start() {
   void api.onProfileOpened(() => void openPendingProfile());
+  watchEditors();
   try {
     session.appState = await api.appState();
     if (await openPendingProfile()) return;
@@ -88,6 +90,8 @@ export async function connect() {
   try {
     enterExplorer(await api.connect());
     transfers.resume();
+    // Las ventanas del Editor que perdieron la conexión ya pueden volver a guardar.
+    void api.announceConnected();
   } catch (code) {
     if (code !== "connection.unauthorized") show({ name: "problem", message: errorMessage(code) });
     else if (session.appState?.profile && session.appState.public_key) show({ name: "key", notice: errorMessage(code) });
@@ -135,6 +139,8 @@ export async function openPendingProfile(): Promise<boolean> {
 
 /** Importa el Perfil del fichero `path` y conecta con él. */
 export async function importProfileFrom(path: string) {
+  // Las ventanas del Editor son del Servidor anterior: guardar en ellas escribiría en el nuevo.
+  if (!(await closeEditors())) return;
   try {
     session.appState = await api.importProfile(path);
   } catch (code) {

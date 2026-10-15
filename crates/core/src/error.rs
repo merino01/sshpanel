@@ -62,6 +62,12 @@ pub enum Error {
     TransferFailed,
     #[error("la Transferencia se ha cancelado")]
     Cancelled,
+    #[error("el archivo no es texto UTF-8")]
+    NotText,
+    #[error("no se pudo leer el archivo")]
+    ReadFailed,
+    #[error("no se pudo guardar el archivo")]
+    WriteFailed,
 }
 
 impl Error {
@@ -98,6 +104,9 @@ impl Error {
             Self::LocalWriteFailed => "transfer.local_write_failed",
             Self::TransferFailed => "transfer.failed",
             Self::Cancelled => "transfer.cancelled",
+            Self::NotText => "editor.not_text",
+            Self::ReadFailed => "editor.read_failed",
+            Self::WriteFailed => "editor.write_failed",
         }
     }
 }

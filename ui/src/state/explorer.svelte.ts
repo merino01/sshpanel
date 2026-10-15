@@ -4,6 +4,7 @@ import { api, type Entry, type Listing } from "../lib/api";
 import { joinPath, type Place } from "../lib/paths";
 import { isConnectionError } from "../lib/errors";
 import { confirm } from "./confirm.svelte";
+import { openInEditor } from "./editorWindows.svelte";
 import { show, showConnectionLost, session } from "./session.svelte";
 import { toasts } from "./toasts.svelte";
 
@@ -87,9 +88,11 @@ export function selectedEntry(): Entry | undefined {
   return explorer.listing.entries.find((entry) => entry.name === explorer.selected);
 }
 
-/** Abre `entry` si es una carpeta. Los archivos aún no se abren. */
+/** Abre `entry`: una carpeta, en el Explorador; un archivo de texto, en su ventana del Editor. */
 export function openEntry(entry: Entry) {
-  if (entry.kind === "dir") void openFolder(joinPath(explorer.listing.path, entry.name));
+  const path = joinPath(explorer.listing.path, entry.name);
+  if (entry.kind === "dir") void openFolder(path);
+  else if (entry.kind === "file") void openInEditor(path);
 }
 
 /** Copia la ruta de `name`, de la carpeta en pantalla, o la de la propia carpeta si no se indica. */

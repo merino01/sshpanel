@@ -86,14 +86,17 @@ Type=Application
 MimeType=${mimeType};
 `,
 );
-const xmlName = `Perfil de ${branding.name}`.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+// El nombre del tipo en cada idioma: sin `xml:lang`, el inglés, que el sistema
+// usa cuando no tiene el suyo. En Windows y macOS solo cabe uno: el de arriba.
+const xmlText = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 writeFileSync(
   resolve(linuxDir, "mime.xml"),
   `<?xml version="1.0" encoding="UTF-8"?>
 <!-- Generado por scripts/apply-branding.mjs desde branding.toml. No editar. -->
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
   <mime-type type="${mimeType}">
-    <comment>${xmlName}</comment>
+    <comment>${xmlText(`${branding.name} profile`)}</comment>
+    <comment xml:lang="es">${xmlText(`Perfil de ${branding.name}`)}</comment>
     <glob pattern="*.${branding.profile_extension}"/>
   </mime-type>
 </mime-info>

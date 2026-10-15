@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "window-title",
+  "description": "Cada ventana cambia su propio título cuando el Miembro cambia el idioma.",
+  "windows": ["*"],
+  "permissions": ["core:window:allow-set-title"]
+}

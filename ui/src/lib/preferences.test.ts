@@ -33,4 +33,12 @@ describe("withDefaults", () => {
     expect(withDefaults({ shortcuts: { reload: ["F6"], fly: ["F7"] } }).shortcuts).toEqual({ reload: ["F6"] });
     expect(withDefaults({ shortcuts: "F6" }).shortcuts).toEqual({});
   });
+
+  it("se queda con el idioma si vale y, si no, sigue al sistema", () => {
+    expect(withDefaults({}).language).toBe("system");
+    expect(withDefaults({ language: "en" }).language).toBe("en");
+    expect(withDefaults({ language: "es" }).language).toBe("es");
+    expect(withDefaults({ language: "fr" }).language).toBe("system");
+    expect(withDefaults({ language: 1 }).language).toBe("system");
+  });
 });

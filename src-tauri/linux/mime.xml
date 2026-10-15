@@ -2,7 +2,8 @@
 <!-- Generado por scripts/apply-branding.mjs desde branding.toml. No editar. -->
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
   <mime-type type="application/x-sshpanel">
-    <comment>Perfil de SSH Panel</comment>
+    <comment>SSH Panel profile</comment>
+    <comment xml:lang="es">Perfil de SSH Panel</comment>
     <glob pattern="*.sshpanel"/>
   </mime-type>
 </mime-info>

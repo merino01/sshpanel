@@ -21,6 +21,8 @@ Quien decide lo que puede hacer cada persona es el servidor, no la app (ver la [
 - [Guía del servidor](docs/guia-servidor.md), para el administrador: usuarios, claves, Carpeta compartida, modos, dar de alta y de baja.
 - [Guía de instalación](docs/guia-instalacion.md), para cada persona: instalar pese a los avisos de «desarrollador desconocido» y entrar por primera vez.
 
+In English: [server guide](docs/server-guide.md) and [installation guide](docs/installation-guide.md).
+
 El diseño está en el [spec de la v1](docs/spec-v1.md), las decisiones en [`docs/adr/`](docs/adr/) y el vocabulario en el [glosario](GLOSSARY.md).
 
 ## Desarrollo

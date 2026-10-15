@@ -5,14 +5,16 @@ mod windows;
 use std::path::Path;
 
 use commands::transfers::Transfers;
-use commands::{files, preferences, profile, terminal, transfers, trash, update};
+use commands::{editor, files, preferences, profile, terminal, transfers, trash, update};
 use opened::Opened;
 use sshpanel_core::{Core, SystemSecretStore};
 use tauri::Manager;
+use windows::Editors;
 
 pub fn run() {
     tauri::Builder::default()
         .manage(Opened::default())
+        .manage(Editors::default())
         // Abrir un Perfil con la app ya abierta: se lo lleva la primera instancia.
         .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             if let Some(path) = opened::profile_arg(&args, &opened::extension(app), Path::new(&cwd)) {
@@ -65,12 +67,20 @@ pub fn run() {
             update::open_releases,
             preferences::read_preferences,
             preferences::save_preferences,
-            windows::open_settings
+            windows::open_settings,
+            editor::read_head,
+            editor::read_text,
+            editor::write_text,
+            windows::open_editor,
+            windows::editor_file,
+            windows::set_unsaved,
+            windows::unsaved_editors,
+            windows::close_editors
         ])
         .build(tauri::generate_context!())
         .expect("error al iniciar la aplicación")
         .run(|_app, _event| {
-            // La ventana principal manda: al cerrarla se cierran las demás (Ajustes…).
+            // La ventana principal manda: al cerrarla se cierran las demás (Ajustes, Editor…).
             if let tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::Destroyed, .. } = &_event {
                 if label == windows::MAIN {
                     _app.exit(0);

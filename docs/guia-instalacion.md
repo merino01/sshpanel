@@ -1,5 +1,7 @@
 # Guía de instalación
 
+*[English version](installation-guide.md)*
+
 Cómo instalar la app y entrar por primera vez. Necesitas el fichero de perfil que te ha enviado el administrador.
 
 Descarga el instalador de tu sistema desde la página de versiones (Releases) del proyecto. La app no está firmada por Microsoft ni por Apple, porque esos certificados cuestan dinero cada año. Por eso tu sistema te avisará de que es de un «desarrollador desconocido». Es normal: aquí tienes cómo abrirla igualmente.
@@ -50,3 +52,5 @@ Solo hace falta la primera vez.
 3. Cuando el administrador te avise de que ya tienes acceso, pulsa **Reintentar**.
 
 Desde entonces, la app entra directamente al abrirla y te avisa cuando hay una versión nueva: pulsa **Actualizar** y se reinicia ya actualizada. Si más adelante te envían otro perfil, haz doble clic en él: la app te preguntará antes de cambiar.
+
+La app usa el idioma de tu equipo si es español o inglés, y si no, inglés. Puedes cambiarlo en **Ajustes → Idioma**.

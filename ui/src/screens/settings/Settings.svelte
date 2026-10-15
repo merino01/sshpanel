@@ -8,6 +8,7 @@
   import type { Component } from "svelte";
   import { t } from "../../i18n";
   import Appearance from "./Appearance.svelte";
+  import LanguageSection from "./LanguageSection.svelte";
   import ShortcutsSection from "./ShortcutsSection.svelte";
 
   /** Cada sección: su texto, su icono (trazos de 24×24) y su componente. */
@@ -23,6 +24,12 @@
       label: "settings.shortcuts",
       icon: "M4.5 6h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2ZM6.5 10h.01M10 10h.01M14 10h.01M17.5 10h.01M7.5 14h9",
       component: ShortcutsSection,
+    },
+    {
+      id: "language",
+      label: "settings.language",
+      icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM3.5 9h17M3.5 15h17M12 3c-2.5 2.6-3.6 5.6-3.6 9s1.1 6.4 3.6 9M12 3c2.5 2.6 3.6 5.6 3.6 9s-1.1 6.4-3.6 9",
+      component: LanguageSection,
     },
   ];
 

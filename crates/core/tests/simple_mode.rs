@@ -86,6 +86,34 @@ async fn refuses_transfers_outside_them() {
 }
 
 #[tokio::test]
+async fn edits_files_in_them() {
+    let server = TestServer::start();
+    server.put_file("alice", "notas.txt", "hola");
+    let s = connect(&server, "simple").await;
+    server.sh("printf 'acta' > /srv/compartida/acta.txt && chmod 666 /srv/compartida/acta.txt");
+
+    s.core.read_head("/home/alice/notas.txt").await.unwrap();
+    assert_eq!(s.core.read_text("/home/alice/notas.txt").await.unwrap().text, "hola");
+    s.core.write_text("/srv/compartida/acta.txt", "acta nueva").await.unwrap();
+    assert_eq!(server.sh("cat /srv/compartida/acta.txt"), "acta nueva");
+}
+
+#[tokio::test]
+async fn refuses_editing_outside_them() {
+    let server = TestServer::start();
+    let s = connect(&server, "simple").await;
+    server.sh("echo -n x > /srv/otra/dato.txt && chmod 666 /srv/otra/dato.txt");
+    let outside = Error::OutsideAllowed;
+
+    for path in ["/srv/otra/dato.txt", "/home/alice/../../srv/otra/dato.txt", "/etc/passwd"] {
+        assert_eq!(s.core.read_head(path).await.unwrap_err(), outside, "{path}");
+        assert_eq!(s.core.read_text(path).await.unwrap_err(), outside, "{path}");
+        assert_eq!(s.core.write_text(path, "mío").await.unwrap_err(), outside, "{path}");
+    }
+    assert_eq!(server.sh("cat /srv/otra/dato.txt"), "x");
+}
+
+#[tokio::test]
 async fn does_not_restore_outside_them() {
     let server = TestServer::start();
     let trash = "/home/alice/.local/share/Trash";

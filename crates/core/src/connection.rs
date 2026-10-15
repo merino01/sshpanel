@@ -1,6 +1,7 @@
 //! Conexión con el Servidor: SSH con la Huella verificada y sesión SFTP. Las
 //! operaciones sobre archivos viven en los submódulos, por área.
 
+use std::io;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -14,6 +15,7 @@ use russh_sftp::protocol::StatusCode;
 use crate::error::{Error, Result};
 use crate::profile::{Mode, Profile};
 
+mod editor;
 mod explorer;
 mod naming;
 mod paths;
@@ -21,6 +23,7 @@ mod terminal;
 mod transfer;
 mod trash;
 
+pub use editor::{Head, Stamp, TextFile};
 pub use explorer::{Entry, EntryKind, Listing};
 pub(crate) use naming::Reserved;
 use paths::is_within;
@@ -169,6 +172,17 @@ impl Connection {
             SftpError::Status(s) if s.status_code == StatusCode::PermissionDenied => Error::PermissionDenied,
             SftpError::Status(s) if s.status_code == StatusCode::NoSuchFile => Error::NotFound,
             SftpError::Timeout | SftpError::IO(_) | SftpError::UnexpectedBehavior(_) => Error::ConnectionLost,
+            _ => fallback,
+        }
+    }
+
+    /// Traduce un error de lectura o escritura en un archivo remoto abierto.
+    /// `fallback` es el error de la operación, si el Servidor no da otro.
+    fn io_failure(&self, err: io::Error, fallback: Error) -> Error {
+        match err.into_inner().map(|inner| inner.downcast::<SftpError>()) {
+            Some(Ok(sftp)) => self.failure(*sftp, fallback),
+            _ if self.ssh.is_closed() => Error::ConnectionLost,
+            // Estado de error del Servidor sin código, como un disco lleno.
             _ => fallback,
         }
     }

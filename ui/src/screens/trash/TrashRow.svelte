@@ -1,6 +1,6 @@
 <!-- Un elemento de la Papelera; «Restaurar» y, en Modo avanzado, «Eliminar definitivamente» están en su menú contextual. -->
 <script lang="ts">
-  import { t } from "../../i18n";
+  import { locale, t } from "../../i18n";
   import type { Trashed } from "../../lib/api";
   import { formatDate, formatSize } from "../../lib/format";
   import { openMenu } from "../../state/menu.svelte";
@@ -24,6 +24,6 @@
   <span class="icon" aria-hidden="true">{item.kind === "dir" ? "📁" : "📄"}</span>
   <span class="name" title={item.name}>{item.name}</span>
   <span class="muted" title={item.original_dir}>{item.original_dir}</span>
-  <span class="muted">{item.deleted === null ? "" : formatDate(item.deleted)}</span>
-  <span class="muted">{item.kind === "file" ? formatSize(item.size) : ""}</span>
+  <span class="muted">{item.deleted === null ? "" : formatDate(item.deleted, locale.current)}</span>
+  <span class="muted">{item.kind === "file" ? formatSize(item.size, locale.current) : ""}</span>
 </li>

@@ -1,5 +1,7 @@
 # Guía del servidor
 
+*[English version](server-guide.md)*
+
 Para el Administrador: cómo preparar el Servidor para que los Miembros entren con la app, cómo darlos de alta y de baja, y cómo hacer que cada uno solo pueda hacer lo que le toca.
 
 Los comandos son para Debian y Ubuntu, y se ejecutan en el Servidor con `sudo`. Todos los nombres de esta guía son de ejemplo: el Servidor `vps.example.com` (203.0.113.10) y los Miembros `alice` y `bob`. Cámbialos por los tuyos.

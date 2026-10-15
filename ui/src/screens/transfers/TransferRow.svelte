@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "../../i18n";
+  import { locale, t } from "../../i18n";
   import { formatSize } from "../../lib/format";
   import type { QueuedTransfer } from "../../lib/transferQueue.svelte";
   import { transfers } from "../../state/transfers.svelte";
@@ -20,7 +20,7 @@
     const { status, progress } = transfer;
     if (status !== "running") return transfer.outcome ?? t("transfers.waiting");
     if (!progress) return t("transfers.preparing");
-    return t("transfers.progress", { done: formatSize(Math.min(progress.done, progress.total)), total: formatSize(progress.total) });
+    return t("transfers.progress", { done: formatSize(Math.min(progress.done, progress.total), locale.current), total: formatSize(progress.total, locale.current) });
   });
 
   const retryLabel = $derived(t("transfers.retryLabel", { name: transfer.name }));

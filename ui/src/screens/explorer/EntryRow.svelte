@@ -1,12 +1,15 @@
 <!--
   Un archivo o carpeta del Explorador. Un clic la selecciona (recibe el foco y
-  se marca) y, si es una carpeta, el doble clic la abre. Con el foco, los Atajos
-  (Intro, Supr, F2…) actúan sobre ella; el menú contextual tiene el resto.
+  se marca) y el doble clic la abre: una carpeta, en el Explorador; un archivo
+  de texto, en el Editor. Con el foco, los Atajos (Intro, Supr, F2…) actúan
+  sobre ella; el menú contextual tiene el resto.
 -->
 <script lang="ts">
-  import { t } from "../../i18n";
+  import { locale, t } from "../../i18n";
   import type { Entry } from "../../lib/api";
   import { formatDate, formatSize } from "../../lib/format";
+  import { joinPath } from "../../lib/paths";
+  import { openInEditor } from "../../state/editorWindows.svelte";
   import { askToTrash, explorer, openEntry, select, startRenaming } from "../../state/explorer.svelte";
   import { openMenu, type MenuItem } from "../../state/menu.svelte";
   import { pickDownload } from "../../state/transfers.svelte";
@@ -15,6 +18,7 @@
   let row = $state<HTMLLIElement>();
 
   const isDir = $derived(entry.kind === "dir");
+  const isFile = $derived(entry.kind === "file");
 
   function open() {
     openEntry(entry);
@@ -28,6 +32,7 @@
   function menuItems(): MenuItem[] {
     const items: MenuItem[] = [];
     if (isDir) items.push({ label: t("explorer.openShort"), action: open });
+    if (isFile) items.push({ label: t("editor.openWith"), action: () => void openInEditor(joinPath(explorer.listing.path, entry.name)) });
     // Un enlace roto no tiene nada que descargar.
     if (entry.kind !== "symlink") items.push({ label: t("explorer.download"), action: () => pickDownload(explorer.listing.path, entry.name) });
     items.push(
@@ -48,16 +53,16 @@
   class="entry {entry.kind}"
   class:selected={explorer.selected === entry.name}
   tabindex="0"
-  title={isDir ? t("explorer.open", { name: entry.name }) : entry.name}
-  ondblclick={isDir ? open : undefined}
+  title={isDir || isFile ? t("explorer.open", { name: entry.name }) : entry.name}
+  ondblclick={isDir || isFile ? open : undefined}
   onfocus={() => select(entry.name)}
   onblur={() => select(undefined)}
   {oncontextmenu}
 >
   <span class="icon" aria-hidden="true">{isDir ? "📁" : "📄"}</span>
   <span class="name">{entry.name}</span>
-  <span class="muted">{entry.kind === "file" ? formatSize(entry.size) : ""}</span>
-  <span class="muted">{entry.modified === null ? "" : formatDate(entry.modified)}</span>
+  <span class="muted">{entry.kind === "file" ? formatSize(entry.size, locale.current) : ""}</span>
+  <span class="muted">{entry.modified === null ? "" : formatDate(entry.modified, locale.current)}</span>
 </li>
 
 <style>

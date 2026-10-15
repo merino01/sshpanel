@@ -1,0 +1,5 @@
+# CodeMirror 6 para el Editor
+
+El Editor necesita resaltado según la extensión, deshacer, buscar y reemplazar, y abrir sin atascarse archivos de varios MB, porque la spec no pone límite de tamaño. Usamos CodeMirror 6: es modular (solo entran las piezas que usamos), pinta solo las líneas visibles, sus lenguajes se descargan cada uno aparte cuando se abre un archivo suyo (`@codemirror/language-data`), y sus estilos se escriben en CSS, así que siguen las variables del Tema. Descartamos Monaco (el editor de VS Code: varios MB y workers para algo que no es un IDE), Ace (API anterior a los módulos de ES y temas propios difíciles de casar con los nuestros) y un `textarea` con un resaltador como Prism (repinta el archivo entero y no aguanta archivos grandes).
+
+Consecuencias: unos 117 KB gzip más en un chunk aparte, que solo carga la ventana del Editor; la principal no cambia. El resaltado usa los colores de la paleta de la Terminal, así que un Tema nuevo no tiene que definir colores aparte para el código. CodeMirror trata los saltos de línea a su manera, así que el Editor fija el separador del archivo (LF o CRLF) para guardarlo tal como estaba.

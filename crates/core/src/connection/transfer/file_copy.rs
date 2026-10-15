@@ -1,11 +1,10 @@
 //! Copia de un archivo, pasando por un provisional oculto y continuando
 //! donde se quedó un intento anterior.
 
-use std::io::{self, SeekFrom};
+use std::io::SeekFrom;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use russh_sftp::client::error::Error as SftpError;
 use russh_sftp::protocol::OpenFlags;
 use tokio::fs;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
@@ -51,7 +50,7 @@ impl Connection {
             let mut target = if offset > 0 {
                 source.seek(SeekFrom::Start(offset)).await.map_err(|_| Error::LocalUnreadable)?;
                 let mut target = self.sftp.open_with_flags(partial.as_str(), OpenFlags::WRITE).await.map_err(|e| self.failure(e, Error::TransferFailed))?;
-                target.seek(SeekFrom::Start(offset)).await.map_err(|e| self.io_failure(e))?;
+                target.seek(SeekFrom::Start(offset)).await.map_err(|e| self.io_failure(e, Error::TransferFailed))?;
                 target
             } else {
                 self.sftp.create(partial.as_str()).await.map_err(|e| self.failure(e, Error::TransferFailed))?
@@ -62,10 +61,10 @@ impl Connection {
                 if n == 0 {
                     break;
                 }
-                target.write_all(&buf[..n]).await.map_err(|e| self.io_failure(e))?;
+                target.write_all(&buf[..n]).await.map_err(|e| self.io_failure(e, Error::TransferFailed))?;
                 counter.add(n)?;
             }
-            target.shutdown().await.map_err(|e| self.io_failure(e))?;
+            target.shutdown().await.map_err(|e| self.io_failure(e, Error::TransferFailed))?;
             self.ensure_free(remote).await?;
             self.sftp.rename(partial.as_str(), remote).await.map_err(|e| self.failure(e, Error::TransferFailed))
         }
@@ -84,7 +83,7 @@ impl Connection {
         let result = async {
             let mut source = self.sftp.open(remote).await.map_err(|e| self.failure(e, Error::TransferFailed))?;
             let mut target = if offset > 0 {
-                source.seek(SeekFrom::Start(offset)).await.map_err(|e| self.io_failure(e))?;
+                source.seek(SeekFrom::Start(offset)).await.map_err(|e| self.io_failure(e, Error::TransferFailed))?;
                 let mut target = fs::OpenOptions::new().write(true).open(&partial).await.map_err(|_| Error::LocalWriteFailed)?;
                 target.seek(SeekFrom::Start(offset)).await.map_err(|_| Error::LocalWriteFailed)?;
                 target
@@ -94,7 +93,7 @@ impl Connection {
             let mut buf = vec![0; CHUNK];
             let copied = async {
                 loop {
-                    let n = source.read(&mut buf).await.map_err(|e| self.io_failure(e))?;
+                    let n = source.read(&mut buf).await.map_err(|e| self.io_failure(e, Error::TransferFailed))?;
                     if n == 0 {
                         return Ok(());
                     }
@@ -117,16 +116,6 @@ impl Connection {
             let _ = fs::remove_file(&partial).await;
         }
         result
-    }
-
-    /// Traduce un error de lectura o escritura en un archivo remoto.
-    fn io_failure(&self, err: io::Error) -> Error {
-        match err.into_inner().map(|inner| inner.downcast::<SftpError>()) {
-            Some(Ok(sftp)) => self.failure(*sftp, Error::TransferFailed),
-            _ if self.ssh.is_closed() => Error::ConnectionLost,
-            // Estado de error del Servidor sin código, como un disco lleno.
-            _ => Error::TransferFailed,
-        }
     }
 }
 

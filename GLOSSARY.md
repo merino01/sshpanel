@@ -83,3 +83,30 @@ _Avoid_: Skin, apariencia (como nombre de cosa)
 **Atajo**:
 Combinación de teclas asignada a una acción de la app, configurable en Ajustes.
 _Avoid_: Shortcut, acceso directo (son los de la barra lateral)
+
+## En inglés
+
+Cómo se dicen estos términos en la interfaz y las guías en inglés (`i18n/en.json`, `docs/*-guide.md`). Se escriben con mayúscula igual que en español.
+
+| Español | Inglés | _Avoid_ |
+| --- | --- | --- |
+| Servidor | Server | VPS, host |
+| Miembro | Member | Client, user |
+| Administrador | Administrator | Owner, root |
+| Perfil | Profile | Config |
+| Modo simple | Simple mode | Basic mode |
+| Modo avanzado | Advanced mode | Expert mode, pro mode |
+| Administración | Administration | Admin panel |
+| Explorador | Explorer | File manager |
+| Editor | Editor | Viewer |
+| Abrir con | Open with | Run, launch |
+| Terminal | Terminal | Console, shell |
+| Huella | Fingerprint | Certificate |
+| Clave pública | Public key | Password, token |
+| Carpeta compartida | Shared folder | Group folder, share |
+| Papelera | Trash | Recycle bin, bin |
+| Transferencia | Transfer | — |
+| Branding | Branding | Theme, skin |
+| Ajustes | Settings | Preferences, options |
+| Tema | Theme | Skin |
+| Atajo | Shortcut | Hotkey; y nunca para los accesos directos de la barra lateral |

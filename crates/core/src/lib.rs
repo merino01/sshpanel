@@ -15,7 +15,7 @@ use tokio::sync::Mutex;
 
 use connection::{Connection, Reserved, Terminal};
 
-pub use connection::{Entry, EntryKind, Listing, Outcome, Progress, Restored, TerminalEvent, Transfer, Trashed};
+pub use connection::{Entry, EntryKind, Head, Listing, Outcome, Progress, Restored, Stamp, TerminalEvent, TextFile, Transfer, Trashed};
 pub use error::{Error, Result};
 pub use profile::{Mode, NewProfile, Profile};
 pub use secrets::{MemorySecretStore, SecretStore, SystemSecretStore};
@@ -142,6 +142,24 @@ impl Core {
     /// Borra para siempre todo lo que hay en la Papelera. Solo en Modo avanzado.
     pub async fn empty_trash(&self) -> Result<()> {
         self.connection().await?.empty_trash().await
+    }
+
+    /// El principio del archivo `path` (como mucho 8 KB) y su tamaño, para
+    /// decidir si es de texto antes de abrirlo en el Editor.
+    pub async fn read_head(&self, path: &str) -> Result<Head> {
+        self.connection().await?.read_head(path).await
+    }
+
+    /// Lee entero el archivo de texto `path`, con su [`Stamp`]. Falla con
+    /// [`Error::NotText`] si no es UTF-8.
+    pub async fn read_text(&self, path: &str) -> Result<TextFile> {
+        self.connection().await?.read_text(path).await
+    }
+
+    /// Guarda `text` en el archivo `path`, que tiene que existir, conservando
+    /// sus permisos y su propietario. Devuelve su [`Stamp`] nuevo.
+    pub async fn write_text(&self, path: &str, text: &str) -> Result<Stamp> {
+        self.connection().await?.write_text(path, text).await
     }
 
     /// Abre la Terminal `id` en el Servidor, de `cols` columnas y `rows`
