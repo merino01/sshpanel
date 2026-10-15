@@ -1,6 +1,6 @@
 <!--
-  La app: la pantalla que toque según `session.screen` y, una sola vez fuera de
-  ella, el panel de Transferencias, el aviso de soltar, el menú contextual, el
+  La ventana principal: la barra superior, la pantalla que toque según
+  `session.screen` y, una sola vez fuera de ella, el panel de Transferencias, el aviso de soltar, el menú contextual, el
   diálogo de confirmación y los avisos, para que sigan ahí al cambiar de pantalla.
 -->
 <script lang="ts">
@@ -8,6 +8,7 @@
   import ContextMenu from "./components/ContextMenu.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import Toasts from "./components/Toasts.svelte";
+  import TopBar from "./components/TopBar.svelte";
   import Connecting from "./screens/Connecting.svelte";
   import CreateProfile from "./screens/CreateProfile.svelte";
   import Explorer from "./screens/explorer/Explorer.svelte";
@@ -24,29 +25,32 @@
   const workspace = $derived(inWorkspace());
 </script>
 
-<main class:workspace>
-  {#if workspace}
-    <Sidebar />
-  {/if}
-  {#if session.screen.name === "welcome"}
-    <Welcome error={session.screen.error} />
-  {:else if session.screen.name === "key"}
-    <PublicKey notice={session.screen.notice} />
-  {:else if session.screen.name === "connecting"}
-    <Connecting />
-  {:else if session.screen.name === "problem"}
-    <Problem message={session.screen.message} />
-  {:else if session.screen.name === "explorer"}
-    <Explorer />
-  {:else if session.screen.name === "trash"}
-    <Trash />
-  {:else if session.screen.name === "createProfile"}
-    <CreateProfile />
-  {/if}
-  {#if workspace && isAdvanced()}
-    <TerminalScreen visible={session.screen.name === "terminal"} />
-  {/if}
-</main>
+<div class="window" class:workspace>
+  <TopBar />
+  <main class:workspace>
+    {#if workspace}
+      <Sidebar />
+    {/if}
+    {#if session.screen.name === "welcome"}
+      <Welcome error={session.screen.error} />
+    {:else if session.screen.name === "key"}
+      <PublicKey notice={session.screen.notice} />
+    {:else if session.screen.name === "connecting"}
+      <Connecting />
+    {:else if session.screen.name === "problem"}
+      <Problem message={session.screen.message} />
+    {:else if session.screen.name === "explorer"}
+      <Explorer />
+    {:else if session.screen.name === "trash"}
+      <Trash />
+    {:else if session.screen.name === "createProfile"}
+      <CreateProfile />
+    {/if}
+    {#if workspace && isAdvanced()}
+      <TerminalScreen visible={session.screen.name === "terminal"} />
+    {/if}
+  </main>
+</div>
 <TransferPanel />
 <DropOverlay />
 <ContextMenu />

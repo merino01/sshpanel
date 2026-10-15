@@ -1,10 +1,11 @@
 mod commands;
 mod opened;
+mod windows;
 
 use std::path::Path;
 
 use commands::transfers::Transfers;
-use commands::{files, profile, terminal, transfers, trash, update};
+use commands::{files, preferences, profile, terminal, transfers, trash, update};
 use opened::Opened;
 use sshpanel_core::{Core, SystemSecretStore};
 use tauri::Manager;
@@ -17,7 +18,7 @@ pub fn run() {
             if let Some(path) = opened::profile_arg(&args, &opened::extension(app), Path::new(&cwd)) {
                 opened::deliver(app, path);
             }
-            if let Some(window) = app.get_webview_window("main") {
+            if let Some(window) = app.get_webview_window(windows::MAIN) {
                 let _ = window.unminimize();
                 let _ = window.set_focus();
             }
@@ -61,11 +62,20 @@ pub fn run() {
             transfers::cancel_transfer,
             update::check_update,
             update::install_update,
-            update::open_releases
+            update::open_releases,
+            preferences::read_preferences,
+            preferences::save_preferences,
+            windows::open_settings
         ])
         .build(tauri::generate_context!())
         .expect("error al iniciar la aplicación")
         .run(|_app, _event| {
+            // La ventana principal manda: al cerrarla se cierran las demás (Ajustes…).
+            if let tauri::RunEvent::WindowEvent { label, event: tauri::WindowEvent::Destroyed, .. } = &_event {
+                if label == windows::MAIN {
+                    _app.exit(0);
+                }
+            }
             // En macOS, el Perfil abierto con doble clic llega como evento.
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Opened { urls } = _event {

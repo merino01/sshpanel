@@ -1,0 +1,25 @@
+import { describe, expect, it } from "vitest";
+import { DEFAULT_PREFERENCES, withDefaults } from "./preferences";
+
+describe("withDefaults", () => {
+  it("sin fichero o con uno que no es un objeto, usa los valores por defecto", () => {
+    expect(withDefaults(null)).toEqual(DEFAULT_PREFERENCES);
+    expect(withDefaults("dark")).toEqual(DEFAULT_PREFERENCES);
+    expect(withDefaults([])).toEqual(DEFAULT_PREFERENCES);
+  });
+
+  it("completa las preferencias que faltan", () => {
+    expect(withDefaults({})).toEqual(DEFAULT_PREFERENCES);
+    expect(withDefaults({ other: 1 })).toEqual(DEFAULT_PREFERENCES);
+  });
+
+  it("cambia por el valor por defecto lo que no vale", () => {
+    expect(withDefaults({ theme: "purple" }).theme).toBe("system");
+    expect(withDefaults({ theme: 3 }).theme).toBe("system");
+  });
+
+  it("mantiene lo guardado", () => {
+    expect(withDefaults({ theme: "dark" }).theme).toBe("dark");
+    expect(withDefaults({ theme: "light" }).theme).toBe("light");
+  });
+});

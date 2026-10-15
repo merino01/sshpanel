@@ -2,6 +2,7 @@
 //! como el código estable de [`sshpanel_core::Error::code`].
 
 pub mod files;
+pub mod preferences;
 pub mod profile;
 pub mod terminal;
 pub mod transfers;

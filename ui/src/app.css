@@ -1,5 +1,5 @@
 /*
- * Estilos globales: colores, tipografía, botones, mensajes y las listas de
+ * Estilos globales: colores (Tema Sistema, Claro u Oscuro según `data-theme`), tipografía, botones, mensajes y las listas de
  * archivos que comparten el Explorador y la Papelera. Lo propio de cada
  * componente va en su bloque <style>.
  */
@@ -7,18 +7,37 @@
   --accent: #3b82f6; /* sobrescrito desde branding.toml */
   --bg: #ffffff;
   --fg: #1f2937;
+  color-scheme: light;
   font-family: system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #111827;
     --fg: #f3f4f6;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #111827;
+  --fg: #f3f4f6;
+  color-scheme: dark;
 }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+}
+/*
+ * La ventana: la barra superior y, debajo, la pantalla. Las de trabajo ocupan
+ * justo la ventana (cada panel tiene su scroll); el resto crece con la página.
+ */
+.window {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+.window.workspace {
+  height: 100vh;
 }
 main {
   display: grid;
@@ -26,7 +45,7 @@ main {
   justify-items: center;
   gap: 0.5rem;
   max-width: 34rem;
-  min-height: 100vh;
+  min-height: 0;
   margin: 0 auto;
   padding: 1rem;
   text-align: center;
@@ -38,8 +57,8 @@ main.workspace {
   justify-items: stretch;
   gap: 0;
   max-width: none;
-  height: 100vh;
   min-height: 0;
+  margin: 0;
   padding: 0;
   box-sizing: border-box;
   text-align: left;

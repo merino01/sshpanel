@@ -11,8 +11,20 @@
 
   "welcome.admin": "¿Administras el servidor? Empieza creando tu perfil",
 
+  "topbar.label": "Ajustes y administración",
+  "topbar.connected": "Conectado",
+  "topbar.disconnected": "Sin conectar",
+  "topbar.createProfile": "Crear perfil",
+  "topbar.settings": "Ajustes",
+  "settings.title": "Ajustes",
+  "settings.help": "Tus preferencias se guardan en este equipo y se aplican al momento.",
+  "settings.appearance": "Apariencia",
+  "settings.theme": "Tema",
+  "settings.theme.system": "Sistema",
+  "settings.theme.light": "Claro",
+  "settings.theme.dark": "Oscuro",
+
   "create.title": "Crear perfil",
-  "create.sidebar": "Crear perfil",
   "create.help": "Rellena los datos de la persona que va a usar la app. La huella del servidor la calculamos nosotros al conectar; no tienes que copiarla.",
   "create.helpOwn": "Empieza por tu propio perfil: el servidor, tu usuario Linux y Modo avanzado. Después podrás crear los de los demás desde la app.",
   "create.host": "Dirección del servidor",
@@ -186,5 +198,6 @@
   "error.transfer.local_write_failed": "No se ha podido guardar en esa carpeta de tu equipo. Elige otra o comprueba que queda espacio libre.",
   "error.transfer.cancelled": "La transferencia se ha cancelado.",
   "error.transfer.failed": "La transferencia no ha podido terminar. Puede que no quede espacio en el servidor. Inténtalo de nuevo.",
-  "error.unknown": "Ha ocurrido un error inesperado. Inténtalo de nuevo."
+  "error.unknown": "Ha ocurrido un error inesperado. Inténtalo de nuevo.",
+  "error.window.failed": "No se ha podido abrir la ventana."
 }

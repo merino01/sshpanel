@@ -5,6 +5,7 @@
  */
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import type { Preferences } from "./preferences";
 
 export interface Profile {
   host: string;
@@ -129,6 +130,15 @@ export const api = {
   installUpdate: () => invoke<void>("install_update"),
   /** Abre en el navegador la página de la última Release. */
   openReleases: () => invoke<void>("open_releases"),
+
+  /** Las preferencias guardadas en el equipo, sin completar (`null` si no hay); ver `lib/preferences`. */
+  readPreferences: () => invoke<unknown>("read_preferences"),
+  /** Guarda las preferencias y avisa a todas las ventanas con `onPreferencesChanged`. */
+  savePreferences: (preferences: Preferences) => invoke<void>("save_preferences", { preferences }),
+  onPreferencesChanged: (handler: (preferences: unknown) => void) =>
+    listen<unknown>("preferences-changed", (event) => handler(event.payload)),
+  /** Abre la ventana de Ajustes, o la pone delante si ya está abierta. */
+  openSettings: (title: string) => invoke<void>("open_settings", { title }),
 };
 
 export type Api = typeof api;
