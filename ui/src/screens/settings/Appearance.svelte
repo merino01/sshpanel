@@ -45,6 +45,7 @@
 
 <section aria-labelledby="appearance">
   <h2 id="appearance">{t("settings.appearance")}</h2>
+  <p class="help">{t("settings.appearance.help")}</p>
   <fieldset>
     <legend>{t("settings.theme")}</legend>
     <div class="themes">
@@ -73,6 +74,10 @@
 </section>
 
 <style>
+  .help {
+    margin-bottom: 1.1rem;
+    font-size: 0.9rem;
+  }
   fieldset {
     margin: 0;
     padding: 0;

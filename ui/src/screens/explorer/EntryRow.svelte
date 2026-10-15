@@ -1,6 +1,6 @@
 <!--
-  Un archivo o carpeta del Explorador. La fila recibe el foco y, si es una
-  carpeta, se abre con un clic en cualquier parte. Con el foco, los Atajos
+  Un archivo o carpeta del Explorador. Un clic la selecciona (recibe el foco y
+  se marca) y, si es una carpeta, el doble clic la abre. Con el foco, los Atajos
   (Intro, Supr, F2…) actúan sobre ella; el menú contextual tiene el resto.
 -->
 <script lang="ts">
@@ -46,9 +46,10 @@
 <li
   bind:this={row}
   class="entry {entry.kind}"
+  class:selected={explorer.selected === entry.name}
   tabindex="0"
   title={isDir ? t("explorer.open", { name: entry.name }) : entry.name}
-  onclick={isDir ? open : undefined}
+  ondblclick={isDir ? open : undefined}
   onfocus={() => select(entry.name)}
   onblur={() => select(undefined)}
   {oncontextmenu}
@@ -61,10 +62,13 @@
 
 <style>
   li {
-    cursor: pointer;
+    cursor: default;
+    user-select: none;
   }
-  li:hover .name {
-    color: var(--accent-text);
-    text-decoration: underline;
+  li:hover {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  li.selected {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
   }
 </style>

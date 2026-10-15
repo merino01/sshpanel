@@ -61,8 +61,13 @@
 </script>
 
 <section aria-labelledby="shortcuts">
-  <h2 id="shortcuts">{t("settings.shortcuts")}</h2>
-  <p class="help">{t("settings.shortcuts.help")}</p>
+  <header>
+    <div>
+      <h2 id="shortcuts">{t("settings.shortcuts")}</h2>
+      <p class="help">{t("settings.shortcuts.help")}</p>
+    </div>
+    <button class="secondary" disabled={!changed} onclick={resetShortcuts}>{t("settings.shortcuts.reset")}</button>
+  </header>
   <ul>
     {#each ACTIONS as action (action)}
       {@const name = t(`shortcuts.action.${action}`)}
@@ -92,26 +97,28 @@
       </li>
     {/each}
   </ul>
-  <div class="actions">
-    <button class="secondary" disabled={!changed} onclick={resetShortcuts}>{t("settings.shortcuts.reset")}</button>
-  </div>
 </section>
 
 <style>
-  h2 {
-    margin: 2rem 0 0.75rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.25);
-    font-size: 1rem;
+  header {
+    display: flex;
+    gap: 1rem;
+    align-items: start;
+    justify-content: space-between;
+    margin-bottom: 1.1rem;
+  }
+  header .secondary {
+    flex: none;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.9rem;
   }
   .help {
-    margin-bottom: 0.75rem;
     font-size: 0.9rem;
   }
   ul {
     margin: 0;
     padding: 0;
-    border: 1px solid rgba(127, 127, 127, 0.35);
+    border: 1px solid var(--border-strong);
     border-radius: 0.6rem;
     list-style: none;
   }
@@ -121,7 +128,7 @@
     gap: 0.75rem;
     align-items: center;
     padding: 0.5rem 0.5rem 0.5rem 0.85rem;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+    border-bottom: 1px solid var(--border);
   }
   li:last-child {
     border-bottom: 0;
@@ -149,10 +156,10 @@
   /* Cada combinación, como una tecla: el borde de abajo más grueso le da relieve. */
   kbd {
     padding: 0.15rem 0.45rem;
-    border: 1px solid rgba(127, 127, 127, 0.45);
+    border: 1px solid var(--border-strong);
     border-bottom-width: 2px;
     border-radius: 0.35rem;
-    background: color-mix(in srgb, var(--fg) 5%, var(--bg));
+    background: var(--subtle);
     font-family: inherit;
     font-size: 0.85rem;
     white-space: nowrap;
@@ -163,7 +170,7 @@
   }
   .change {
     padding: 0.3rem 0.6rem;
-    border: 1px solid rgba(127, 127, 127, 0.4);
+    border: 1px solid var(--border-strong);
     border-radius: 0.4rem;
     background: none;
     color: inherit;
@@ -171,7 +178,7 @@
   }
   .change:hover {
     border-color: var(--accent);
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .change:focus-visible {
     outline: 2px solid var(--accent);
@@ -179,22 +186,13 @@
   }
   li.recording .change {
     border: 1px dashed var(--accent);
-    color: var(--accent);
+    color: var(--accent-text);
     font-weight: 600;
   }
   .conflict {
     grid-column: 1 / -1;
     margin: 0;
-    color: #dc2626;
+    color: var(--error);
     font-size: 0.85rem;
-  }
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 0.75rem;
-  }
-  .actions .secondary {
-    padding: 0.4rem 0.9rem;
-    font-size: 0.9rem;
   }
 </style>
