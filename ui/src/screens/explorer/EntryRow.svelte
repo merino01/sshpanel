@@ -1,15 +1,13 @@
 <!--
   Un archivo o carpeta del Explorador. La fila recibe el foco y, si es una
-  carpeta, se abre con un clic en cualquier parte o con Intro. Supr la mueve a
-  la Papelera y el menú contextual tiene el resto.
+  carpeta, se abre con un clic en cualquier parte. Con el foco, los Atajos
+  (Intro, Supr, F2…) actúan sobre ella; el menú contextual tiene el resto.
 -->
 <script lang="ts">
   import { t } from "../../i18n";
   import type { Entry } from "../../lib/api";
   import { formatDate, formatSize } from "../../lib/format";
-  import { joinPath } from "../../lib/paths";
-  import { confirm } from "../../state/confirm.svelte";
-  import { explorer, openFolder, startRenaming, trashEntry } from "../../state/explorer.svelte";
+  import { askToTrash, explorer, openEntry, select, startRenaming } from "../../state/explorer.svelte";
   import { openMenu, type MenuItem } from "../../state/menu.svelte";
   import { pickDownload } from "../../state/transfers.svelte";
 
@@ -19,18 +17,12 @@
   const isDir = $derived(entry.kind === "dir");
 
   function open() {
-    void openFolder(joinPath(explorer.listing.path, entry.name));
+    openEntry(entry);
   }
 
   /** Pide confirmación y la mueve a la Papelera; si se cancela, el foco vuelve a la fila. */
-  async function askToTrash() {
-    const confirmed = await confirm({
-      title: t("trash.confirmTitle", { name: entry.name }),
-      body: t("trash.confirmHelp"),
-      confirmLabel: t("trash.confirm"),
-    });
-    if (confirmed) void trashEntry(entry.name);
-    else row?.focus();
+  async function trash() {
+    if (!(await askToTrash(entry.name))) row?.focus();
   }
 
   function menuItems(): MenuItem[] {
@@ -40,15 +32,9 @@
     if (entry.kind !== "symlink") items.push({ label: t("explorer.download"), action: () => pickDownload(explorer.listing.path, entry.name) });
     items.push(
       { label: t("explorer.rename"), action: () => startRenaming(entry) },
-      { label: t("explorer.delete"), action: askToTrash },
+      { label: t("explorer.delete"), action: trash },
     );
     return items;
-  }
-
-  function onkeydown(event: KeyboardEvent) {
-    if (event.target !== row) return;
-    if (event.key === "Enter" && isDir) open();
-    if (event.key === "Delete") void askToTrash();
   }
 
   function oncontextmenu(event: MouseEvent) {
@@ -63,7 +49,8 @@
   tabindex="0"
   title={isDir ? t("explorer.open", { name: entry.name }) : entry.name}
   onclick={isDir ? open : undefined}
-  {onkeydown}
+  onfocus={() => select(entry.name)}
+  onblur={() => select(undefined)}
   {oncontextmenu}
 >
   <span class="icon" aria-hidden="true">{isDir ? "📁" : "📄"}</span>

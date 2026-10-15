@@ -1,8 +1,9 @@
 /** Explorador: la carpeta en pantalla y lo que se hace en ella. */
 import { errorMessage, t } from "../i18n";
 import { api, type Entry, type Listing } from "../lib/api";
-import type { Place } from "../lib/paths";
+import { joinPath, type Place } from "../lib/paths";
 import { isConnectionError } from "../lib/errors";
+import { confirm } from "./confirm.svelte";
 import { show, showConnectionLost, session } from "./session.svelte";
 import { toasts } from "./toasts.svelte";
 
@@ -16,6 +17,8 @@ interface Explorer {
   /** Carpetas visitadas antes de la actual, para volver con «Carpeta anterior». */
   history: string[];
   editing?: Editing;
+  /** La fila con el foco, sobre la que actúan los Atajos de Renombrar, Mover a la Papelera y Abrir. */
+  selected?: string;
 }
 
 export const explorer = $state<Explorer>({ home: "", listing: { path: "", entries: [] }, history: [] });
@@ -44,7 +47,9 @@ export function enterExplorer(listing: Listing) {
 function showListing(listing: Listing, back = false) {
   const previous = explorer.listing.path;
   if (!back && previous && previous !== listing.path) explorer.history.push(previous);
-  Object.assign(explorer, { listing, editing: undefined });
+  // Al recargar la misma carpeta, la fila con el foco sigue ahí.
+  const selected = previous === listing.path ? explorer.selected : undefined;
+  Object.assign(explorer, { listing, editing: undefined, selected });
   show({ name: "explorer" });
 }
 
@@ -64,6 +69,37 @@ export async function goBack() {
     showListing(await api.listDir(path), true);
   } catch (code) {
     fail(code);
+  }
+}
+
+/** Vuelve a listar la carpeta en pantalla. */
+export function reload() {
+  void openFolder(explorer.listing.path);
+}
+
+/** La fila con el foco pasa a ser `name`; `undefined` si ninguna lo tiene. */
+export function select(name: string | undefined) {
+  explorer.selected = name;
+}
+
+/** El archivo o carpeta de la fila con el foco, si sigue en la carpeta. */
+export function selectedEntry(): Entry | undefined {
+  return explorer.listing.entries.find((entry) => entry.name === explorer.selected);
+}
+
+/** Abre `entry` si es una carpeta. Los archivos aún no se abren. */
+export function openEntry(entry: Entry) {
+  if (entry.kind === "dir") void openFolder(joinPath(explorer.listing.path, entry.name));
+}
+
+/** Copia la ruta de `name`, de la carpeta en pantalla, o la de la propia carpeta si no se indica. */
+export async function copyPath(name?: string) {
+  const path = name === undefined ? explorer.listing.path : joinPath(explorer.listing.path, name);
+  try {
+    await navigator.clipboard.writeText(path);
+    toasts.success(t("shortcuts.pathCopied", { path }));
+  } catch {
+    toasts.error(t("shortcuts.copyFailed"));
   }
 }
 
@@ -111,6 +147,17 @@ export async function submitName(value: string) {
     return fail(code);
   }
   await openFolder(dir);
+}
+
+/** Pide confirmación y, si se da, mueve `name` a la Papelera. Dice si se confirmó. */
+export async function askToTrash(name: string): Promise<boolean> {
+  const confirmed = await confirm({
+    title: t("trash.confirmTitle", { name }),
+    body: t("trash.confirmHelp"),
+    confirmLabel: t("trash.confirm"),
+  });
+  if (confirmed) void trashEntry(name);
+  return confirmed;
 }
 
 /** Mueve `name`, de la carpeta en pantalla, a la Papelera, con «Deshacer» en el aviso. La confirmación se pide antes. */

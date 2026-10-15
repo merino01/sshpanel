@@ -28,4 +28,9 @@ describe("withDefaults", () => {
   it("acepta cualquier Tema descubierto", () => {
     for (const id of themeIds) expect(withDefaults({ theme: id }).theme).toBe(id);
   });
+
+  it("se queda con los Atajos cambiados que valen", () => {
+    expect(withDefaults({ shortcuts: { reload: ["F6"], fly: ["F7"] } }).shortcuts).toEqual({ reload: ["F6"] });
+    expect(withDefaults({ shortcuts: "F6" }).shortcuts).toEqual({});
+  });
 });

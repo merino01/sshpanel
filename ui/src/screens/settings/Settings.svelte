@@ -1,11 +1,12 @@
 <!--
   Ventana de Ajustes: las preferencias del Miembro, guardadas en su equipo. Cada
   cambio se guarda al momento y llega a las demás ventanas. Cada grupo es una
-  sección, en su propio componente; de momento, la Apariencia con el Tema.
+  sección, en su propio componente: la Apariencia (el Tema) y los Atajos.
 -->
 <script lang="ts">
   import { t } from "../../i18n";
   import Appearance from "./Appearance.svelte";
+  import ShortcutsSection from "./ShortcutsSection.svelte";
 </script>
 
 <main class="settings">
@@ -13,6 +14,7 @@
   <p class="help">{t("settings.help")}</p>
 
   <Appearance />
+  <ShortcutsSection />
 </main>
 
 <style>

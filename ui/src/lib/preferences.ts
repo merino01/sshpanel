@@ -4,19 +4,23 @@
  * rompa un fichero antiguo ni un valor que ya no existe deje la app a medias.
  */
 
+import { validOverrides, type ShortcutOverrides } from "./shortcuts";
 import { isTheme, SYSTEM_THEME } from "./themes";
 
 export interface Preferences {
   /** El id de un Tema de `themes/`, o «system», que sigue el modo claro u oscuro del equipo. */
   theme: string;
+  /** Solo los Atajos que el Miembro ha cambiado; el resto, los de por defecto. */
+  shortcuts: ShortcutOverrides;
 }
 
-export const DEFAULT_PREFERENCES: Preferences = { theme: SYSTEM_THEME };
+export const DEFAULT_PREFERENCES: Preferences = { theme: SYSTEM_THEME, shortcuts: {} };
 
 /** Las preferencias de `raw` (lo leído del fichero), con el valor por defecto en las que faltan o no valen. */
 export function withDefaults(raw: unknown): Preferences {
   const saved = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
   return {
     theme: isTheme(saved.theme) ? saved.theme : DEFAULT_PREFERENCES.theme,
+    shortcuts: validOverrides(saved.shortcuts),
   };
 }

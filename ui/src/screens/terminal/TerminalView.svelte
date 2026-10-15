@@ -73,7 +73,8 @@
       <button class="primary" onclick={() => reopenTerminal(tab.id)}>{t("terminal.reopen")}</button>
     </div>
   {/if}
-  <div class="screen" role="region" aria-label={t("terminal.label", { number: String(tab.number) })} bind:this={container}></div>
+  <!-- Con el foco aquí, la app no aplica ningún Atajo: la consola recibe todas las teclas. -->
+  <div class="screen" data-no-shortcuts role="region" aria-label={t("terminal.label", { number: String(tab.number) })} bind:this={container}></div>
 </div>
 
 <style>
