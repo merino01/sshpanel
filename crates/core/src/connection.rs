@@ -23,7 +23,7 @@ mod terminal;
 mod transfer;
 mod trash;
 
-pub use editor::{Head, Stamp, TextFile};
+pub use editor::{Head, Stamp, TextCopy, TextFile};
 pub use explorer::{Entry, EntryKind, Listing};
 pub(crate) use naming::Reserved;
 use paths::is_within;

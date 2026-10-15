@@ -9,7 +9,7 @@ import { api, type Stamp, type TextFile } from "../lib/api";
 import { isConnectionError } from "../lib/errors";
 import { baseName } from "../lib/paths";
 import { fileTitle } from "../lib/textFile";
-import { confirm, confirmation } from "./confirm.svelte";
+import { choose, confirm, confirmation } from "./confirm.svelte";
 import { toasts } from "./toasts.svelte";
 
 type Phase =
@@ -27,7 +27,7 @@ interface Editor {
   saving: boolean;
   /** Al guardar se vio que no hay conexión; se quita al reconectar la principal. */
   offline: boolean;
-  /** Tamaño y fecha del archivo al abrirlo o guardarlo; el conflicto al guardar los comparará. */
+  /** Tamaño y fecha del archivo al abrirlo o guardarlo; si al guardar ya no coinciden, hay conflicto. */
   stamp: Stamp | null;
 }
 
@@ -90,13 +90,23 @@ export function changed() {
   setUnsaved(true);
 }
 
-/** Guarda el texto en el Servidor. Si se ha caído la conexión, el texto se queda y se avisa a la principal. */
+/**
+ * Guarda el texto en el Servidor. Si el archivo ha cambiado allí desde que se
+ * abrió, pregunta antes. Si se ha caído la conexión, el texto se queda y se
+ * avisa a la principal.
+ */
 export async function save() {
   if (editor.phase.name !== "ready" || editor.saving) return;
   editor.saving = true;
   const saving = revision;
+  const text = currentText();
   try {
-    editor.stamp = await api.writeText(editor.path, currentText());
+    try {
+      editor.stamp = await api.writeText(editor.path, text, editor.stamp);
+    } catch (code) {
+      if (code !== "editor.conflict") throw code;
+      if (!(await resolveConflict(text))) return;
+    }
     editor.offline = false;
     // Lo escrito mientras se guardaba sigue sin guardar.
     if (revision === saving) setUnsaved(false);
@@ -110,6 +120,31 @@ export async function save() {
   } finally {
     editor.saving = false;
   }
+}
+
+/**
+ * El archivo ha cambiado en el Servidor: pregunta si sobrescribirlo o guardar
+ * `text` como copia al lado, que pasa a ser el archivo de esta ventana. Dice
+ * si se ha guardado.
+ */
+async function resolveConflict(text: string): Promise<boolean> {
+  const choice = await choose({
+    title: t("editor.conflictTitle", { name: fileName() }),
+    body: t("editor.conflictHelp"),
+    confirmLabel: t("editor.conflictOverwrite"),
+    alternativeLabel: t("editor.conflictCopy"),
+  });
+  if (choice === "confirm") {
+    editor.stamp = await api.writeText(editor.path, text, null);
+  } else if (choice === "alternative") {
+    const copy = await api.writeTextCopy(editor.path, text);
+    editor.path = copy.path;
+    editor.stamp = copy.stamp;
+    void api.moveEditor(copy.path).catch(() => {});
+    updateTitle();
+    toasts.success(t("editor.savedAsCopy", { name: fileName() }));
+  }
+  return choice !== "cancel";
 }
 
 function setUnsaved(unsaved: boolean) {

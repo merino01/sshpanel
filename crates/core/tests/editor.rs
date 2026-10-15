@@ -64,7 +64,7 @@ async fn reads_a_text_file_and_saves_it() {
     assert_eq!(file.stamp, stamp_on_server(&server, NOTES));
 
     let text = "línea uno\r\nlínea dos\r\nsin salto final";
-    let stamp = s.core.write_text(NOTES, text).await.unwrap();
+    let stamp = s.core.write_text(NOTES, text, None).await.unwrap();
 
     assert_eq!(hex_on_server(&server, NOTES), hex(text.as_bytes()));
     assert_eq!(stamp, stamp_on_server(&server, NOTES));
@@ -77,8 +77,8 @@ async fn saving_a_shorter_text_leaves_nothing_of_the_old_one() {
     server.put_file("alice", "notas.txt", "un texto bastante largo");
     let s = connect(&server).await;
 
-    s.core.write_text(NOTES, "corto").await.unwrap();
-    s.core.write_text("/home/alice/notas.txt", "").await.unwrap();
+    s.core.write_text(NOTES, "corto", None).await.unwrap();
+    s.core.write_text("/home/alice/notas.txt", "", None).await.unwrap();
 
     assert_eq!(server.sh("wc -c < /home/alice/notas.txt"), "0");
 }
@@ -91,7 +91,7 @@ async fn reads_and_saves_a_big_file() {
     let text: String = (0..60_000).map(|n| format!("línea número {n}\n")).collect();
     assert!(text.len() > 512 * 1024);
 
-    s.core.write_text("/home/alice/grande.txt", &text).await.unwrap();
+    s.core.write_text("/home/alice/grande.txt", &text, None).await.unwrap();
     let file = s.core.read_text("/home/alice/grande.txt").await.unwrap();
 
     assert_eq!(file.text, text);
@@ -106,7 +106,7 @@ async fn saving_keeps_the_permissions_and_the_owner() {
     server.sh("printf 'de bob' > /srv/compartida/acta.txt && chown bob:alice /srv/compartida/acta.txt && chmod 664 /srv/compartida/acta.txt");
     let s = connect(&server).await;
 
-    s.core.write_text("/srv/compartida/acta.txt", "de alice").await.unwrap();
+    s.core.write_text("/srv/compartida/acta.txt", "de alice", None).await.unwrap();
 
     assert_eq!(server.sh("cat /srv/compartida/acta.txt"), "de alice");
     assert_eq!(server.sh("stat -c '%a %U' /srv/compartida/acta.txt"), "664 bob");
@@ -148,7 +148,7 @@ async fn explains_what_went_wrong() {
     assert_eq!(s.core.read_head("/home/alice/no-existe.txt").await.unwrap_err(), Error::NotFound);
     assert_eq!(s.core.read_text("/home/alice/fotos").await.unwrap_err(), Error::ReadFailed);
     assert_eq!(s.core.read_head("/home/alice/fotos").await.unwrap_err(), Error::ReadFailed);
-    assert_eq!(s.core.write_text("/srv/root.txt", "mío").await.unwrap_err(), Error::PermissionDenied);
+    assert_eq!(s.core.write_text("/srv/root.txt", "mío", None).await.unwrap_err(), Error::PermissionDenied);
     assert_eq!(server.sh("cat /srv/root.txt"), "de root");
     assert_eq!(s.core.read_text("notas.txt").await.unwrap_err(), Error::InvalidName);
 }
@@ -158,11 +158,59 @@ async fn saving_a_file_that_no_longer_exists_does_not_create_it() {
     let server = TestServer::start();
     server.put_file("alice", "notas.txt", "hola");
     let s = connect(&server).await;
-    s.core.read_text(NOTES).await.unwrap();
+    let file = s.core.read_text(NOTES).await.unwrap();
     server.sh("rm /home/alice/notas.txt");
 
-    assert_eq!(s.core.write_text(NOTES, "adiós").await.unwrap_err(), Error::NotFound);
+    assert_eq!(s.core.write_text(NOTES, "adiós", Some(file.stamp)).await.unwrap_err(), Error::NotFound);
+    assert_eq!(s.core.write_text(NOTES, "adiós", None).await.unwrap_err(), Error::NotFound);
     assert_eq!(server.sh("ls /home/alice"), "");
+}
+
+#[tokio::test]
+async fn does_not_overwrite_a_file_that_changed_on_the_server() {
+    let server = TestServer::start();
+    server.put_file("alice", "notas.txt", "hola");
+    let s = connect(&server).await;
+    let file = s.core.read_text(NOTES).await.unwrap();
+    server.sh("printf 'cambio de otro' > /home/alice/notas.txt");
+
+    assert_eq!(s.core.write_text(NOTES, "mío", Some(file.stamp)).await.unwrap_err(), Error::Conflict);
+    assert_eq!(server.sh("cat /home/alice/notas.txt"), "cambio de otro");
+}
+
+#[tokio::test]
+async fn saves_when_nothing_changed_and_overwrites_when_asked() {
+    let server = TestServer::start();
+    server.put_file("alice", "notas.txt", "hola");
+    let s = connect(&server).await;
+    let file = s.core.read_text(NOTES).await.unwrap();
+
+    let stamp = s.core.write_text(NOTES, "primera", Some(file.stamp)).await.unwrap();
+    s.core.write_text(NOTES, "segunda", Some(stamp)).await.unwrap();
+    assert_eq!(server.sh("cat /home/alice/notas.txt"), "segunda");
+
+    server.sh("printf 'cambio de otro' > /home/alice/notas.txt");
+    let stamp = s.core.write_text(NOTES, "mío", None).await.unwrap();
+    assert_eq!(server.sh("cat /home/alice/notas.txt"), "mío");
+    assert_eq!(stamp, stamp_on_server(&server, NOTES));
+}
+
+#[tokio::test]
+async fn saves_a_copy_next_to_the_file_without_overwriting_anything() {
+    let server = TestServer::start();
+    server.put_file("alice", "notas.txt", "de otro");
+    let s = connect(&server).await;
+
+    let copy = s.core.write_text_copy(NOTES, "mío").await.unwrap();
+    assert_eq!(copy.path, "/home/alice/notas (1).txt");
+    assert_eq!(copy.stamp, stamp_on_server(&server, &copy.path));
+
+    let copy = s.core.write_text_copy(NOTES, "mío otra vez").await.unwrap();
+    assert_eq!(copy.path, "/home/alice/notas (2).txt");
+
+    assert_eq!(server.sh("cat /home/alice/notas.txt"), "de otro");
+    assert_eq!(server.sh("cat '/home/alice/notas (1).txt'"), "mío");
+    assert_eq!(server.sh("cat '/home/alice/notas (2).txt'"), "mío otra vez");
 }
 
 #[tokio::test]
@@ -172,5 +220,5 @@ async fn needs_a_connection() {
 
     assert_eq!(core.read_head(NOTES).await.unwrap_err(), Error::NotConnected);
     assert_eq!(core.read_text(NOTES).await.unwrap_err(), Error::NotConnected);
-    assert_eq!(core.write_text(NOTES, "hola").await.unwrap_err(), Error::NotConnected);
+    assert_eq!(core.write_text(NOTES, "hola", None).await.unwrap_err(), Error::NotConnected);
 }

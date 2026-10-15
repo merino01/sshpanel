@@ -94,7 +94,7 @@ async fn edits_files_in_them() {
 
     s.core.read_head("/home/alice/notas.txt").await.unwrap();
     assert_eq!(s.core.read_text("/home/alice/notas.txt").await.unwrap().text, "hola");
-    s.core.write_text("/srv/compartida/acta.txt", "acta nueva").await.unwrap();
+    s.core.write_text("/srv/compartida/acta.txt", "acta nueva", None).await.unwrap();
     assert_eq!(server.sh("cat /srv/compartida/acta.txt"), "acta nueva");
 }
 
@@ -108,9 +108,11 @@ async fn refuses_editing_outside_them() {
     for path in ["/srv/otra/dato.txt", "/home/alice/../../srv/otra/dato.txt", "/etc/passwd"] {
         assert_eq!(s.core.read_head(path).await.unwrap_err(), outside, "{path}");
         assert_eq!(s.core.read_text(path).await.unwrap_err(), outside, "{path}");
-        assert_eq!(s.core.write_text(path, "mío").await.unwrap_err(), outside, "{path}");
+        assert_eq!(s.core.write_text(path, "mío", None).await.unwrap_err(), outside, "{path}");
+        assert_eq!(s.core.write_text_copy(path, "mío").await.unwrap_err(), outside, "{path}");
     }
     assert_eq!(server.sh("cat /srv/otra/dato.txt"), "x");
+    assert_eq!(server.sh("ls /srv/otra"), "dato.txt");
 }
 
 #[tokio::test]

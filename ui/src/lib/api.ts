@@ -90,6 +90,12 @@ export interface TextFile {
   stamp: Stamp;
 }
 
+/** La copia guardada al lado de un archivo que cambió en el Servidor. */
+export interface TextCopy {
+  path: string;
+  stamp: Stamp;
+}
+
 /** Dónde ha quedado una Transferencia terminada. */
 export type Outcome = { uploaded: string } | { downloaded: string };
 
@@ -114,12 +120,19 @@ export const api = {
   readHead: (path: string) => invoke<Head>("read_head", { path }),
   /** Lee entero un archivo de texto; falla con `editor.not_text` si no es UTF-8. */
   readText: (path: string) => invoke<TextFile>("read_text", { path }),
-  /** Guarda `text` en el archivo `path`, que tiene que existir, y devuelve su `Stamp` nuevo. */
-  writeText: (path: string, text: string) => invoke<Stamp>("write_text", { path, text }),
+  /**
+   * Guarda `text` en el archivo `path`, que tiene que existir, y devuelve su `Stamp` nuevo. Con `expected`,
+   * falla con `editor.conflict` si el archivo ya no tiene ese `Stamp`; con `null`, lo sobrescribe sin mirar.
+   */
+  writeText: (path: string, text: string, expected: Stamp | null) => invoke<Stamp>("write_text", { path, text, expected }),
+  /** Guarda `text` en un archivo nuevo al lado de `path`, con el primer nombre libre. */
+  writeTextCopy: (path: string, text: string) => invoke<TextCopy>("write_text_copy", { path, text }),
   /** Abre `path` en su propia ventana del Editor, o la pone delante si ya está abierta. */
   openEditor: (path: string, title: string) => invoke<void>("open_editor", { path, title }),
   /** El archivo que tiene abierto esta ventana del Editor. */
   editorFile: () => invoke<string | null>("editor_file"),
+  /** Esta ventana del Editor pasa a tener el archivo `path`. */
+  moveEditor: (path: string) => invoke<void>("move_editor", { path }),
   /** Apunta si esta ventana del Editor tiene cambios sin guardar. */
   setUnsaved: (unsaved: boolean) => invoke<void>("set_unsaved", { unsaved }),
   /** Cuántas ventanas del Editor tienen cambios sin guardar. */

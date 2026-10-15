@@ -15,7 +15,7 @@ use tokio::sync::Mutex;
 
 use connection::{Connection, Reserved, Terminal};
 
-pub use connection::{Entry, EntryKind, Head, Listing, Outcome, Progress, Restored, Stamp, TerminalEvent, TextFile, Transfer, Trashed};
+pub use connection::{Entry, EntryKind, Head, Listing, Outcome, Progress, Restored, Stamp, TerminalEvent, TextCopy, TextFile, Transfer, Trashed};
 pub use error::{Error, Result};
 pub use profile::{Mode, NewProfile, Profile};
 pub use secrets::{MemorySecretStore, SecretStore, SystemSecretStore};
@@ -157,9 +157,17 @@ impl Core {
     }
 
     /// Guarda `text` en el archivo `path`, que tiene que existir, conservando
-    /// sus permisos y su propietario. Devuelve su [`Stamp`] nuevo.
-    pub async fn write_text(&self, path: &str, text: &str) -> Result<Stamp> {
-        self.connection().await?.write_text(path, text).await
+    /// sus permisos y su propietario. Devuelve su [`Stamp`] nuevo. Con
+    /// `expected`, falla con [`Error::Conflict`] si el archivo ha cambiado en
+    /// el Servidor desde ese [`Stamp`]; sin él, lo sobrescribe sin mirar.
+    pub async fn write_text(&self, path: &str, text: &str, expected: Option<Stamp>) -> Result<Stamp> {
+        self.connection().await?.write_text(path, text, expected).await
+    }
+
+    /// Guarda `text` como copia al lado del archivo `path`, con el primer
+    /// nombre libre, sin sobrescribir nada.
+    pub async fn write_text_copy(&self, path: &str, text: &str) -> Result<TextCopy> {
+        self.connection().await?.write_text_copy(path, text, &self.reserved).await
     }
 
     /// Abre la Terminal `id` en el Servidor, de `cols` columnas y `rows`

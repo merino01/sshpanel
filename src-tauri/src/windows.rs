@@ -132,6 +132,16 @@ pub fn editor_file(window: WebviewWindow, editors: State<Editors>) -> Option<Str
     editors.0.lock().unwrap().path_of(window.label()).cloned()
 }
 
+/// Esta ventana del Editor pasa a tener el archivo `path`, como tras guardar
+/// una copia. Abrir el archivo de antes abrirá otra ventana.
+#[tauri::command]
+pub fn move_editor(path: String, window: WebviewWindow, editors: State<Editors>) {
+    let mut windows = editors.0.lock().unwrap();
+    let label = window.label().to_string();
+    windows.by_path.retain(|_, l| *l != label);
+    windows.by_path.insert(path, label);
+}
+
 /// Apunta si esta ventana del Editor tiene cambios sin guardar, para preguntar
 /// antes de cerrar la principal o cambiar de Perfil.
 #[tauri::command]

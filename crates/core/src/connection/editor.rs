@@ -3,13 +3,14 @@
 //! ([`Connection::read_head`]); aquí solo se exige que sea UTF-8, para poder
 //! devolverlo como texto sin estropearlo.
 
-use russh_sftp::client::fs::Metadata;
+use russh_sftp::client::fs::{File, Metadata};
 use russh_sftp::protocol::OpenFlags;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use super::Connection;
-use super::paths::split_path;
+use super::naming::Reserved;
+use super::paths::{join, split_path};
 use crate::error::{Error, Result};
 
 /// Cuánto se lee del principio de un archivo para decidir si es de texto.
@@ -17,7 +18,7 @@ const HEAD: usize = 8 * 1024;
 
 /// Tamaño y fecha de modificación de un archivo al leerlo o guardarlo. Si al
 /// volver a guardar ya no coinciden, otro lo ha cambiado en el Servidor.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Stamp {
     pub size: u64,
     /// Segundos desde la época Unix.
@@ -43,6 +44,13 @@ pub struct Head {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TextFile {
     pub text: String,
+    pub stamp: Stamp,
+}
+
+/// La copia que se ha guardado al lado de un archivo.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TextCopy {
+    pub path: String,
     pub stamp: Stamp,
 }
 
@@ -90,13 +98,45 @@ impl Connection {
     /// Sustituye el contenido del archivo `path`, que tiene que existir. Se
     /// escribe en el mismo archivo, no en uno nuevo, para que conserve sus
     /// permisos y su propietario (en la Carpeta compartida suele ser de otro).
-    pub(crate) async fn write_text(&self, path: &str, text: &str) -> Result<Stamp> {
+    ///
+    /// Con `expected`, falla con [`Error::Conflict`] sin tocar nada si el
+    /// archivo ya no tiene ese [`Stamp`]. No es atómico: un cambio justo entre
+    /// la comprobación y la escritura, o uno del mismo tamaño en el mismo
+    /// segundo, no se detecta.
+    pub(crate) async fn write_text(&self, path: &str, text: &str, expected: Option<Stamp>) -> Result<Stamp> {
         self.check_file(path)?;
-        let mut file = self
+        if let Some(expected) = expected {
+            let meta = self.sftp.metadata(path).await.map_err(|e| self.failure(e, Error::WriteFailed))?;
+            if Stamp::from(&meta) != expected {
+                return Err(Error::Conflict);
+            }
+        }
+        let file = self
             .sftp
             .open_with_flags(path, OpenFlags::WRITE | OpenFlags::TRUNCATE)
             .await
             .map_err(|e| self.failure(e, Error::WriteFailed))?;
+        self.write_all(file, text).await
+    }
+
+    /// Guarda `text` en un archivo nuevo al lado de `path`, con el primer
+    /// nombre libre (`notas (1).txt`…). Nunca sobrescribe nada.
+    pub(crate) async fn write_text_copy(&self, path: &str, text: &str, reserved: &Reserved) -> Result<TextCopy> {
+        self.check_file(path)?;
+        let (dir, name) = split_path(path).ok_or(Error::InvalidName)?;
+        let (name, _reservation) = self.free_remote_name(dir, name, false, reserved, Error::WriteFailed).await?;
+        let path = join(dir, &name);
+        let file = self
+            .sftp
+            .open_with_flags(&path, OpenFlags::CREATE | OpenFlags::EXCLUDE | OpenFlags::WRITE)
+            .await
+            .map_err(|e| self.failure(e, Error::WriteFailed))?;
+        let stamp = self.write_all(file, text).await?;
+        Ok(TextCopy { path, stamp })
+    }
+
+    /// Escribe `text` en `file`, abierto para escribir, lo cierra y devuelve su [`Stamp`].
+    async fn write_all(&self, mut file: File, text: &str) -> Result<Stamp> {
         file.write_all(text.as_bytes()).await.map_err(|e| self.io_failure(e, Error::WriteFailed))?;
         file.flush().await.map_err(|e| self.io_failure(e, Error::WriteFailed))?;
         let meta = file.metadata().await.map_err(|e| self.failure(e, Error::WriteFailed))?;

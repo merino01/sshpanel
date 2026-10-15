@@ -68,6 +68,8 @@ pub enum Error {
     ReadFailed,
     #[error("no se pudo guardar el archivo")]
     WriteFailed,
+    #[error("el archivo ha cambiado en el Servidor desde que se abrió")]
+    Conflict,
 }
 
 impl Error {
@@ -107,6 +109,7 @@ impl Error {
             Self::NotText => "editor.not_text",
             Self::ReadFailed => "editor.read_failed",
             Self::WriteFailed => "editor.write_failed",
+            Self::Conflict => "editor.conflict",
         }
     }
 }

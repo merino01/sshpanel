@@ -72,8 +72,10 @@ pub fn run() {
             editor::read_head,
             editor::read_text,
             editor::write_text,
+            editor::write_text_copy,
             windows::open_editor,
             windows::editor_file,
+            windows::move_editor,
             windows::set_unsaved,
             windows::unsaved_editors,
             windows::close_editors
