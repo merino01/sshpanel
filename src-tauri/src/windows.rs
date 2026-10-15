@@ -1,17 +1,54 @@
-//! Ventanas de la app además de la principal: Ajustes y una por cada archivo
-//! abierto en el Editor. Todas cargan la misma interfaz; el parámetro `window`
-//! de la URL le dice cuál pintar. Comparten el núcleo y la conexión de la
-//! principal, y se cierran con ella.
+//! Las ventanas de la app: la principal, Ajustes y una por cada archivo abierto
+//! en el Editor. Todas cargan la misma interfaz; el parámetro `window` de la URL
+//! le dice cuál pintar. Comparten el núcleo y la conexión de la principal, y se
+//! cierran con ella. Todas tienen el mismo aspecto (ver [`styled`]).
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
-use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+use tauri::{AppHandle, Manager, Runtime, State, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 
 /// Etiqueta de la ventana principal, la que crea `tauri.conf.json`.
 pub const MAIN: &str = "main";
 
 const SETTINGS: &str = "settings";
+
+/// Abre la ventana principal con lo que dice `tauri.conf.json` (tamaño y el
+/// título del Branding), que no la crea sola para darle el aspecto común.
+pub fn open_main(app: &AppHandle) -> tauri::Result<()> {
+    let config = app.config().app.windows.iter().find(|window| window.label == MAIN).cloned().unwrap_or_default();
+    styled(WebviewWindowBuilder::from_config(app, &config)?).build().map(|_| ())
+}
+
+/// El aspecto de todas las ventanas: la barra de título dentro de la interfaz
+/// (`TitleBar.svelte`) y, en macOS y Windows, fondo transparente para el marco
+/// de cristal. En macOS se quedan los semáforos del sistema sobre la barra y el
+/// cristal es el del sistema; en Windows, Mica. Con la Transparencia quitada, la
+/// interfaz pinta el fondo opaco encima.
+///
+/// En Linux la ventana es opaca: con WebKitGTK transparente (al menos con NVIDIA
+/// en Wayland) solo se pintan las zonas que cambian y el resto se queda vacío.
+fn styled<'a, R: Runtime, M: Manager<R>>(builder: WebviewWindowBuilder<'a, R, M>) -> WebviewWindowBuilder<'a, R, M> {
+    let builder = builder.transparent(!cfg!(target_os = "linux"));
+    #[cfg(target_os = "macos")]
+    let builder = {
+        use tauri::window::{Effect, EffectState, EffectsBuilder};
+        builder
+            .title_bar_style(tauri::TitleBarStyle::Overlay)
+            .hidden_title(true)
+            // Centrados en la barra de título, que es más alta que la del sistema.
+            .traffic_light_position(tauri::LogicalPosition::new(16.0, 18.0))
+            .effects(EffectsBuilder::new().effect(Effect::Sidebar).state(EffectState::FollowsWindowActiveState).build())
+    };
+    #[cfg(target_os = "windows")]
+    let builder = {
+        use tauri::window::{Effect, EffectsBuilder};
+        builder.decorations(false).effects(EffectsBuilder::new().effect(Effect::Mica).build())
+    };
+    #[cfg(target_os = "linux")]
+    let builder = builder.decorations(false);
+    builder
+}
 
 /// Las etiquetas de las ventanas del Editor empiezan así (`editor-1`…), como
 /// dice `capabilities/default.json`.
@@ -25,7 +62,7 @@ pub fn open_settings(title: String, app: AppHandle) -> Result<(), String> {
         let _ = window.show();
         return window.set_focus().map_err(failed);
     }
-    WebviewWindowBuilder::new(&app, SETTINGS, WebviewUrl::App("index.html?window=settings".into()))
+    styled(WebviewWindowBuilder::new(&app, SETTINGS, WebviewUrl::App("index.html?window=settings".into())))
         .title(title)
         .inner_size(640.0, 520.0)
         .min_inner_size(480.0, 360.0)
@@ -73,7 +110,7 @@ pub async fn open_editor(path: String, title: String, app: AppHandle, editors: S
     }
     windows.next += 1;
     let label = format!("{EDITOR_PREFIX}{}", windows.next);
-    let window = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html?window=editor".into()))
+    let window = styled(WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html?window=editor".into())))
         .title(title)
         .inner_size(900.0, 640.0)
         .min_inner_size(480.0, 320.0)

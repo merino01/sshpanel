@@ -7,48 +7,20 @@
 </script>
 
 {#if transfers.items.length}
-  <aside aria-label={t("transfers.title")}>
-    <header>
-      <h2>{t("transfers.title")}</h2>
+  <aside
+    class="fixed right-4 bottom-4 z-40 max-h-[40vh] w-[min(24rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-glass-edge bg-popover/90 px-3.5 py-2.5 text-left shadow-[0_10px_30px_var(--shadow)] backdrop-blur-xl"
+    aria-label={t("transfers.title")}
+  >
+    <header class="flex items-baseline justify-between">
+      <h2 class="text-sm font-semibold">{t("transfers.title")}</h2>
       {#if transfers.items.some(isFinished)}
-        <button class="link" onclick={() => transfers.clearFinished()}>{t("transfers.clear")}</button>
+        <button class="text-xs text-accent-text hover:underline" onclick={() => transfers.clearFinished()}>{t("transfers.clear")}</button>
       {/if}
     </header>
-    <ul>
+    <ul class="mt-1 divide-y divide-border">
       {#each transfers.items as transfer (transfer.id)}
         <TransferRow {transfer} />
       {/each}
     </ul>
   </aside>
 {/if}
-
-<style>
-  aside {
-    position: fixed;
-    right: 1rem;
-    bottom: 1rem;
-    z-index: 5;
-    width: min(24rem, calc(100vw - 2rem));
-    max-height: 40vh;
-    overflow-y: auto;
-    padding: 0.6rem 0.8rem;
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    background: var(--bg);
-    box-shadow: 0 6px 20px var(--shadow);
-    text-align: left;
-  }
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-  h2 {
-    margin: 0;
-  }
-  ul {
-    margin: 0.3rem 0 0;
-    padding: 0;
-    list-style: none;
-  }
-</style>

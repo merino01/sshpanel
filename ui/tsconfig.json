@@ -12,9 +12,15 @@
       "DOM"
     ],
     "types": [
-      "svelte"
+      "svelte",
+      "unplugin-icons/types/svelte"
     ],
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": [
     "src",

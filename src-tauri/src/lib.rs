@@ -33,6 +33,7 @@ pub fn run() {
             app.manage(Core::new(data_dir, Box::new(secrets)));
             app.manage(Transfers::default());
             update::manage(app.handle())?;
+            windows::open_main(app.handle())?;
             let cwd = std::env::current_dir().unwrap_or_default();
             if let Some(path) = opened::profile_arg(std::env::args_os(), &opened::extension(app.handle()), &cwd) {
                 opened::deliver(app.handle(), path);

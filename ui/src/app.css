@@ -1,146 +1,93 @@
 /*
- * Estilos globales: tipografía, botones, mensajes y las listas de archivos que
- * comparten el Explorador y la Papelera. Los colores son variables del Tema
- * (`--bg`, `--fg`, `--accent`…), que pone en `:root` el estado de las
- * preferencias (ver lib/themes). Lo propio de cada componente va en su bloque <style>.
+ * La entrada de Tailwind: los tokens del Tema y la capa base. Todo lo demás son
+ * clases en los componentes. Los colores son variables del Tema con los nombres
+ * de shadcn-svelte (`--background`, `--primary`…), que pone en `:root` el estado
+ * de las preferencias (ver lib/themes); aquí se pasan a utilidades
+ * (`bg-background`, `text-primary`…) y se derivan las que no trae el Tema.
  */
-:root {
-  font-family: system-ui, sans-serif;
-}
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-}
-/*
- * La ventana: la barra superior y, debajo, la pantalla. Las de trabajo ocupan
- * justo la ventana (cada panel tiene su scroll); el resto crece con la página.
- */
-.window {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  min-height: 100vh;
-}
-.window.workspace {
-  height: 100vh;
-}
-main {
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 0.5rem;
-  max-width: 34rem;
-  min-height: 0;
-  margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
-}
-main.workspace {
-  display: grid;
-  grid-template-columns: 13rem 1fr;
-  place-content: stretch;
-  justify-items: stretch;
-  gap: 0;
-  max-width: none;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  text-align: left;
-}
-h1 {
-  color: var(--accent-text);
-}
-h2 {
-  margin: 1rem 0 0;
-  font-size: 1rem;
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* `dark:` en los Temas oscuros; `glass:` con la ventana de cristal (Transparencia). */
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant glass (&:where([data-glass], [data-glass] *));
+
+@theme inline {
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  /* Escala corta, de app de escritorio: 12 / 13 (texto) / 15 / 20 / 26. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.45;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 1.2;
+
+  /* Radios por jerarquía: filas, controles, hoja y ventanas flotantes. */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 7px;
+  --radius-xl: 12px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: color-mix(in oklab, var(--foreground) 62%, transparent);
+  /* El `accent` de shadcn: el fondo al pasar el ratón, un velo del acento del Tema. */
+  --color-accent: color-mix(in oklab, var(--primary) 12%, transparent);
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* La barra de avance indeterminada (ver components/ui/progress). */
+  --animate-indeterminate: indeterminate 1.2s ease-in-out infinite;
+  @keyframes indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(250%);
+    }
+  }
+
+  /* Los propios de la app. */
+  --color-surface: var(--surface);
+  --color-accent-text: var(--accent-text);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-terminal: var(--terminal-bg);
+  --color-backdrop: var(--backdrop);
+  /* El marco de cristal: la barra del Tema, translúcida, y un filo de luz. */
+  --color-glass: color-mix(in oklab, var(--surface) 62%, transparent);
+  --color-glass-edge: color-mix(in oklab, var(--foreground) 8%, transparent);
 }
 
-button {
-  font: inherit;
-  cursor: pointer;
-}
-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-button.primary {
-  padding: 0.7rem 1.4rem;
-  border: 0;
-  border-radius: 0.5rem;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-weight: 600;
-}
-button.secondary {
-  padding: 0.6rem 1.2rem;
-  border: 1px solid var(--accent);
-  border-radius: 0.5rem;
-  background: none;
-  color: var(--accent-text);
-  font-weight: 600;
-}
-button.link {
-  border: 0;
-  background: none;
-  color: var(--accent-text);
-  text-decoration: underline;
-}
-
-.error {
-  color: var(--error);
-}
-.help,
-.feedback {
-  margin: 0;
-  opacity: 0.8;
-}
-.help.empty {
-  padding: 1.5rem 2rem;
-}
-
-/*
- * Listas de archivos: Explorador y Papelera. Cada pantalla define sus columnas
- * con `--columns`; la cabecera (.columns) y las filas (.entry) las comparten.
- */
-.files {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  text-align: left;
-}
-.entry,
-.columns {
-  display: grid;
-  grid-template-columns: var(--columns, 1.5rem 1fr auto);
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.45rem 0.75rem;
-}
-.entry {
-  border-bottom: 1px solid var(--border);
-}
-.columns {
-  border-bottom: 1px solid var(--border-strong);
-  font-size: 0.8rem;
-  font-weight: 600;
-  opacity: 0.7;
-}
-.entry .muted {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  opacity: 0.6;
-  font-size: 0.85rem;
-}
-.entry .name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.entry:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-  border-radius: 0.3rem;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-feature-settings: "cv11", "ss01";
+  }
+  /* Con cristal, la ventana es transparente y el color lo pone el marco de cada ventana. */
+  body {
+    @apply m-0 bg-surface font-sans text-sm text-foreground antialiased glass:bg-transparent;
+  }
 }

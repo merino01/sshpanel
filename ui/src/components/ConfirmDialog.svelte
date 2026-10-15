@@ -4,64 +4,42 @@
   Escape cancela.
 -->
 <script lang="ts">
+  import * as AlertDialog from "./ui/alert-dialog";
   import { t } from "../i18n";
-  import { confirmation } from "../state/confirm.svelte";
+  import { confirmation, type Confirmation } from "../state/confirm.svelte";
 
-  let dialog = $state<HTMLDialogElement>();
-  let cancelButton = $state<HTMLButtonElement>();
-  let confirmed = false;
+  // La última pregunta: se sigue pintando mientras el diálogo se cierra.
+  let shown = $state.raw<Confirmation | null>(null);
+  let cancel = $state<HTMLButtonElement | null>(null);
 
-  $effect(() => {
-    if (!confirmation.current || !dialog || dialog.open) return;
-    confirmed = false;
-    dialog.showModal();
-    cancelButton?.focus();
+  $effect.pre(() => {
+    if (confirmation.current) shown = confirmation.current;
   });
 
-  // Se cierra con los botones o con Escape.
-  function onclose() {
+  function finish(confirmed: boolean) {
     const pending = confirmation.current;
     confirmation.current = null;
     pending?.resolve(confirmed);
   }
-
-  function accept() {
-    confirmed = true;
-    dialog?.close();
-  }
 </script>
 
-{#if confirmation.current}
-  <dialog bind:this={dialog} {onclose}>
-    <h2>{confirmation.current.title}</h2>
-    <p class="help">{confirmation.current.body}</p>
-    <div class="actions">
-      <button bind:this={cancelButton} class="secondary" onclick={() => dialog?.close()}>{t("explorer.cancel")}</button>
-      <button class="primary" onclick={accept}>{confirmation.current.confirmLabel}</button>
-    </div>
-  </dialog>
+{#if shown}
+  <AlertDialog.Root open={confirmation.current !== null} onOpenChange={(open) => !open && finish(false)}>
+    <AlertDialog.Content
+      class="max-w-sm gap-5 rounded-xl border border-glass-edge p-5 shadow-[0_20px_50px_var(--shadow)] ring-0 sm:max-w-sm"
+      onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        cancel?.focus();
+      }}
+    >
+      <AlertDialog.Header class="place-items-start text-left">
+        <AlertDialog.Title class="text-base font-semibold">{shown.title}</AlertDialog.Title>
+        <AlertDialog.Description>{shown.body}</AlertDialog.Description>
+      </AlertDialog.Header>
+      <div class="flex justify-end gap-2">
+        <AlertDialog.Cancel bind:ref={cancel} onclick={() => finish(false)}>{t("explorer.cancel")}</AlertDialog.Cancel>
+        <AlertDialog.Action onclick={() => finish(true)}>{shown.confirmLabel}</AlertDialog.Action>
+      </div>
+    </AlertDialog.Content>
+  </AlertDialog.Root>
 {/if}
-
-<style>
-  dialog {
-    max-width: min(24rem, 90vw);
-    padding: 1.2rem 1.4rem;
-    border: 1px solid var(--border);
-    border-radius: 0.6rem;
-    background: var(--bg);
-    color: var(--fg);
-    box-shadow: 0 10px 30px var(--shadow);
-  }
-  dialog::backdrop {
-    background: var(--backdrop);
-  }
-  h2 {
-    margin: 0 0 0.5rem;
-  }
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-</style>

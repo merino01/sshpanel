@@ -37,6 +37,8 @@ export interface ThemePalette {
   name?: string;
   /** Acento propio; si falta, el del Branding. */
   accent?: string;
+  /** `false` si el Tema no admite el cristal (Alto contraste): se ve siempre opaco. */
+  glass?: false;
   colors: {
     bg: string;
     fg: string;
@@ -94,27 +96,51 @@ export function accentOf(palette: ThemePalette, brandingAccent: string): string 
   return palette.accent ?? brandingAccent;
 }
 
-/** Las variables CSS del Tema para `:root`. */
+/**
+ * Las variables CSS del Tema para `:root`, con los nombres de shadcn-svelte
+ * (`--background`, `--primary`…) más las propias de la app. El acento del Tema
+ * es `--primary`; el `accent` de shadcn (el fondo al pasar el ratón) se deriva
+ * de él en `app.css`.
+ */
 export function cssVariables(palette: ThemePalette, brandingAccent: string): Record<string, string> {
   const { colors } = palette;
   const accent = accentOf(palette, brandingAccent);
+  const onAccent = colors.onAccent ?? readableOn(accent);
   return {
-    "--bg": colors.bg,
-    "--fg": colors.fg,
-    "--surface": colors.surface,
+    "--background": colors.bg,
+    "--foreground": colors.fg,
+    "--card": colors.bg,
+    "--card-foreground": colors.fg,
+    "--popover": colors.bg,
+    "--popover-foreground": colors.fg,
+    "--primary": accent,
+    "--primary-foreground": onAccent,
+    "--ring": accent,
+    "--secondary": colors.subtle,
+    "--secondary-foreground": colors.fg,
+    "--muted": colors.subtle,
     "--border": colors.border,
-    "--border-strong": colors.borderStrong,
-    "--subtle": colors.subtle,
-    "--shadow": colors.shadow,
-    "--backdrop": colors.backdrop,
-    "--accent": accent,
+    "--input": colors.borderStrong,
+    "--destructive": colors.error,
+    "--surface": colors.surface,
     "--accent-text": colors.accentText ?? accent,
-    "--on-accent": colors.onAccent ?? readableOn(accent),
-    "--error": colors.error,
     "--success": colors.success,
     "--warning": colors.warning,
+    "--shadow": colors.shadow,
+    "--backdrop": colors.backdrop,
     "--terminal-bg": palette.terminal.background,
   };
+}
+
+/**
+ * Si el equipo admite el cristal: en Linux la ventana es opaca (ver `styled` en
+ * `src-tauri/src/windows.rs`), así que la interfaz no puede dejar ver lo de detrás.
+ */
+export const glassSupported = typeof navigator !== "undefined" && !/Linux/i.test(navigator.userAgent);
+
+/** Si la ventana se ve de cristal: el equipo lo admite, lo pide el Miembro y el Tema lo admite. */
+export function glassOn(transparency: boolean, palette: ThemePalette, supported = glassSupported): boolean {
+  return supported && transparency && palette.glass !== false;
 }
 
 /** Los colores de xterm.js para el Tema. */

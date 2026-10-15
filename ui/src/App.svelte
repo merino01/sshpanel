@@ -25,31 +25,48 @@
   const workspace = $derived(inWorkspace());
 </script>
 
-<div class="window" class:workspace>
+<!--
+  El marco (barra de título y barra lateral) es de cristal si la Transparencia
+  está activada; el trabajo va en una hoja opaca encima. Las pantallas de trabajo
+  ocupan la hoja entera; el resto, una hoja centrada.
+-->
+<div class="grid h-screen grid-rows-[auto_minmax(0,1fr)] bg-surface glass:bg-glass">
   <TopBar />
-  <main class:workspace>
-    {#if workspace}
+  {#if workspace}
+    <main class="grid min-h-0 grid-cols-[13rem_minmax(0,1fr)]">
       <Sidebar />
-    {/if}
-    {#if session.screen.name === "welcome"}
-      <Welcome error={session.screen.error} />
-    {:else if session.screen.name === "key"}
-      <PublicKey notice={session.screen.notice} />
-    {:else if session.screen.name === "connecting"}
-      <Connecting />
-    {:else if session.screen.name === "problem"}
-      <Problem message={session.screen.message} />
-    {:else if session.screen.name === "explorer"}
-      <Explorer />
-    {:else if session.screen.name === "trash"}
-      <Trash />
-    {:else if session.screen.name === "createProfile"}
-      <CreateProfile />
-    {/if}
-    {#if workspace && isAdvanced()}
-      <TerminalScreen visible={session.screen.name === "terminal"} />
-    {/if}
-  </main>
+      <div class="mr-2 mb-2 grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)] overflow-hidden rounded-xl border border-glass-edge bg-background shadow-[0_1px_3px_var(--shadow)]">
+        {#if session.screen.name === "explorer"}
+          <Explorer />
+        {:else if session.screen.name === "trash"}
+          <Trash />
+        {:else if session.screen.name === "createProfile"}
+          <div class="min-h-0 overflow-y-auto px-8 py-10">
+            <CreateProfile />
+          </div>
+        {/if}
+        {#if isAdvanced()}
+          <TerminalScreen visible={session.screen.name === "terminal"} />
+        {/if}
+      </div>
+    </main>
+  {:else}
+    <main class="grid min-h-0 overflow-y-auto px-4 pb-4">
+      <div class="m-auto flex w-full max-w-[34rem] flex-col items-center gap-2 rounded-xl border border-glass-edge bg-background px-8 py-10 text-center shadow-[0_8px_30px_var(--shadow)]">
+        {#if session.screen.name === "welcome"}
+          <Welcome error={session.screen.error} />
+        {:else if session.screen.name === "key"}
+          <PublicKey notice={session.screen.notice} />
+        {:else if session.screen.name === "connecting"}
+          <Connecting />
+        {:else if session.screen.name === "problem"}
+          <Problem message={session.screen.message} />
+        {:else if session.screen.name === "createProfile"}
+          <CreateProfile />
+        {/if}
+      </div>
+    </main>
+  {/if}
 </div>
 <TransferPanel />
 <DropOverlay />

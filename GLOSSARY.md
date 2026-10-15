@@ -80,6 +80,10 @@ _Avoid_: Configuración, opciones (el Perfil también configura la app)
 Paleta completa de colores de la interfaz y de la Terminal que el Miembro elige en Ajustes. Los Temas básicos (Sistema, Claro, Oscuro, Alto contraste) usan el color de acento del Branding; los Temas con nombre propio traen el suyo.
 _Avoid_: Skin, apariencia (como nombre de cosa)
 
+**Transparencia**:
+Preferencia de Ajustes que hace de cristal el marco de la ventana (la barra de título y la lateral), dejando ver lo que hay detrás. Solo en macOS y Windows; en Linux y con Alto contraste la ventana es siempre opaca.
+_Avoid_: Vibrancy, efecto cristal (como nombre de la preferencia)
+
 **Atajo**:
 Combinación de teclas asignada a una acción de la app, configurable en Ajustes.
 _Avoid_: Shortcut, acceso directo (son los de la barra lateral)
@@ -109,4 +113,5 @@ Cómo se dicen estos términos en la interfaz y las guías en inglés (`i18n/en.
 | Branding | Branding | Theme, skin |
 | Ajustes | Settings | Preferences, options |
 | Tema | Theme | Skin |
+| Transparencia | Transparency | Vibrancy, glass |
 | Atajo | Shortcut | Hotkey; y nunca para los accesos directos de la barra lateral |

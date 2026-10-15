@@ -12,22 +12,24 @@
 </script>
 
 <section aria-labelledby="language">
-  <h2 id="language">{t("settings.language")}</h2>
-  <p class="help">{t("settings.language.help")}</p>
+  <h2 id="language" class="text-xl font-semibold tracking-tight">{t("settings.language")}</h2>
+  <p class="mt-1 mb-5 max-w-[60ch] text-muted-foreground">{t("settings.language.help")}</p>
   <fieldset>
-    <legend class="visually-hidden">{t("settings.language")}</legend>
-    <div class="languages">
+    <legend class="sr-only">{t("settings.language")}</legend>
+    <!-- Como las opciones de Tema: una tarjeta por idioma. -->
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-3">
       {#each options as id (id)}
         {@const shown = resolveLanguage(id, systemLanguage)}
-        <label class="language">
+        <label class="group relative cursor-pointer rounded-xl border border-input p-2 transition-colors hover:border-primary has-checked:border-primary has-checked:ring-1 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring grid place-items-center px-2 py-3 text-center">
           <input
+            class="pointer-events-none absolute opacity-0"
             type="radio"
             name="language"
             value={id}
             checked={preferences.language === id}
             onchange={() => setPreference("language", id)}
           />
-          <span class="name" lang={id === SYSTEM_LANGUAGE ? undefined : id}>
+          <span class="text-base font-semibold group-has-checked:text-accent-text" lang={id === SYSTEM_LANGUAGE ? undefined : id}>
             {id === SYSTEM_LANGUAGE ? t("settings.language.system") : LANGUAGE_NAMES[shown]}
           </span>
         </label>
@@ -35,66 +37,3 @@
     </div>
   </fieldset>
 </section>
-
-<style>
-  .help {
-    margin-bottom: 1.1rem;
-    font-size: 0.9rem;
-  }
-  fieldset {
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .languages {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
-    gap: 0.75rem;
-  }
-  /* Como las opciones de Tema: una tarjeta por idioma. */
-  .language {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 0.65rem 0.5rem 0.5rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 0.6rem;
-    cursor: pointer;
-  }
-  .language:hover {
-    border-color: var(--accent);
-  }
-  .language:has(input:checked) {
-    border-color: var(--accent);
-    box-shadow: inset 0 0 0 1px var(--accent);
-  }
-  .language:has(input:focus-visible) {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .name {
-    padding: 0 0.15rem;
-    font-size: 1.05rem;
-    font-weight: 600;
-  }
-  .language:has(input:checked) .name {
-    color: var(--accent-text);
-  }
-</style>

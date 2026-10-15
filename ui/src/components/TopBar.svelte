@@ -1,101 +1,50 @@
 <!--
-  Barra superior, en todas las pantallas. A la izquierda, con qué usuario y
-  Servidor se está (el punto se rellena con la conexión abierta); a la derecha,
-  «Crear perfil» para el Administrador y «Ajustes».
+  Barra superior de la ventana principal, en todas las pantallas. A la
+  izquierda, la cápsula con el usuario y el Servidor (el punto se rellena con la
+  conexión abierta y late una vez al conectar); a la derecha, «Crear perfil»
+  para el Administrador y «Ajustes».
 -->
 <script lang="ts">
+  import Settings from "~icons/heroicons/cog-6-tooth";
+  import CreateProfile from "~icons/heroicons/user-plus";
   import { t } from "../i18n";
   import { openCreateProfile } from "../state/createProfile.svelte";
   import { openSettings } from "../state/preferences.svelte";
   import { inWorkspace, session } from "../state/session.svelte";
+  import TitleBar from "./TitleBar.svelte";
 
   const profile = $derived(session.appState?.profile);
   const connected = $derived(inWorkspace());
+  const creating = $derived(session.screen.name === "createProfile");
+
+  const action = "flex h-7 items-center gap-1.5 rounded-lg px-2 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring aria-[current]:bg-accent aria-[current]:text-accent-text";
 </script>
 
-<header>
+<TitleBar>
   {#if profile}
-    <p class="identity" title={t(connected ? "topbar.connected" : "topbar.disconnected")}>
-      <span class="dot" class:connected aria-hidden="true"></span>
-      <span class="user">{profile.username}</span>
-      <span class="at">@</span>
-      <span class="host">{profile.host}</span>
+    <p
+      class="flex h-7 min-w-0 items-center gap-2 rounded-full border border-glass-edge bg-foreground/5 px-3 font-mono text-xs whitespace-nowrap"
+      title={t(connected ? "topbar.connected" : "topbar.disconnected")}
+    >
+      <span class="relative grid size-2 shrink-0 place-items-center" aria-hidden="true">
+        {#if connected}
+          <span class="absolute inset-0 animate-[ping_0.9s_cubic-bezier(0,0,0.2,1)_1] rounded-full bg-primary motion-reduce:animate-none"></span>
+        {/if}
+        <span class="size-2 rounded-full border-[1.5px] border-primary {connected ? 'bg-primary' : ''}"></span>
+      </span>
+      <span class="font-semibold">{profile.username}</span><span class="-mx-1.5 text-muted-foreground">@</span><span class="truncate text-muted-foreground">{profile.host}</span>
     </p>
   {/if}
-  <nav aria-label={t("topbar.label")}>
+  <nav class="ml-auto flex items-center gap-0.5" aria-label={t("topbar.label")}>
     {#if profile?.admin}
-      <button aria-current={session.screen.name === "createProfile" ? "location" : undefined} onclick={openCreateProfile}>
+      <button class={action} aria-current={creating ? "location" : undefined} onclick={openCreateProfile}>
+        <CreateProfile class="size-4" />
         {t("topbar.createProfile")}
       </button>
     {/if}
-    <button onclick={openSettings}>{t("topbar.settings")}</button>
+    <button class={action} onclick={openSettings}>
+      <Settings class="size-4" />
+      {t("topbar.settings")}
+    </button>
   </nav>
-</header>
-
-<style>
-  header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    min-height: 2.5rem;
-    padding: 0 0.75rem 0 1rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    font-size: 0.875rem;
-  }
-  .identity {
-    display: flex;
-    align-items: baseline;
-    gap: 0.3rem;
-    min-width: 0;
-    margin: 0;
-    white-space: nowrap;
-  }
-  .dot {
-    flex: none;
-    align-self: center;
-    width: 0.5rem;
-    height: 0.5rem;
-    margin-right: 0.3rem;
-    border: 1.5px solid var(--accent);
-    border-radius: 50%;
-    box-sizing: border-box;
-  }
-  .dot.connected {
-    background: var(--accent);
-  }
-  .user {
-    font-weight: 600;
-  }
-  .at {
-    opacity: 0.5;
-  }
-  .host {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    opacity: 0.8;
-  }
-  nav {
-    display: flex;
-    gap: 0.25rem;
-    margin-left: auto;
-  }
-  button {
-    padding: 0.3rem 0.65rem;
-    border: 0;
-    border-radius: 0.4rem;
-    background: none;
-    color: inherit;
-  }
-  button:hover {
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-  button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-  }
-  button[aria-current] {
-    background: var(--accent);
-    color: var(--on-accent);
-  }
-</style>
+</TitleBar>

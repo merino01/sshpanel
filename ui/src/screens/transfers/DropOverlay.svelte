@@ -1,26 +1,15 @@
 <!-- Aviso de adónde se subirá lo que se está arrastrando sobre la ventana. -->
 <script lang="ts">
+  import Upload from "~icons/heroicons/cloud-arrow-up";
   import { t } from "../../i18n";
   import { drop } from "../../state/transfers.svelte";
 </script>
 
 {#if drop.target !== null}
-  <div>{t("transfers.dropHere", { path: drop.target })}</div>
+  <div
+    class="pointer-events-none fixed inset-2 z-[60] grid place-content-center justify-items-center gap-3 rounded-2xl border-2 border-dashed border-primary bg-background/85 text-xl font-semibold text-accent-text backdrop-blur-sm"
+  >
+    <Upload class="size-10" />
+    {t("transfers.dropHere", { path: drop.target })}
+  </div>
 {/if}
-
-<style>
-  div {
-    position: fixed;
-    inset: 0.5rem;
-    z-index: 20;
-    display: grid;
-    place-content: center;
-    border: 3px dashed var(--accent);
-    border-radius: 0.8rem;
-    background: color-mix(in srgb, var(--bg) 85%, transparent);
-    color: var(--accent-text);
-    font-size: 1.3rem;
-    font-weight: 600;
-    pointer-events: none;
-  }
-</style>

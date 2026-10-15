@@ -3,6 +3,7 @@
   la actual. Si no cabe, se ve el final y el principio se desplaza.
 -->
 <script lang="ts">
+  import Separator from "~icons/heroicons/chevron-right-16-solid";
   import { t } from "../../i18n";
   import { breadcrumbs, placeOf } from "../../lib/paths";
   import { allowedPlaces, explorer, openFolder } from "../../state/explorer.svelte";
@@ -22,55 +23,22 @@
   });
 </script>
 
-<nav aria-label={t("explorer.breadcrumbs")}>
-  <ol bind:this={list}>
+<nav class="min-w-0" aria-label={t("explorer.breadcrumbs")}>
+  <ol bind:this={list} class="flex items-center overflow-x-auto font-mono text-xs whitespace-nowrap [scrollbar-width:none]">
     {#each parts as part, i (part.path)}
-      <li>
+      <li class="flex items-center">
+        {#if i > 0}<Separator class="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />{/if}
         {#if i === parts.length - 1}
-          <span aria-current="page">{part.name}</span>
+          <span class="px-1.5 py-0.5 font-semibold" aria-current="page">{part.name}</span>
         {:else}
-          <button onclick={() => openFolder(part.path)}>{part.name}</button>
+          <button
+            class="rounded-md px-1.5 py-0.5 text-muted-foreground hover:bg-foreground/8 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+            onclick={() => openFolder(part.path)}
+          >
+            {part.name}
+          </button>
         {/if}
       </li>
     {/each}
   </ol>
 </nav>
-
-<style>
-  nav {
-    min-width: 0;
-  }
-  ol {
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    list-style: none;
-    font-family: ui-monospace, monospace;
-    font-size: 0.85rem;
-    white-space: nowrap;
-  }
-  li + li::before {
-    content: "›";
-    padding: 0 0.3rem;
-    opacity: 0.5;
-  }
-  button {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    font: inherit;
-    opacity: 0.7;
-  }
-  button:hover {
-    color: var(--accent-text);
-    opacity: 1;
-    text-decoration: underline;
-  }
-  [aria-current] {
-    font-weight: 600;
-  }
-</style>

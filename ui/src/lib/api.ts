@@ -126,6 +126,11 @@ export const api = {
   unsavedEditors: () => invoke<number>("unsaved_editors"),
   /** Cierra todas las ventanas del Editor, sin preguntar. */
   closeEditors: () => invoke<void>("close_editors"),
+  /** La barra de título es de la interfaz (`TitleBar.svelte`): estos son sus botones en Windows y Linux. */
+  minimizeWindow: () => getCurrentWindow().minimize(),
+  toggleMaximizeWindow: () => getCurrentWindow().toggleMaximize(),
+  /** Cierra esta ventana como su botón del sistema: pasa por `guardClose`. */
+  closeWindow: () => getCurrentWindow().close(),
   /** Antes de cerrar esta ventana pregunta a `allow`; si responde `false`, no se cierra. */
   guardClose: (allow: () => Promise<boolean>) =>
     getCurrentWindow().onCloseRequested(async (event) => {

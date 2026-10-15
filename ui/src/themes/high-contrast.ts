@@ -8,6 +8,8 @@ import type { ThemePalette } from "../lib/themes";
 
 export default {
   scheme: "dark",
+  // El cristal deja ver lo de detrás y baja el contraste.
+  glass: false,
   colors: {
     bg: "#000000",
     fg: "#ffffff",

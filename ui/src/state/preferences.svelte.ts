@@ -5,7 +5,7 @@ import { locale, systemLanguage } from "../i18n/locale.svelte";
 import { api } from "../lib/api";
 import { resolveLanguage } from "../lib/language";
 import { DEFAULT_PREFERENCES, withDefaults, type Preferences } from "../lib/preferences";
-import { cssVariables, resolveTheme, type ThemePalette } from "../lib/themes";
+import { cssVariables, glassOn, resolveTheme, type ThemePalette } from "../lib/themes";
 import { toasts } from "./toasts.svelte";
 
 export const preferences = $state<Preferences>({ ...DEFAULT_PREFERENCES });
@@ -44,7 +44,8 @@ export function openSettings() {
 
 /**
  * Guarda las preferencias en el estado, pinta el Tema como variables CSS en
- * `:root` y cambia el idioma: los textos de la ventana se traducen solos.
+ * `:root` (con la clase `dark` en los oscuros y `data-glass` si la ventana va de
+ * cristal) y cambia el idioma: los textos de la ventana se traducen solos.
  */
 function apply(next: Preferences) {
   Object.assign(preferences, next);
@@ -55,4 +56,6 @@ function apply(next: Preferences) {
   const root = document.documentElement.style;
   for (const [name, value] of Object.entries(cssVariables(palette, branding.accentColor))) root.setProperty(name, value);
   root.colorScheme = palette.scheme;
+  document.documentElement.classList.toggle("dark", palette.scheme === "dark");
+  document.documentElement.toggleAttribute("data-glass", glassOn(next.transparency, palette));
 }

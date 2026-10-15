@@ -8,6 +8,7 @@
   import { Terminal } from "@xterm/xterm";
   import "@xterm/xterm/css/xterm.css";
   import { onMount } from "svelte";
+  import { Button } from "../../components/ui/button";
   import { branding } from "../../branding.generated";
   import { t } from "../../i18n";
   import { shortcutFor } from "../../lib/terminalTabs";
@@ -20,11 +21,15 @@
   let xterm = $state<Terminal>();
   const fit = new FitAddon();
 
+  /** La fuente empaquetada de la app; mientras se carga, la del sistema. */
+  const FALLBACK = "ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace";
+  const FONT = `'JetBrains Mono Variable', ${FALLBACK}`;
+
   onMount(() => {
     const id = tab.id;
     const term = new Terminal({
       cursorBlink: true,
-      fontFamily: "ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace",
+      fontFamily: FALLBACK,
       fontSize: 14,
     });
     term.loadAddon(fit);
@@ -38,6 +43,11 @@
     const observer = new ResizeObserver(() => container?.offsetParent && fit.fit());
     observer.observe(container!);
     xterm = term;
+    // xterm mide la letra al cambiar de fuente: con la buena ya cargada, se vuelve a medir y ajustar.
+    void document.fonts.load("14px 'JetBrains Mono Variable'").then(() => {
+      term.options.fontFamily = FONT;
+      if (container?.offsetParent) fit.fit();
+    });
     return () => {
       observer.disconnect();
       input.dispose();
@@ -64,46 +74,15 @@
   });
 </script>
 
-<div class="view" role="tabpanel" id="terminal-{tab.id}" hidden={!visible}>
+<div class="flex min-h-0 flex-1 flex-col" role="tabpanel" id="terminal-{tab.id}" hidden={!visible}>
   {#if tab.status === "opening"}
-    <p class="help notice">{t("terminal.opening")}</p>
+    <p class="border-b px-4 py-2 text-muted-foreground">{t("terminal.opening")}</p>
   {:else if tab.status === "closed"}
-    <div class="notice closed" role="status">
+    <div class="flex items-center gap-4 border-b px-4 py-2" role="status">
       <p>{tab.message ?? t("terminal.closed")}</p>
-      <button class="primary" onclick={() => reopenTerminal(tab.id)}>{t("terminal.reopen")}</button>
+      <Button size="sm" onclick={() => reopenTerminal(tab.id)}>{t("terminal.reopen")}</Button>
     </div>
   {/if}
   <!-- Con el foco aquí, la app no aplica ningún Atajo: la consola recibe todas las teclas. -->
-  <div class="screen" data-no-shortcuts role="region" aria-label={t("terminal.label", { number: String(tab.number) })} bind:this={container}></div>
+  <div class="min-h-0 flex-1 bg-terminal p-2" data-no-shortcuts role="region" aria-label={t("terminal.label", { number: String(tab.number) })} bind:this={container}></div>
 </div>
-
-<style>
-  .view {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .view[hidden] {
-    display: none;
-  }
-  .notice {
-    margin: 0;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .closed {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-  }
-  .closed p {
-    margin: 0;
-  }
-  .screen {
-    flex: 1;
-    min-height: 0;
-    padding: 0.5rem;
-    background: var(--terminal-bg);
-  }
-</style>

@@ -3,6 +3,10 @@
   «Subir archivos», y debajo el contenido de la carpeta a todo el ancho.
 -->
 <script lang="ts">
+  import Back from "~icons/heroicons/arrow-left-20-solid";
+  import Up from "~icons/heroicons/arrow-up-20-solid";
+  import Upload from "~icons/heroicons/arrow-up-tray-16-solid";
+  import { Button } from "../../components/ui/button";
   import { t } from "../../i18n";
   import { isWithin, parentOf } from "../../lib/paths";
   import { allowedPlaces, explorer, goBack, openFolder, startCreating } from "../../state/explorer.svelte";
@@ -11,6 +15,7 @@
   import Breadcrumbs from "./Breadcrumbs.svelte";
   import EntryRow from "./EntryRow.svelte";
   import NameForm from "./NameForm.svelte";
+  import { EMPTY, EXPLORER_COLUMNS, HEADER } from "../files";
 
   // En Modo simple, no se sube más allá de la carpeta personal o la Carpeta compartida.
   const parent = $derived.by(() => {
@@ -32,33 +37,43 @@
   }
 </script>
 
-<section>
-  <header>
-    <button class="icon" aria-label={t("explorer.back")} title={t("explorer.back")} disabled={!explorer.history.length} onclick={goBack}>
-      ←
-    </button>
-    <button
-      class="icon"
+<section class="flex min-h-0 min-w-0 flex-col">
+  <header class="grid h-12 shrink-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-1 border-b px-2.5">
+    <Button variant="ghost" size="icon-sm" aria-label={t("explorer.back")} title={t("explorer.back")} disabled={!explorer.history.length} onclick={goBack}>
+      <Back />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon-sm"
       aria-label={t("explorer.up")}
       title={t("explorer.up")}
       disabled={parent === null}
       onclick={() => parent !== null && openFolder(parent)}
     >
-      ↑
-    </button>
+      <Up />
+    </Button>
     <Breadcrumbs />
-    <button class="secondary" onclick={() => pickUploads(explorer.listing.path)}>{t("explorer.upload")}</button>
+    <Button variant="outline" size="sm" onclick={() => pickUploads(explorer.listing.path)}>
+      <Upload />
+      {t("explorer.upload")}
+    </Button>
   </header>
-  <div class="columns" aria-hidden="true">
+  <div class="{HEADER} {EXPLORER_COLUMNS}" aria-hidden="true">
     <span></span>
     <span>{t("explorer.nameColumn")}</span>
     <span>{t("explorer.sizeColumn")}</span>
     <span>{t("explorer.modifiedColumn")}</span>
   </div>
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-  <div class="folder" role="region" tabindex="0" aria-label={t("explorer.folderLabel")} oncontextmenu={onFolderMenu}>
+  <div
+    class="min-h-0 flex-1 overflow-y-auto p-1.5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+    role="region"
+    tabindex="0"
+    aria-label={t("explorer.folderLabel")}
+    oncontextmenu={onFolderMenu}
+  >
     {#if editing || explorer.listing.entries.length}
-      <ul class="files">
+      <ul>
         {#if editing?.kind === "create"}
           <NameForm {editing} />
         {/if}
@@ -71,52 +86,7 @@
         {/each}
       </ul>
     {:else}
-      <p class="help empty">{t("files.empty")}</p>
+      <p class={EMPTY}>{t("files.empty")}</p>
     {/if}
   </div>
 </section>
-
-<style>
-  section {
-    --columns: 1.5rem minmax(0, 1fr) 7rem 10rem;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-  }
-  header {
-    display: grid;
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
-    gap: 0.4rem;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  header :global(button.secondary) {
-    padding: 0.35rem 0.8rem;
-    font-size: 0.9rem;
-  }
-  .icon {
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 0.4rem;
-    background: none;
-    color: inherit;
-    font-size: 1rem;
-    line-height: 1;
-  }
-  .icon:not(:disabled):hover {
-    border-color: var(--accent);
-    color: var(--accent-text);
-  }
-  .folder {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-  }
-  .folder:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-  }
-</style>

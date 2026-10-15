@@ -5,6 +5,7 @@
   sobre ella; el menú contextual tiene el resto.
 -->
 <script lang="ts">
+  import FileIcon from "../../components/FileIcon.svelte";
   import { locale, t } from "../../i18n";
   import type { Entry } from "../../lib/api";
   import { formatDate, formatSize } from "../../lib/format";
@@ -13,6 +14,7 @@
   import { askToTrash, explorer, openEntry, select, startRenaming } from "../../state/explorer.svelte";
   import { openMenu, type MenuItem } from "../../state/menu.svelte";
   import { pickDownload } from "../../state/transfers.svelte";
+  import { EXPLORER_COLUMNS, MUTED, ROW } from "../files";
 
   let { entry }: { entry: Entry } = $props();
   let row = $state<HTMLLIElement>();
@@ -37,7 +39,7 @@
     if (entry.kind !== "symlink") items.push({ label: t("explorer.download"), action: () => pickDownload(explorer.listing.path, entry.name) });
     items.push(
       { label: t("explorer.rename"), action: () => startRenaming(entry) },
-      { label: t("explorer.delete"), action: trash },
+      { label: t("explorer.delete"), action: trash, destructive: true },
     );
     return items;
   }
@@ -50,8 +52,8 @@
 <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions, a11y_click_events_have_key_events -->
 <li
   bind:this={row}
-  class="entry {entry.kind}"
-  class:selected={explorer.selected === entry.name}
+  class="{ROW} {EXPLORER_COLUMNS}"
+  data-selected={explorer.selected === entry.name ? "" : undefined}
   tabindex="0"
   title={isDir || isFile ? t("explorer.open", { name: entry.name }) : entry.name}
   ondblclick={isDir || isFile ? open : undefined}
@@ -59,21 +61,8 @@
   onblur={() => select(undefined)}
   {oncontextmenu}
 >
-  <span class="icon" aria-hidden="true">{isDir ? "📁" : "📄"}</span>
-  <span class="name">{entry.name}</span>
-  <span class="muted">{entry.kind === "file" ? formatSize(entry.size, locale.current) : ""}</span>
-  <span class="muted">{entry.modified === null ? "" : formatDate(entry.modified, locale.current)}</span>
+  <FileIcon {entry} />
+  <span class="truncate">{entry.name}</span>
+  <span class="{MUTED} text-right">{entry.kind === "file" ? formatSize(entry.size, locale.current) : ""}</span>
+  <span class={MUTED}>{entry.modified === null ? "" : formatDate(entry.modified, locale.current)}</span>
 </li>
-
-<style>
-  li {
-    cursor: default;
-    user-select: none;
-  }
-  li:hover {
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-  }
-  li.selected {
-    background: color-mix(in srgb, var(--accent) 20%, transparent);
-  }
-</style>

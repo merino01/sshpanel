@@ -5,6 +5,9 @@
   cambian de pestaña.
 -->
 <script lang="ts">
+  import Close from "~icons/heroicons/x-mark-16-solid";
+  import Plus from "~icons/heroicons/plus-20-solid";
+  import { Button } from "../../components/ui/button";
   import { t } from "../../i18n";
   import { shortcutFor } from "../../lib/terminalTabs";
   import { closeTerminal, cycleTerminal, newTerminal, selectTerminal, terminals } from "../../state/terminal.svelte";
@@ -25,106 +28,38 @@
 
 <svelte:window {onkeydown} />
 
-<section hidden={!visible}>
-  <header>
-    <div class="tabs" role="tablist" aria-label={t("terminal.tabs")}>
+<section class="flex min-h-0 min-w-0 flex-col" hidden={!visible}>
+  <header class="flex h-11 shrink-0 items-center gap-1 border-b px-2.5">
+    <div class="flex min-w-0 gap-1 overflow-x-auto [scrollbar-width:none]" role="tablist" aria-label={t("terminal.tabs")}>
       {#each terminals.tabs as tab (tab.id)}
         {@const label = t("terminal.tab", { number: String(tab.number) })}
-        <div class="tab" class:active={tab.id === terminals.active} class:ended={tab.status === "closed"}>
+        {@const active = tab.id === terminals.active}
+        <div class="flex h-7 shrink-0 items-center rounded-lg pr-1 transition-colors {active ? 'bg-foreground/10' : 'hover:bg-foreground/5'}">
           <button
+            class="h-full rounded-lg pr-1.5 pl-3 focus-visible:outline-2 focus-visible:outline-ring {active ? 'font-medium' : 'text-muted-foreground'} {tab.status === 'closed' ? 'line-through decoration-muted-foreground/60' : ''}"
             role="tab"
-            aria-selected={tab.id === terminals.active}
+            aria-selected={active}
             aria-controls="terminal-{tab.id}"
             onclick={() => selectTerminal(tab.id)}
           >
             {label}
           </button>
           <button
-            class="close"
+            class="grid size-5 place-items-center rounded-md text-muted-foreground hover:bg-foreground/10 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
             aria-label={t("terminal.close", { number: String(tab.number) })}
             title={t("terminal.close", { number: String(tab.number) })}
             onclick={() => closeTerminal(tab.id)}
           >
-            ×
+            <Close class="size-3.5" />
           </button>
         </div>
       {/each}
     </div>
-    <button class="new" aria-label={t("terminal.new")} title={t("terminal.new")} onclick={newTerminal}>+</button>
+    <Button variant="ghost" size="icon-sm" aria-label={t("terminal.new")} title={t("terminal.new")} onclick={newTerminal}>
+      <Plus />
+    </Button>
   </header>
   {#each terminals.tabs as tab (tab.id)}
     <TerminalView {tab} visible={visible && tab.id === terminals.active} />
   {/each}
 </section>
-
-<style>
-  section {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-  }
-  section[hidden] {
-    display: none;
-  }
-  header {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-    padding: 0.5rem 1rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .tabs {
-    display: flex;
-    gap: 0.25rem;
-    min-width: 0;
-    overflow-x: auto;
-  }
-  .tab {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    border: 1px solid transparent;
-    border-bottom: 0;
-    border-radius: 0.4rem 0.4rem 0 0;
-  }
-  .tab.active {
-    border-color: var(--border);
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-  .tab.ended button[role="tab"] {
-    opacity: 0.6;
-  }
-  .tab button {
-    border: 0;
-    background: none;
-    color: inherit;
-  }
-  button[role="tab"] {
-    padding: 0.4rem 0.3rem 0.4rem 0.7rem;
-  }
-  .tab.active button[role="tab"] {
-    font-weight: 600;
-  }
-  .close {
-    padding: 0.2rem 0.5rem;
-    border-radius: 0.3rem;
-    line-height: 1;
-  }
-  .close:hover,
-  .new:hover {
-    color: var(--accent-text);
-  }
-  .new {
-    flex-shrink: 0;
-    width: 1.8rem;
-    height: 1.8rem;
-    margin-bottom: 0.2rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 0.4rem;
-    background: none;
-    color: inherit;
-    font-size: 1.1rem;
-    line-height: 1;
-  }
-</style>

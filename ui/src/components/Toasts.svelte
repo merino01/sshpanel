@@ -7,16 +7,21 @@
   import { flip } from "svelte/animate";
   import { prefersReducedMotion } from "svelte/motion";
   import { fade, fly } from "svelte/transition";
+  import Close from "~icons/heroicons/x-mark-20-solid";
   import { t } from "../i18n";
   import { toasts } from "../state/toasts.svelte";
 
   const duration = $derived(prefersReducedMotion.current ? 0 : 180);
 </script>
 
-<section aria-label={t("toast.region")}>
+<!-- Bajo la barra de título y la de cada pantalla, para no tapar sus botones. -->
+<section class="pointer-events-none fixed top-24 right-4 z-[60] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2" aria-label={t("toast.region")}>
   {#each toasts.items as toast (toast.id)}
+    <!-- Los colores del Tema, al revés: destaca sin añadir colores nuevos. -->
     <div
-      class="toast {toast.kind}"
+      class="pointer-events-auto flex items-center gap-2 rounded-xl py-2 pr-2 pl-3.5 text-left shadow-[0_10px_30px_var(--shadow)] {toast.kind === 'error'
+        ? 'bg-destructive text-background'
+        : 'bg-foreground/90 text-background backdrop-blur-xl'}"
       role={toast.kind === "error" ? "alert" : "status"}
       onmouseenter={() => toasts.pause(toast.id)}
       onmouseleave={() => toasts.resume(toast.id)}
@@ -26,77 +31,23 @@
       out:fade={{ duration }}
       animate:flip={{ duration }}
     >
-      <p>{toast.text}</p>
+      <p class="min-w-0 flex-1 text-sm [overflow-wrap:anywhere]">{toast.text}</p>
       {#if toast.action}
-        <button class="action" onclick={() => toasts.act(toast.id)}>{toast.action.label}</button>
+        <button
+          class="shrink-0 rounded-md px-2 py-1 text-sm font-semibold text-[color-mix(in_oklab,var(--primary)_70%,var(--background))] hover:bg-current/15 focus-visible:outline-2 focus-visible:outline-current"
+          onclick={() => toasts.act(toast.id)}
+        >
+          {toast.action.label}
+        </button>
       {/if}
-      <button class="close" aria-label={t("toast.close")} title={t("toast.close")} onclick={() => toasts.dismiss(toast.id)}>×</button>
+      <button
+        class="grid size-7 shrink-0 place-items-center rounded-md opacity-70 hover:bg-current/15 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-current"
+        aria-label={t("toast.close")}
+        title={t("toast.close")}
+        onclick={() => toasts.dismiss(toast.id)}
+      >
+        <Close class="size-4" />
+      </button>
     </div>
   {/each}
 </section>
-
-<style>
-  section {
-    position: fixed;
-    /* Bajo la cabecera de las pantallas, para no tapar sus botones. */
-    top: 4rem;
-    right: 1rem;
-    z-index: 20;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    width: min(24rem, calc(100vw - 2rem));
-    pointer-events: none;
-  }
-  /* Los colores del tema, al revés: destaca sin añadir colores nuevos. */
-  .toast {
-    display: flex;
-    gap: 0.6rem;
-    align-items: center;
-    padding: 0.65rem 0.6rem 0.65rem 0.9rem;
-    border-radius: 0.5rem;
-    background: var(--fg);
-    color: var(--bg);
-    box-shadow: 0 6px 20px var(--shadow);
-    pointer-events: auto;
-    text-align: left;
-  }
-  .toast.error {
-    background: var(--error);
-    color: var(--bg);
-  }
-  p {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    overflow-wrap: anywhere;
-    font-size: 0.92rem;
-    line-height: 1.35;
-  }
-  button {
-    flex-shrink: 0;
-    border: 0;
-    border-radius: 0.35rem;
-    background: none;
-    color: inherit;
-  }
-  .action {
-    padding: 0.3rem 0.55rem;
-    color: color-mix(in srgb, var(--accent) 70%, var(--bg));
-    font-weight: 700;
-  }
-  .close {
-    padding: 0.15rem 0.45rem;
-    font-size: 1.1rem;
-    line-height: 1;
-    opacity: 0.7;
-  }
-  button:hover {
-    background: color-mix(in srgb, currentColor 14%, transparent);
-    opacity: 1;
-  }
-  button:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 1px;
-  }
-</style>

@@ -16,9 +16,11 @@
         "width": 1000,
         "height": 680,
         "minWidth": 720,
-        "minHeight": 480
+        "minHeight": 480,
+        "create": false
       }
     ],
+    "macOSPrivateApi": true,
     "security": {
       "csp": null
     }

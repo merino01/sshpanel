@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Download from "~icons/heroicons/arrow-down-tray-16-solid";
+  import Upload from "~icons/heroicons/arrow-up-tray-16-solid";
+  import { Progress } from "../../components/ui/progress";
   import { locale, t } from "../../i18n";
   import { formatSize } from "../../lib/format";
   import type { QueuedTransfer } from "../../lib/transferQueue.svelte";
@@ -27,68 +30,27 @@
   const cancelLabel = $derived(t("transfers.cancelLabel", { name: transfer.name }));
 </script>
 
-<li class={transfer.status}>
-  <span class="icon" class:done={transfer.status === "done"} title={t(isUpload ? "transfers.upload" : "transfers.download")}>
-    {isUpload ? "↑" : "↓"}
+<li class="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 py-2">
+  <span class={transfer.status === "done" ? "text-accent-text" : "text-muted-foreground"} title={t(isUpload ? "transfers.upload" : "transfers.download")}>
+    {#if isUpload}<Upload class="size-4" />{:else}<Download class="size-4" />{/if}
   </span>
-  <span class="name" title={transfer.name}>{transfer.name}</span>
-  <span class="actions">
+  <span class="truncate" title={transfer.name}>{transfer.name}</span>
+  <span class="flex gap-3 text-xs">
     {#if transfer.status === "failed"}
-      <button class="link" aria-label={retryLabel} title={retryLabel} onclick={() => transfers.retry(transfer)}>{t("transfers.retry")}</button>
+      <button class="text-accent-text hover:underline" aria-label={retryLabel} title={retryLabel} onclick={() => transfers.retry(transfer)}>{t("transfers.retry")}</button>
     {/if}
     {#if transfer.status !== "done" && transfer.status !== "cancelled"}
-      <button class="link" aria-label={cancelLabel} title={cancelLabel} disabled={transfer.cancelling} onclick={() => transfers.cancel(transfer)}>
+      <button
+        class="text-accent-text hover:underline disabled:opacity-40"
+        aria-label={cancelLabel}
+        title={cancelLabel}
+        disabled={transfer.cancelling}
+        onclick={() => transfers.cancel(transfer)}
+      >
         {t("transfers.cancel")}
       </button>
     {/if}
   </span>
-  {#if value === undefined}
-    <progress max="1"></progress>
-  {:else}
-    <progress max="1" {value}></progress>
-  {/if}
-  <span class="detail" class:error={transfer.status === "failed"} title={detail}>{detail}</span>
+  <Progress class="col-span-2 col-start-2 h-1.5" max={1} value={value ?? null} />
+  <span class="col-span-2 col-start-2 truncate text-xs tabular-nums {transfer.status === 'failed' ? 'text-destructive' : 'text-muted-foreground'}" title={detail}>{detail}</span>
 </li>
-
-<style>
-  li {
-    display: grid;
-    grid-template-columns: 1.2rem 1fr auto;
-    gap: 0.15rem 0.4rem;
-    padding: 0.4rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.9rem;
-  }
-  li:last-child {
-    border-bottom: 0;
-  }
-  .name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  progress,
-  .detail {
-    grid-column: 2 / -1;
-  }
-  .actions {
-    display: flex;
-    gap: 0.6rem;
-    font-size: 0.8rem;
-  }
-  progress {
-    width: 100%;
-    height: 0.5rem;
-    accent-color: var(--accent);
-  }
-  .detail {
-    font-size: 0.8rem;
-    opacity: 0.8;
-  }
-  .detail.error {
-    opacity: 1;
-  }
-  .icon.done {
-    color: var(--accent-text);
-  }
-</style>

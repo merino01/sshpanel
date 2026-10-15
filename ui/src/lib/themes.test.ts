@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contrast,
   cssVariables,
+  glassOn,
   isTheme,
   readableOn,
   resolveTheme,
@@ -86,26 +87,43 @@ describe("resolveTheme", () => {
 describe("cssVariables", () => {
   it("los Temas básicos usan el acento del Branding", () => {
     for (const id of ["light", "dark", "high-contrast"]) {
-      expect(cssVariables(themes[id], BRANDING)["--accent"]).toBe(BRANDING);
+      expect(cssVariables(themes[id], BRANDING)["--primary"]).toBe(BRANDING);
     }
   });
 
   it("un Tema con acento propio lo usa en vez del del Branding", () => {
     const own: ThemePalette = { ...themes.dark, accent: "#c4746e" };
     const vars = cssVariables(own, BRANDING);
-    expect(vars["--accent"]).toBe("#c4746e");
+    expect(vars["--primary"]).toBe("#c4746e");
+    expect(vars["--ring"]).toBe("#c4746e");
     expect(vars["--accent-text"]).toBe("#c4746e");
     expect(xtermTheme(own, BRANDING).cursor).toBe("#c4746e");
   });
 
   it("sin texto sobre acento propio, elige blanco o negro según el acento", () => {
-    expect(cssVariables(themes["high-contrast"], "#1e3a8a")["--on-accent"]).toBe("#ffffff");
-    expect(cssVariables(themes["high-contrast"], "#fde047")["--on-accent"]).toBe("#000000");
-    expect(cssVariables(themes.light, "#fde047")["--on-accent"]).toBe("#ffffff");
+    expect(cssVariables(themes["high-contrast"], "#1e3a8a")["--primary-foreground"]).toBe("#ffffff");
+    expect(cssVariables(themes["high-contrast"], "#fde047")["--primary-foreground"]).toBe("#000000");
+    expect(cssVariables(themes.light, "#fde047")["--primary-foreground"]).toBe("#ffffff");
   });
 
   it("Alto contraste pone el texto en acento en el color del texto", () => {
     expect(cssVariables(themes["high-contrast"], BRANDING)["--accent-text"]).toBe("#ffffff");
+  });
+});
+
+describe("glassOn", () => {
+  it("con la Transparencia activada, los Temas que lo admiten son de cristal", () => {
+    expect(glassOn(true, themes.light, true)).toBe(true);
+    expect(glassOn(true, themes.dark, true)).toBe(true);
+    expect(glassOn(false, themes.dark, true)).toBe(false);
+  });
+
+  it("Alto contraste es siempre opaco", () => {
+    expect(glassOn(true, themes["high-contrast"], true)).toBe(false);
+  });
+
+  it("en un equipo sin cristal (Linux), siempre opaco", () => {
+    expect(glassOn(true, themes.dark, false)).toBe(false);
   });
 });
 

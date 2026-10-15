@@ -41,4 +41,10 @@ describe("withDefaults", () => {
     expect(withDefaults({ language: "fr" }).language).toBe("system");
     expect(withDefaults({ language: 1 }).language).toBe("system");
   });
+
+  it("la Transparencia va activada salvo que se haya quitado", () => {
+    expect(withDefaults({}).transparency).toBe(true);
+    expect(withDefaults({ transparency: false }).transparency).toBe(false);
+    expect(withDefaults({ transparency: "no" }).transparency).toBe(true);
+  });
 });

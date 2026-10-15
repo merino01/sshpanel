@@ -1,13 +1,15 @@
 <!--
-  Ajustes › Apariencia: el Tema. Cada opción lleva una ventana en miniatura
-  pintada con la paleta de su Tema (fondo, texto, acento y una línea de la
-  Terminal con sus colores); la de Sistema, mitad Claro y mitad Oscuro.
+  Ajustes › Apariencia: el Tema y, donde el equipo lo admite, la Transparencia.
+  Cada Tema lleva una ventana en miniatura pintada con su paleta (fondo, texto,
+  acento y una línea de la Terminal con sus colores); la de Sistema, mitad Claro
+  y mitad Oscuro.
 -->
 <script lang="ts">
   import { branding } from "../../branding.generated";
   import { t } from "../../i18n";
-  import { accentOf, resolveTheme, SYSTEM_THEME, themeIds, themes, type ThemePalette } from "../../lib/themes";
-  import { preferences, setPreference } from "../../state/preferences.svelte";
+  import { Switch } from "../../components/ui/switch";
+  import { accentOf, glassSupported, resolveTheme, SYSTEM_THEME, themeIds, themes, type ThemePalette } from "../../lib/themes";
+  import { activeTheme, preferences, setPreference } from "../../state/preferences.svelte";
 
   /** Los colores de la Terminal que enseña la miniatura. */
   const ANSI = ["red", "green", "yellow", "blue", "magenta", "cyan"] as const;
@@ -29,36 +31,44 @@
       `--swatch-terminal: ${terminal.background}`,
     ].join("; ");
   }
+  // Alto contraste no admite el cristal: el interruptor se queda, apagado y sin poder tocarse.
+  const glassAllowed = $derived(activeTheme.palette.glass !== false);
 </script>
 
 {#snippet preview(palette: ThemePalette, half = false)}
-  <span class="preview" class:half style={colors(palette)}>
-    <span class="line"></span>
-    <span class="line short"></span>
-    <span class="terminal">
+  <span
+    class="col-start-1 row-start-1 grid grid-rows-[auto_auto_1fr] content-start gap-1.5 border-t-[7px] border-(--swatch-accent) bg-(--swatch-bg) px-2.5 pt-2 {half
+      ? '[clip-path:polygon(62%_0,100%_0,100%_100%,38%_100%)]'
+      : ''}"
+    style={colors(palette)}
+  >
+    <span class="h-1.5 rounded-full bg-(--swatch-fg) opacity-55"></span>
+    <span class="h-1.5 w-[55%] rounded-full bg-(--swatch-fg) opacity-55"></span>
+    <span class="-mx-2.5 flex items-center gap-1 self-end border-t border-(--swatch-border) bg-(--swatch-terminal) px-2.5 py-1">
       {#each ANSI as color (color)}
-        <span class="dot" style="background: {palette.terminal[color]}"></span>
+        <span class="size-1.5 rounded-full" style="background: {palette.terminal[color]}"></span>
       {/each}
     </span>
   </span>
 {/snippet}
 
 <section aria-labelledby="appearance">
-  <h2 id="appearance">{t("settings.appearance")}</h2>
-  <p class="help">{t("settings.appearance.help")}</p>
+  <h2 id="appearance" class="text-xl font-semibold tracking-tight">{t("settings.appearance")}</h2>
+  <p class="mt-1 mb-5 max-w-[60ch] text-muted-foreground">{t("settings.appearance.help")}</p>
   <fieldset>
-    <legend>{t("settings.theme")}</legend>
-    <div class="themes">
+    <legend class="mb-2.5 font-medium">{t("settings.theme")}</legend>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-3">
       {#each themeIds as id (id)}
-        <label class="theme">
+        <label class="group relative cursor-pointer rounded-xl border border-input p-2 transition-colors hover:border-primary has-checked:border-primary has-checked:ring-1 has-checked:ring-primary has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring grid gap-2">
           <input
+            class="pointer-events-none absolute opacity-0"
             type="radio"
             name="theme"
             value={id}
             checked={preferences.theme === id}
             onchange={() => setPreference("theme", id)}
           />
-          <span class="swatch" aria-hidden="true">
+          <span class="relative grid h-16 overflow-hidden rounded-md border" aria-hidden="true">
             {#if id === SYSTEM_THEME}
               {@render preview(resolveTheme(id, false))}
               {@render preview(resolveTheme(id, true), true)}
@@ -66,109 +76,23 @@
               {@render preview(themes[id])}
             {/if}
           </span>
-          <span class="name">{label(id)}</span>
+          <span class="px-0.5 text-sm group-has-checked:font-semibold">{label(id)}</span>
         </label>
       {/each}
     </div>
   </fieldset>
+  {#if glassSupported}
+    <label class="mt-6 flex max-w-[60ch] cursor-pointer items-start justify-between gap-6 rounded-xl border p-4 has-data-disabled:cursor-default">
+      <span class="flex flex-col gap-1">
+        <span class="font-medium">{t("settings.transparency")}</span>
+        <span class="text-muted-foreground">{t(glassAllowed ? "settings.transparency.help" : "settings.transparency.unavailable")}</span>
+      </span>
+      <Switch
+        class="mt-0.5"
+        checked={glassAllowed && preferences.transparency}
+        disabled={!glassAllowed}
+        onCheckedChange={(checked) => setPreference("transparency", checked)}
+      />
+    </label>
+  {/if}
 </section>
-
-<style>
-  .help {
-    margin-bottom: 1.1rem;
-    font-size: 0.9rem;
-  }
-  fieldset {
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-  legend {
-    margin-bottom: 0.6rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-  .themes {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
-    gap: 0.75rem;
-  }
-  .theme {
-    position: relative;
-    display: grid;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 0.6rem;
-    cursor: pointer;
-  }
-  .theme:hover {
-    border-color: var(--accent);
-  }
-  .theme:has(input:checked) {
-    border-color: var(--accent);
-    box-shadow: inset 0 0 0 1px var(--accent);
-  }
-  .theme:has(input:focus-visible) {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
-  /* Una ventana en miniatura con los colores de cada Tema; Sistema, una encima de otra cortada en diagonal. */
-  .swatch {
-    position: relative;
-    display: grid;
-    height: 4rem;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: 0.35rem;
-  }
-  .preview {
-    grid-area: 1 / 1;
-    display: grid;
-    grid-template-rows: auto auto 1fr;
-    align-content: start;
-    gap: 0.3rem;
-    padding: 0.5rem 0.6rem 0;
-    border-top: 0.45rem solid var(--swatch-accent);
-    background: var(--swatch-bg);
-  }
-  .preview.half {
-    clip-path: polygon(62% 0, 100% 0, 100% 100%, 38% 100%);
-  }
-  .line {
-    height: 0.3rem;
-    border-radius: 0.15rem;
-    background: var(--swatch-fg);
-    opacity: 0.55;
-  }
-  .line.short {
-    width: 55%;
-  }
-  .terminal {
-    display: flex;
-    gap: 0.2rem;
-    align-items: center;
-    align-self: end;
-    margin: 0 -0.6rem;
-    padding: 0.25rem 0.6rem;
-    border-top: 1px solid var(--swatch-border);
-    background: var(--swatch-terminal);
-  }
-  .dot {
-    width: 0.35rem;
-    height: 0.35rem;
-    border-radius: 50%;
-  }
-  .name {
-    padding: 0 0.15rem;
-    font-size: 0.9rem;
-  }
-  .theme:has(input:checked) .name {
-    font-weight: 600;
-  }
-</style>

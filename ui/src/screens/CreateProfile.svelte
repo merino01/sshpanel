@@ -7,6 +7,10 @@
   no hay claves de otros que autorizar.
 -->
 <script lang="ts">
+  import { Button } from "../components/ui/button";
+  import { Checkbox } from "../components/ui/checkbox";
+  import { Input } from "../components/ui/input";
+  import * as RadioGroup from "../components/ui/radio-group";
   import { t } from "../i18n";
   import type { ProfileField } from "../lib/profileForm";
   import AuthorizeKey from "./AuthorizeKey.svelte";
@@ -22,8 +26,8 @@
   }
 </script>
 
-<section>
-  <h1>{t("create.title")}</h1>
+<section class="flex w-full flex-col items-center gap-2 text-center">
+  <h1 class="text-2xl font-semibold tracking-tight">{t("create.title")}</h1>
   {#if created}
     <p role="status">{t("create.done", { username: created.profile.username, path: created.path })}</p>
     {#if createForm.own}
@@ -31,65 +35,74 @@
     {:else}
       <p>{t("create.nextStep", { username: created.profile.username })}</p>
     {/if}
-    <p class="help">{t("create.fingerprintHelp")}</p>
-    <code class="fingerprint">{created.profile.fingerprint}</code>
-    <div class="actions">
+    <p class="mt-2 text-muted-foreground">{t("create.fingerprintHelp")}</p>
+    <code class="block w-full rounded-lg bg-muted px-3 py-2.5 font-mono text-xs break-all select-all">{created.profile.fingerprint}</code>
+    <div class="mt-3 flex w-full justify-end gap-2">
+      <Button variant="outline" onclick={leaveCreateProfile}>{t("create.back")}</Button>
       {#if createForm.own}
-        <button class="secondary" onclick={leaveCreateProfile}>{t("create.back")}</button>
-        <button class="primary" onclick={importCreated}>{t("create.importOwn")}</button>
+        <Button onclick={importCreated}>{t("create.importOwn")}</Button>
       {:else}
-        <button class="secondary" onclick={leaveCreateProfile}>{t("create.back")}</button>
-        <button class="primary" onclick={createAnother}>{t("create.another")}</button>
+        <Button onclick={createAnother}>{t("create.another")}</Button>
       {/if}
     </div>
   {:else}
-    <p class="help">{t(createForm.own ? "create.helpOwn" : "create.help")}</p>
-    <form {onsubmit} novalidate>
-      <label class:invalid={isInvalid("host")}>
-        <span>{t("create.host")}</span>
-        <input type="text" bind:value={form.host} placeholder="vps.example.com" spellcheck={false} aria-invalid={isInvalid("host")} />
-        {#if isInvalid("host")}<small class="error">{t("create.invalid.host")}</small>{/if}
-      </label>
-      <label class:invalid={isInvalid("port")}>
-        <span>{t("create.port")}</span>
-        <input type="text" inputmode="numeric" bind:value={form.port} aria-invalid={isInvalid("port")} />
-        {#if isInvalid("port")}<small class="error">{t("create.invalid.port")}</small>{/if}
-      </label>
-      <label class:invalid={isInvalid("username")}>
-        <span>{t("create.username")}</span>
-        <input type="text" bind:value={form.username} placeholder="alice" spellcheck={false} autocapitalize="off" aria-invalid={isInvalid("username")} />
-        <small class="help">{t("create.usernameHelp")}</small>
-        {#if isInvalid("username")}<small class="error">{t("create.invalid.username")}</small>{/if}
-      </label>
-      <fieldset>
-        <legend>{t("create.mode")}</legend>
-        <label class="choice">
-          <input type="radio" bind:group={form.mode} value="simple" />
-          <span><strong>{t("create.simple")}</strong> <small class="help">{t("create.simpleHelp")}</small></span>
+    <p class="max-w-[46ch] text-muted-foreground">{t(createForm.own ? "create.helpOwn" : "create.help")}</p>
+    <form class="mt-3 flex w-full max-w-[28rem] flex-col gap-4 text-left" {onsubmit} novalidate>
+      <div class="grid grid-cols-[minmax(0,1fr)_6rem] gap-3">
+        <label class="flex flex-col gap-1.5">
+          <span class="font-medium">{t("create.host")}</span>
+          <Input type="text" bind:value={form.host} placeholder="vps.example.com" spellcheck={false} aria-invalid={isInvalid("host")} />
+          {#if isInvalid("host")}<small class="text-xs text-destructive">{t("create.invalid.host")}</small>{/if}
         </label>
-        <label class="choice">
-          <input type="radio" bind:group={form.mode} value="advanced" />
-          <span><strong>{t("create.advanced")}</strong> <small class="help">{t("create.advancedHelp")}</small></span>
+        <label class="flex flex-col gap-1.5">
+          <span class="font-medium">{t("create.port")}</span>
+          <Input type="text" inputmode="numeric" class="tabular-nums" bind:value={form.port} aria-invalid={isInvalid("port")} />
+          {#if isInvalid("port")}<small class="text-xs text-destructive">{t("create.invalid.port")}</small>{/if}
         </label>
+      </div>
+      <label class="flex flex-col gap-1.5">
+        <span class="font-medium">{t("create.username")}</span>
+        <Input type="text" bind:value={form.username} placeholder="alice" spellcheck={false} autocapitalize="off" aria-invalid={isInvalid("username")} />
+        <small class="text-xs text-muted-foreground">{t("create.usernameHelp")}</small>
+        {#if isInvalid("username")}<small class="text-xs text-destructive">{t("create.invalid.username")}</small>{/if}
+      </label>
+      <fieldset class="flex flex-col gap-1.5">
+        <legend class="mb-1.5 font-medium">{t("create.mode")}</legend>
+        <RadioGroup.Root bind:value={form.mode} class="grid grid-cols-2 gap-2">
+          {#each [["simple", "create.simple", "create.simpleHelp"], ["advanced", "create.advanced", "create.advancedHelp"]] as [value, name, help] (value)}
+            <label
+              class="flex cursor-pointer gap-2.5 rounded-lg border border-input p-3 transition-colors hover:border-primary has-data-checked:border-primary has-data-checked:bg-accent"
+            >
+              <RadioGroup.Item {value} class="mt-0.5" />
+              <span class="flex flex-col gap-0.5">
+                <strong class="font-medium">{t(name)}</strong>
+                <small class="text-xs text-muted-foreground">{t(help)}</small>
+              </span>
+            </label>
+          {/each}
+        </RadioGroup.Root>
       </fieldset>
-      <label class:invalid={isInvalid("sharedFolder")}>
-        <span>{t("create.sharedFolder")}</span>
-        <input type="text" bind:value={form.sharedFolder} placeholder="/srv/compartida" spellcheck={false} aria-invalid={isInvalid("sharedFolder")} />
-        <small class="help">{t("create.sharedFolderHelp")}</small>
-        {#if isInvalid("sharedFolder")}<small class="error">{t("create.invalid.sharedFolder")}</small>{/if}
+      <label class="flex flex-col gap-1.5">
+        <span class="font-medium">{t("create.sharedFolder")}</span>
+        <Input type="text" class="font-mono" bind:value={form.sharedFolder} placeholder="/srv/compartida" spellcheck={false} aria-invalid={isInvalid("sharedFolder")} />
+        <small class="text-xs text-muted-foreground">{t("create.sharedFolderHelp")}</small>
+        {#if isInvalid("sharedFolder")}<small class="text-xs text-destructive">{t("create.invalid.sharedFolder")}</small>{/if}
       </label>
-      <label class="choice">
-        <input type="checkbox" bind:checked={form.admin} />
-        <span><strong>{t("create.admin")}</strong> <small class="help">{t("create.adminHelp")}</small></span>
+      <label class="flex cursor-pointer gap-2.5">
+        <Checkbox bind:checked={form.admin} class="mt-0.5" />
+        <span class="flex flex-col gap-0.5">
+          <strong class="font-medium">{t("create.admin")}</strong>
+          <small class="text-xs text-muted-foreground">{t("create.adminHelp")}</small>
+        </span>
       </label>
       {#if createForm.error}
-        <p class="error" role="alert">{createForm.error}</p>
+        <p class="text-destructive" role="alert">{createForm.error}</p>
       {/if}
-      <div class="actions">
-        <button type="button" class="secondary" onclick={leaveCreateProfile} disabled={createForm.creating}>{t("explorer.cancel")}</button>
-        <button type="submit" class="primary" disabled={createForm.creating}>
+      <div class="mt-1 flex justify-end gap-2">
+        <Button type="button" variant="outline" onclick={leaveCreateProfile} disabled={createForm.creating}>{t("explorer.cancel")}</Button>
+        <Button type="submit" disabled={createForm.creating}>
           {createForm.creating ? t("create.creating") : t("create.submit")}
-        </button>
+        </Button>
       </div>
     </form>
   {/if}
@@ -97,83 +110,3 @@
     <AuthorizeKey />
   {/if}
 </section>
-
-<style>
-  section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
-    min-height: 0;
-    padding: 1rem;
-    overflow-y: auto;
-    text-align: center;
-  }
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.9rem;
-    width: min(28rem, 100%);
-    margin-top: 0.5rem;
-    text-align: left;
-  }
-  label:not(.choice) {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  label > span {
-    font-weight: 600;
-  }
-  input[type="text"] {
-    padding: 0.45rem 0.6rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 0.4rem;
-    background: var(--bg);
-    color: var(--fg);
-    font: inherit;
-  }
-  input[type="text"]:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: -1px;
-  }
-  .invalid input[type="text"] {
-    border-color: var(--error);
-  }
-  fieldset {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-  legend {
-    margin-bottom: 0.3rem;
-    padding: 0;
-    font-weight: 600;
-  }
-  .choice {
-    display: flex;
-    gap: 0.5rem;
-    align-items: baseline;
-  }
-  .choice span > strong {
-    font-weight: 600;
-  }
-  .actions {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-    margin-top: 0.4rem;
-  }
-  .fingerprint {
-    padding: 0.5rem 0.7rem;
-    border-radius: 0.4rem;
-    background: var(--subtle);
-    overflow-wrap: anywhere;
-    user-select: all;
-    font-size: 0.75rem;
-    opacity: 0.8;
-  }
-</style>

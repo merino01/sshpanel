@@ -1,16 +1,18 @@
 <!-- Fila con un campo para escribir el nombre de una carpeta nueva o el nuevo nombre de `entry`. -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import FileIcon from "../../components/FileIcon.svelte";
+  import { Button } from "../../components/ui/button";
+  import { Input } from "../../components/ui/input";
   import { t } from "../../i18n";
   import type { Entry } from "../../lib/api";
   import { stopEditing, submitName, type Editing } from "../../state/explorer.svelte";
 
   let { editing, entry }: { editing: Editing; entry?: Entry } = $props();
-  let input = $state<HTMLInputElement>();
+  let input = $state<HTMLInputElement | null>(null);
   let submitting = $state(false);
 
   const label = $derived(editing.kind === "create" ? t("explorer.newFolderLabel") : t("explorer.renameLabel", { name: editing.name }));
-  const isFile = $derived(entry !== undefined && entry.kind !== "dir");
 
   // Al renombrar, selecciona el nombre sin la extensión.
   onMount(() => {
@@ -30,44 +32,21 @@
   }
 </script>
 
-<li class="entry editing">
-  <span class="icon" aria-hidden="true">{isFile ? "📄" : "📁"}</span>
-  <form {onsubmit}>
-    <input
-      bind:this={input}
+<li class="grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-3 rounded-md bg-accent px-2.5 py-1">
+  <FileIcon entry={entry ?? { name: "", kind: "dir" }} />
+  <form class="flex items-center gap-1.5" {onsubmit}>
+    <Input
+      bind:ref={input}
+      class="h-7 min-w-0 flex-1"
       type="text"
       value={editing.value}
       aria-label={label}
       spellcheck={false}
       onkeydown={(event) => event.key === "Escape" && stopEditing()}
     />
-    <button type="submit" class="primary small" disabled={submitting}>
+    <Button type="submit" size="sm" disabled={submitting}>
       {editing.kind === "create" ? t("explorer.create") : t("explorer.save")}
-    </button>
-    <button type="button" class="link" onclick={stopEditing}>{t("explorer.cancel")}</button>
+    </Button>
+    <Button type="button" variant="ghost" size="sm" onclick={stopEditing}>{t("explorer.cancel")}</Button>
   </form>
 </li>
-
-<style>
-  .entry.editing {
-    grid-template-columns: 1.5rem 1fr;
-  }
-  form {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-  }
-  input {
-    flex: 1;
-    min-width: 0;
-    padding: 0.35rem 0.5rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 0.4rem;
-    background: var(--bg);
-    color: var(--fg);
-    font: inherit;
-  }
-  .primary.small {
-    padding: 0.35rem 0.8rem;
-  }
-</style>

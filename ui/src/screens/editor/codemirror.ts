@@ -63,7 +63,7 @@ function phrases(): Record<string, string> {
   };
 }
 
-const MONOSPACE = "ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace";
+const MONOSPACE = "'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace";
 
 /** El aspecto del Editor con el Tema `palette`. */
 function themeFor(palette: ThemePalette) {
@@ -72,44 +72,44 @@ function themeFor(palette: ThemePalette) {
     {
       "&": { height: "100%", backgroundColor: code.background, color: code.foreground },
       ".cm-scroller": { fontFamily: MONOSPACE, fontSize: "0.875rem", lineHeight: "1.55" },
-      ".cm-content": { padding: "0.75rem 0", caretColor: "var(--accent)" },
+      ".cm-content": { padding: "0.75rem 0", caretColor: "var(--primary)" },
       ".cm-line": { padding: "0 1rem 0 0.75rem" },
       "&.cm-focused": { outline: "none" },
-      ".cm-cursor, .cm-dropCursor": { borderLeft: "2px solid var(--accent)" },
+      ".cm-cursor, .cm-dropCursor": { borderLeft: "2px solid var(--primary)" },
       "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, ::selection": {
         backgroundColor: code.selection,
       },
-      ".cm-activeLine": { backgroundColor: "color-mix(in srgb, var(--accent) 7%, transparent)" },
+      ".cm-activeLine": { backgroundColor: "color-mix(in oklab, var(--primary) 7%, transparent)" },
       ".cm-gutters": { backgroundColor: code.background, color: code.brightBlack, border: "none", borderRight: "1px solid var(--border)" },
       ".cm-lineNumbers .cm-gutterElement": { padding: "0 0.75rem 0 1rem", minWidth: "2.5ch" },
       ".cm-activeLineGutter": { backgroundColor: "transparent", color: code.foreground },
-      ".cm-matchingBracket": { backgroundColor: "color-mix(in srgb, var(--accent) 25%, transparent)", outline: "none" },
-      ".cm-selectionMatch": { backgroundColor: "color-mix(in srgb, var(--accent) 15%, transparent)" },
+      ".cm-matchingBracket": { backgroundColor: "color-mix(in oklab, var(--primary) 25%, transparent)", outline: "none" },
+      ".cm-selectionMatch": { backgroundColor: "color-mix(in oklab, var(--primary) 15%, transparent)" },
       ".cm-searchMatch": { backgroundColor: "color-mix(in srgb, var(--warning) 30%, transparent)" },
       ".cm-searchMatch-selected": { backgroundColor: "color-mix(in srgb, var(--warning) 55%, transparent)" },
       ".cm-specialChar": { color: code.red },
-      ".cm-panels": { backgroundColor: "var(--surface)", color: "var(--fg)", fontFamily: "system-ui, sans-serif" },
+      ".cm-panels": { backgroundColor: "var(--surface)", color: "var(--foreground)", fontFamily: "'Inter Variable', system-ui, sans-serif" },
       ".cm-panels.cm-panels-top": { borderBottom: "1px solid var(--border)" },
       ".cm-panel.cm-search": { padding: "0.5rem 2.5rem 0.5rem 0.75rem", fontSize: "0.85rem" },
       ".cm-panel.cm-search label": { fontSize: "0.85rem" },
       ".cm-textfield": {
         padding: "0.25rem 0.5rem",
-        border: "1px solid var(--border-strong)",
+        border: "1px solid var(--input)",
         borderRadius: "0.35rem",
-        background: "var(--bg)",
-        color: "var(--fg)",
+        background: "var(--background)",
+        color: "var(--foreground)",
         font: "inherit",
       },
       ".cm-button": {
         padding: "0.25rem 0.6rem",
-        border: "1px solid var(--border-strong)",
+        border: "1px solid var(--input)",
         borderRadius: "0.35rem",
         backgroundImage: "none",
-        background: "var(--bg)",
-        color: "var(--fg)",
+        background: "var(--background)",
+        color: "var(--foreground)",
         font: "inherit",
       },
-      ".cm-panel button[name=close]": { color: "var(--fg)", fontSize: "1.1rem", right: "0.6rem", top: "0.35rem" },
+      ".cm-panel button[name=close]": { color: "var(--foreground)", fontSize: "1.1rem", right: "0.6rem", top: "0.35rem" },
     },
     { dark: palette.scheme === "dark" },
   );

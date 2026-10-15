@@ -3,6 +3,8 @@
 export interface MenuItem {
   label: string;
   action: () => void;
+  /** Borra algo: se pinta en el color de error. */
+  destructive?: boolean;
 }
 
 export interface OpenMenu {

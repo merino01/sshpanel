@@ -15,9 +15,11 @@ export interface Preferences {
   shortcuts: ShortcutOverrides;
   /** «es», «en», o «system», que sigue el idioma del equipo. */
   language: string;
+  /** Marco de la ventana de cristal (translúcido); los Temas que no lo admiten se ven opacos igualmente. */
+  transparency: boolean;
 }
 
-export const DEFAULT_PREFERENCES: Preferences = { theme: SYSTEM_THEME, shortcuts: {}, language: SYSTEM_LANGUAGE };
+export const DEFAULT_PREFERENCES: Preferences = { theme: SYSTEM_THEME, shortcuts: {}, language: SYSTEM_LANGUAGE, transparency: true };
 
 /** Las preferencias de `raw` (lo leído del fichero), con el valor por defecto en las que faltan o no valen. */
 export function withDefaults(raw: unknown): Preferences {
@@ -26,5 +28,6 @@ export function withDefaults(raw: unknown): Preferences {
     theme: isTheme(saved.theme) ? saved.theme : DEFAULT_PREFERENCES.theme,
     shortcuts: validOverrides(saved.shortcuts),
     language: isLanguagePreference(saved.language) ? saved.language : DEFAULT_PREFERENCES.language,
+    transparency: typeof saved.transparency === "boolean" ? saved.transparency : DEFAULT_PREFERENCES.transparency,
   };
 }
