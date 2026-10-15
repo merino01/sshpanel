@@ -1,0 +1,5 @@
+# La Administración escribe las claves con sudo y la contraseña del Administrador
+
+Para autorizar, revocar o cambiar de modo una Clave pública, la app tiene que escribir en `/etc/ssh/authorized_keys/<usuario>`, que es de root a propósito (ADR 0006). La app pide la contraseña de sudo del Administrador, la guarda solo en memoria durante la sesión y escribe el fichero con `sudo` por un canal SSH. Nada en el Servidor cambia: ser Administrador sigue siendo poder hacer `sudo`, igual que cuando editaba el fichero a mano. Se descartó un script auxiliar con una regla de sudoers sin contraseña: era más fácil de auditar, pero añadía pasos a la guía del servidor. También se descartó conectar como root, y permisos de grupo sobre los ficheros de claves, que sshd rechaza.
+
+Consecuencias: la Administración necesita una clave de Modo avanzado, porque el simple solo permite SFTP. La contraseña nunca se guarda en disco ni en el almacén de secretos. La app no gana ningún poder: sin sudo en el Servidor, la Administración no puede hacer nada.

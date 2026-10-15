@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-Issues live as local markdown files under `.scratch/` (may migrate to GitHub Issues later). See `docs/agents/issue-tracker.md`.
+Issues live as GitHub Issues in `merino01/sshpanel`, worked with the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Domain docs
 

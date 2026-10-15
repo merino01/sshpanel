@@ -13,7 +13,7 @@ Persona del grupo que usa la app para conectarse al Servidor con su propia ident
 _Avoid_: Cliente, usuario (ambiguo con usuario Linux)
 
 **Administrador**:
-Miembro que configura el Servidor, autoriza a otros Miembros y genera sus Perfiles. Su Perfil lleva la marca de administrador, que solo le muestra «Crear perfil» en la app: su poder real es editar los `authorized_keys` del Servidor.
+Miembro que configura el Servidor, autoriza a otros Miembros y genera sus Perfiles. Su Perfil lleva la marca de administrador, que solo le muestra la Administración en la app: su poder real es poder editar como root los `authorized_keys` del Servidor.
 _Avoid_: Owner, root
 
 **Perfil**:
@@ -28,9 +28,21 @@ _Avoid_: Modo básico, modo fácil
 Nivel de la app que añade la Terminal al explorador de archivos. Se elige al configurar el Perfil, y el Servidor solo permite la Terminal si la clave está autorizada con las opciones de este modo.
 _Avoid_: Modo experto, modo pro
 
+**Administración**:
+Apartado de la app, visible solo con Perfil de administrador, donde se crean Perfiles y se autorizan, revocan o cambian de modo las Claves públicas de los Miembros en el Servidor.
+_Avoid_: Panel de admin, backoffice
+
 **Explorador**:
 Vista de los archivos y carpetas del Servidor, con subida y descarga por arrastrar y soltar o por selector.
 _Avoid_: File manager, gestor de archivos
+
+**Editor**:
+Ventana de la app para leer y modificar un archivo de texto del Servidor y guardarlo de vuelta en él.
+_Avoid_: Visor, bloc de notas
+
+**Abrir con**:
+Elección de con qué se abre un archivo del Servidor: el Editor, una aplicación del equipo del Miembro (la app vigila la copia local y sube cada cambio) o vim en la Terminal.
+_Avoid_: Ejecutar, lanzar
 
 **Terminal**:
 Consola embebida para ejecutar comandos en el Servidor y ver sus respuestas. Solo existe en Modo avanzado.
@@ -59,3 +71,15 @@ _Avoid_: Upload, descarga/subida suelta
 **Branding**:
 Conjunto de valores fijados al compilar (nombre, identificador, extensión del Perfil, icono, color de acento y, opcionalmente, el repositorio de releases y la clave pública del actualizador) que personalizan la app para una instancia concreta. "SSH Panel" es el Branding por defecto; cada instancia es un fork con el suyo.
 _Avoid_: Tema, skin, configuración
+
+**Ajustes**:
+Ventana de la app con las preferencias del Miembro, guardadas en su equipo y no en el Perfil.
+_Avoid_: Configuración, opciones (el Perfil también configura la app)
+
+**Tema**:
+Paleta completa de colores de la interfaz y de la Terminal que el Miembro elige en Ajustes. Los Temas básicos (Sistema, Claro, Oscuro, Alto contraste) usan el color de acento del Branding; los Temas con nombre propio traen el suyo.
+_Avoid_: Skin, apariencia (como nombre de cosa)
+
+**Atajo**:
+Combinación de teclas asignada a una acción de la app, configurable en Ajustes.
+_Avoid_: Shortcut, acceso directo (son los de la barra lateral)
