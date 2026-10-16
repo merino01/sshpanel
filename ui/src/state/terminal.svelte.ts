@@ -6,6 +6,7 @@
 import { errorMessage } from "../i18n";
 import { api } from "../lib/api";
 import { isConnectionError } from "../lib/errors";
+import { shellQuote } from "../lib/shell";
 import { activeAfterClose, cycle, nextNumber } from "../lib/terminalTabs";
 import { show, showConnectionLost } from "./session.svelte";
 
@@ -16,6 +17,8 @@ export interface TerminalTab {
   number: number;
   status: "idle" | "opening" | "open" | "closed";
   message?: string;
+  /** Lo que se teclea en la consola en cuanto se abre, una sola vez (como `vim <ruta>`). */
+  command?: string;
 }
 
 export const terminals = $state<{ tabs: TerminalTab[]; active: number | null }>({ tabs: [], active: null });
@@ -43,8 +46,18 @@ export function openTerminal() {
 
 /** Abre una pestaña nueva y la muestra. */
 export function newTerminal() {
+  addTab();
+}
+
+/** Abre `path` con vim en una pestaña nueva; al salir de vim, queda la consola. */
+export function openInVim(path: string) {
+  addTab(`vim ${shellQuote(path)}`);
+}
+
+/** Añade una pestaña y la muestra; si se da `command`, lo teclea en la consola al abrirse. */
+function addTab(command?: string) {
   const id = nextId++;
-  terminals.tabs.push({ id, number: nextNumber(terminals.tabs), status: "idle" });
+  terminals.tabs.push({ id, number: nextNumber(terminals.tabs), status: "idle", command });
   terminals.active = id;
   show({ name: "terminal" });
 }
@@ -86,6 +99,11 @@ export async function startTerminal(id: number, cols: number, rows: number) {
       () => update({ status: "closed" }),
     );
     if (tab(id)?.status === "opening") update({ status: "open" });
+    const command = tab(id)?.command;
+    if (command && current()) {
+      update({ command: undefined });
+      sendInput(id, `${command}\r`);
+    }
   } catch (code) {
     if (!current()) return;
     if (isConnectionError(code)) return showConnectionLost(code);

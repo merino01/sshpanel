@@ -134,6 +134,7 @@
   "explorer.openWith": "Abrir con…",
   "explorer.openWithEditor": "Editor",
   "explorer.openWithApp": "Aplicación del equipo",
+  "explorer.openWithVim": "vim",
   "explorer.menuLabel": "Acciones de {name}",
   "explorer.menuFolderLabel": "Acciones de la carpeta",
   "explorer.folderLabel": "Contenido de la carpeta",

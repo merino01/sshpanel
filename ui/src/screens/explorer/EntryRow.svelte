@@ -13,6 +13,8 @@
   import { openInEditor } from "../../state/editorWindows.svelte";
   import { askToTrash, explorer, openEntry, select, startRenaming } from "../../state/explorer.svelte";
   import { localCopies } from "../../state/localCopies.svelte";
+  import { isAdvanced } from "../../state/session.svelte";
+  import { openInVim } from "../../state/terminal.svelte";
   import { openMenu, type MenuItem } from "../../state/menu.svelte";
   import { pickDownload } from "../../state/transfers.svelte";
   import { EXPLORER_COLUMNS, MUTED, ROW } from "../files";
@@ -42,6 +44,8 @@
         items: [
           { label: t("explorer.openWithEditor"), action: () => void openInEditor(path) },
           { label: t("explorer.openWithApp"), action: () => void localCopies.open(path) },
+          // vim va en la Terminal, que solo existe en Modo avanzado.
+          ...(isAdvanced() ? [{ label: t("explorer.openWithVim"), action: () => openInVim(path) }] : []),
         ],
       });
     }
