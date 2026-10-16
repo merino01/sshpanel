@@ -70,6 +70,8 @@ pub enum Error {
     WriteFailed,
     #[error("el archivo ha cambiado en el Servidor desde que se abrió")]
     Conflict,
+    #[error("no se pueden leer las claves autorizadas de /etc/ssh/authorized_keys")]
+    KeysUnavailable,
 }
 
 impl Error {
@@ -110,6 +112,7 @@ impl Error {
             Self::ReadFailed => "editor.read_failed",
             Self::WriteFailed => "editor.write_failed",
             Self::Conflict => "editor.conflict",
+            Self::KeysUnavailable => "admin.keys_unavailable",
         }
     }
 }

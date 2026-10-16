@@ -15,7 +15,7 @@ use tokio::sync::Mutex;
 
 use connection::{Connection, Reserved, Terminal};
 
-pub use connection::{Entry, EntryKind, Head, Listing, Outcome, Progress, Restored, Stamp, TerminalEvent, TextCopy, TextFile, Transfer, Trashed};
+pub use connection::{Entry, EntryKind, Head, Listing, Outcome, Progress, Restored, Stamp, TerminalEvent, TextCopy, TextFile, Transfer, Trashed, UserKeys};
 pub use error::{Error, Result};
 pub use profile::{Mode, NewProfile, Profile};
 pub use secrets::{MemorySecretStore, SecretStore, SystemSecretStore};
@@ -173,6 +173,13 @@ impl Core {
     /// nombre libre, sin sobrescribir nada.
     pub async fn write_text_copy(&self, path: &str, text: &str) -> Result<TextCopy> {
         self.connection().await?.write_text_copy(path, text, &self.reserved).await
+    }
+
+    /// Las Claves públicas autorizadas de cada usuario, de
+    /// `/etc/ssh/authorized_keys/`. Falla con [`Error::KeysUnavailable`] si el
+    /// Servidor no las tiene ahí, como pide la guía del servidor.
+    pub async fn authorized_keys(&self) -> Result<Vec<UserKeys>> {
+        self.connection().await?.authorized_keys().await
     }
 
     /// Abre la Terminal `id` en el Servidor, de `cols` columnas y `rows`

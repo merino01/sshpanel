@@ -23,7 +23,9 @@ export type Screen =
   | { name: "trash" }
   /** Solo en Modo avanzado. */
   | { name: "terminal" }
-  /** Para el Administrador; `back` es la pantalla a la que se vuelve. */
+  /** Administración, con el Servidor conectado: las Claves públicas autorizadas o «Crear perfil». */
+  | { name: "admin"; section: "keys" | "createProfile" }
+  /** «Crear perfil» suelto, desde la Bienvenida sin Perfil; `back` es la pantalla a la que se vuelve. */
   | { name: "createProfile"; back: Screen };
 
 /**
@@ -41,7 +43,8 @@ const WORKSPACE: Record<Screen["name"], boolean | ((screen: Screen) => boolean)>
   explorer: true,
   trash: true,
   terminal: true,
-  // Se llega desde la barra lateral o desde la Bienvenida, sin Perfil.
+  admin: true,
+  // Se llega desde la Bienvenida, sin Perfil.
   createProfile: (screen) => screen.name === "createProfile" && isWorkspace(screen.back),
 };
 

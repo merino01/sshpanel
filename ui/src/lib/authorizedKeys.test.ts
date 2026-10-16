@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizedKeyLine } from "./authorizedKeys";
+import { authorizedKeyLine, parseAuthorizedKey } from "./authorizedKeys";
 
 const KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEjEmPlOdEcLaVeNoReAlXxXxXxXxXxXxXxXxXxXxXxX";
 
@@ -31,5 +31,42 @@ describe("authorizedKeyLine", () => {
   it("no deja colar otras opciones", () => {
     expect(authorizedKeyLine(`no-pty ${KEY}`, "advanced")).toBeNull();
     expect(authorizedKeyLine(`command="/bin/sh" ${KEY}`, "simple")).toBeNull();
+  });
+});
+
+describe("parseAuthorizedKey", () => {
+  const DATA = KEY.split(" ")[1];
+
+  it("deduce el modo de las opciones, en cualquier orden", () => {
+    expect(parseAuthorizedKey(`restrict,command="internal-sftp" ${KEY} bob-casa`)).toEqual({ mode: "simple", type: "ssh-ed25519", key: DATA, name: "bob-casa" });
+    expect(parseAuthorizedKey(`command="internal-sftp",restrict ${KEY}`)?.mode).toBe("simple");
+    expect(parseAuthorizedKey(`restrict,pty ${KEY}`)?.mode).toBe("advanced");
+    expect(parseAuthorizedKey(`pty,restrict ${KEY}`)?.mode).toBe("advanced");
+  });
+
+  it("sin opciones, o con otras, es Personalizada", () => {
+    expect(parseAuthorizedKey(KEY)?.mode).toBe("custom");
+    expect(parseAuthorizedKey(`restrict ${KEY}`)?.mode).toBe("custom");
+    expect(parseAuthorizedKey(`restrict,pty,port-forwarding ${KEY}`)?.mode).toBe("custom");
+    expect(parseAuthorizedKey(`from="10.0.0.1",restrict,pty ${KEY}`)?.mode).toBe("custom");
+  });
+
+  it("las comillas pueden llevar espacios y comas", () => {
+    const key = parseAuthorizedKey(`command="echo hola, mundo",restrict ${KEY} de alguien`);
+    expect(key).toEqual({ mode: "custom", type: "ssh-ed25519", key: DATA, name: "de alguien" });
+  });
+
+  it("el nombre es el comentario, con sus espacios; sin él, null", () => {
+    expect(parseAuthorizedKey(`restrict,pty ${KEY} Bob de casa`)?.name).toBe("Bob de casa");
+    expect(parseAuthorizedKey(`restrict,pty ${KEY}`)?.name).toBeNull();
+    expect(parseAuthorizedKey(`  ${KEY}  `)?.name).toBeNull();
+  });
+
+  it("lo que no es una clave da null", () => {
+    expect(parseAuthorizedKey("")).toBeNull();
+    expect(parseAuthorizedKey("hola mundo")).toBeNull();
+    expect(parseAuthorizedKey("restrict,pty")).toBeNull();
+    expect(parseAuthorizedKey('command="sin cerrar ssh-ed25519 AAAA')).toBeNull();
+    expect(parseAuthorizedKey("restrict,pty ssh-ed25519 no*base64")).toBeNull();
   });
 });

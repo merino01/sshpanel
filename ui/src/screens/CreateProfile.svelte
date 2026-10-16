@@ -4,7 +4,8 @@
   Servidor. Al terminar dice dónde ha quedado el fichero para enviárselo. Debajo,
   «Autorizar clave» da la línea de `authorized_keys` de cada Miembro. Sin Perfil
   importado, el primero es el del propio Administrador: se importa al momento y
-  no hay claves de otros que autorizar.
+  no hay claves de otros que autorizar. Dentro de la Administración (`embedded`)
+  no lleva título: ya lo da su pestaña.
 -->
 <script lang="ts">
   import { Button } from "../components/ui/button";
@@ -15,6 +16,8 @@
   import type { ProfileField } from "../lib/profileForm";
   import AuthorizeKey from "./AuthorizeKey.svelte";
   import { createAnother, createForm, importCreated, leaveCreateProfile, submitProfile } from "../state/createProfile.svelte";
+
+  let { embedded = false }: { embedded?: boolean } = $props();
 
   const form = $derived(createForm.form);
   const created = $derived(createForm.created);
@@ -27,7 +30,9 @@
 </script>
 
 <section class="flex w-full flex-col items-center gap-2 text-center">
-  <h1 class="text-2xl font-semibold tracking-tight">{t("create.title")}</h1>
+  {#if !embedded}
+    <h1 class="text-2xl font-semibold tracking-tight">{t("create.title")}</h1>
+  {/if}
   {#if created}
     <p role="status">{t("create.done", { username: created.profile.username, path: created.path })}</p>
     {#if createForm.own}

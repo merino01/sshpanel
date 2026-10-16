@@ -6,7 +6,7 @@ mod windows;
 use std::path::Path;
 
 use commands::transfers::Transfers;
-use commands::{editor, files, preferences, profile, terminal, transfers, trash, update};
+use commands::{admin, editor, files, preferences, profile, terminal, transfers, trash, update};
 use local_copies::LocalCopies;
 use opened::Opened;
 use sshpanel_core::{Core, SystemSecretStore};
@@ -89,7 +89,8 @@ pub fn run() {
             local_copies::watch_local_copy,
             local_copies::open_local_copy,
             local_copies::forget_local_copy,
-            local_copies::clear_local_copies
+            local_copies::clear_local_copies,
+            admin::authorized_keys
         ])
         .build(tauri::generate_context!())
         .expect("error al iniciar la aplicación")

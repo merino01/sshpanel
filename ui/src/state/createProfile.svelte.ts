@@ -35,8 +35,15 @@ function emptyForm(): ProfileForm {
   };
 }
 
-/** Abre «Crear perfil»; al salir se vuelve a la pantalla actual. */
+/** Abre «Crear perfil» suelto (desde la Bienvenida); al salir se vuelve a la pantalla actual. */
 export function openCreateProfile() {
+  resetCreateForm();
+  const back = session.screen.name === "createProfile" ? session.screen.back : session.screen;
+  show({ name: "createProfile", back });
+}
+
+/** Deja «Crear perfil» como recién abierto. */
+export function resetCreateForm() {
   Object.assign(createForm, {
     form: emptyForm(),
     invalid: [],
@@ -46,12 +53,15 @@ export function openCreateProfile() {
     created: undefined,
     authorize: { key: "", mode: "simple", owner: "" },
   });
-  const back = session.screen.name === "createProfile" ? session.screen.back : session.screen;
-  show({ name: "createProfile", back });
 }
 
+/** Sale de «Crear perfil»: suelto, a la pantalla de antes; en la Administración, a las Claves. */
 export function leaveCreateProfile() {
   if (session.screen.name === "createProfile") show(session.screen.back);
+  else if (session.screen.name === "admin") {
+    resetCreateForm();
+    show({ name: "admin", section: "keys" });
+  }
 }
 
 /** Otro Perfil para otro Miembro, con el mismo Servidor. */

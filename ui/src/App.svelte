@@ -10,6 +10,7 @@
   import Toasts from "./components/Toasts.svelte";
   import TopBar from "./components/TopBar.svelte";
   import Connecting from "./screens/Connecting.svelte";
+  import Admin from "./screens/admin/Admin.svelte";
   import CreateProfile from "./screens/CreateProfile.svelte";
   import Explorer from "./screens/explorer/Explorer.svelte";
   import Problem from "./screens/Problem.svelte";
@@ -40,6 +41,8 @@
           <Explorer />
         {:else if session.screen.name === "trash"}
           <Trash />
+        {:else if session.screen.name === "admin"}
+          <Admin />
         {:else if session.screen.name === "createProfile"}
           <div class="min-h-0 overflow-y-auto px-8 py-10">
             <CreateProfile />

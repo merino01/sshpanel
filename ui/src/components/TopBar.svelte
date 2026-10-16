@@ -1,21 +1,21 @@
 <!--
   Barra superior de la ventana principal, en todas las pantallas. A la
   izquierda, la cápsula con el usuario y el Servidor (el punto se rellena con la
-  conexión abierta y late una vez al conectar); a la derecha, «Crear perfil»
+  conexión abierta y late una vez al conectar); a la derecha, «Administración»
   para el Administrador y «Ajustes».
 -->
 <script lang="ts">
   import Settings from "~icons/heroicons/cog-6-tooth";
-  import CreateProfile from "~icons/heroicons/user-plus";
+  import Shield from "~icons/heroicons/shield-check";
   import { t } from "../i18n";
-  import { openCreateProfile } from "../state/createProfile.svelte";
+  import { openAdmin } from "../state/admin.svelte";
   import { openSettings } from "../state/preferences.svelte";
   import { inWorkspace, session } from "../state/session.svelte";
   import TitleBar from "./TitleBar.svelte";
 
   const profile = $derived(session.appState?.profile);
   const connected = $derived(inWorkspace());
-  const creating = $derived(session.screen.name === "createProfile");
+  const administering = $derived(session.screen.name === "admin");
 
   const action = "flex h-7 items-center gap-1.5 rounded-lg px-2 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring aria-[current]:bg-accent aria-[current]:text-accent-text";
 </script>
@@ -36,10 +36,10 @@
     </p>
   {/if}
   <nav class="ml-auto flex items-center gap-0.5" aria-label={t("topbar.label")}>
-    {#if profile?.admin}
-      <button class={action} aria-current={creating ? "location" : undefined} onclick={openCreateProfile}>
-        <CreateProfile class="size-4" />
-        {t("topbar.createProfile")}
+    {#if profile?.admin && connected}
+      <button class={action} aria-current={administering ? "location" : undefined} onclick={openAdmin}>
+        <Shield class="size-4" />
+        {t("topbar.admin")}
       </button>
     {/if}
     <button class={action} onclick={openSettings}>

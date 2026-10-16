@@ -1,6 +1,6 @@
 /**
- * «Autorizar clave» (Administrador): la línea de `authorized_keys` con la que
- * el Servidor aplica el modo del Miembro (ADR 0006). La app solo enseña o no
+ * Las líneas de `authorized_keys` (Administrador): generar la que aplica el
+ * modo del Miembro (ADR 0006) y leer las que ya hay. La app solo enseña o no
  * la Terminal; quien la permite o la niega es el Servidor, con estas opciones.
  */
 import type { Profile } from "./api";
@@ -30,4 +30,72 @@ export function authorizedKeyLine(key: string, mode: Profile["mode"], owner = ""
   if (!KEY_TYPES.test(type) || !data || !BASE64.test(data)) return null;
   const name = owner.trim().replace(/\s+/g, "-");
   return [KEY_OPTIONS[mode], type, data, ...(name ? [name] : comment)].join(" ");
+}
+
+/** El modo de una clave autorizada; `custom` («Personalizada»): sus opciones no son las de ningún modo. */
+export type KeyMode = Profile["mode"] | "custom";
+
+/** Una línea de `authorized_keys` leída. */
+export interface AuthorizedKey {
+  mode: KeyMode;
+  type: string;
+  /** La clave en base64. */
+  key: string;
+  /** El comentario de la clave (en las que autoriza la app, de quién es); `null` si no tiene. */
+  name: string | null;
+}
+
+/**
+ * Lee una línea de `authorized_keys`: `[opciones] tipo base64 [comentario]`.
+ * El modo sale de las opciones, sin importar su orden; sin opciones, o con
+ * otras, es `custom`. `null` si la línea no es una clave.
+ */
+export function parseAuthorizedKey(line: string): AuthorizedKey | null {
+  const text = line.trim();
+  let options = "";
+  let rest = text;
+  if (!KEY_TYPES.test(text.split(/\s+/)[0] ?? "")) {
+    const end = unquoted(text, /\s/);
+    if (end < 0) return null;
+    options = text.slice(0, end);
+    rest = text.slice(end).trim();
+  }
+  const [type, key, ...comment] = rest.split(/\s+/);
+  if (!type || !KEY_TYPES.test(type) || !key || !BASE64.test(key)) return null;
+  const mode = (Object.keys(KEY_OPTIONS) as Profile["mode"][]).find((m) => sameOptions(options, KEY_OPTIONS[m])) ?? "custom";
+  return { mode, type, key, name: comment.length ? comment.join(" ") : null };
+}
+
+/** Si dos listas de opciones son las mismas, en cualquier orden. */
+function sameOptions(a: string, b: string): boolean {
+  const left = splitOptions(a);
+  const right = splitOptions(b);
+  return left.length > 0 && left.length === right.length && left.every((option) => right.includes(option));
+}
+
+/** Las opciones separadas por las comas que no van entre comillas. */
+function splitOptions(options: string): string[] {
+  const parts: string[] = [];
+  let rest = options;
+  while (rest) {
+    const comma = unquoted(rest, /,/);
+    if (comma < 0) {
+      parts.push(rest);
+      break;
+    }
+    parts.push(rest.slice(0, comma));
+    rest = rest.slice(comma + 1);
+  }
+  return parts.filter(Boolean);
+}
+
+/** Posición del primer carácter de `text` que cumple `match` fuera de comillas dobles, o -1. */
+function unquoted(text: string, match: RegExp): number {
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "\\" && quoted) i++;
+    else if (text[i] === '"') quoted = !quoted;
+    else if (!quoted && match.test(text[i])) return i;
+  }
+  return -1;
 }

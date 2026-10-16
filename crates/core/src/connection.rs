@@ -15,6 +15,7 @@ use russh_sftp::protocol::StatusCode;
 use crate::error::{Error, Result};
 use crate::profile::{Mode, Profile};
 
+mod admin;
 mod editor;
 mod explorer;
 mod naming;
@@ -23,6 +24,7 @@ mod terminal;
 mod transfer;
 mod trash;
 
+pub use admin::UserKeys;
 pub use editor::{Head, Stamp, TextCopy, TextFile};
 pub use explorer::{Entry, EntryKind, Listing};
 pub(crate) use naming::Reserved;

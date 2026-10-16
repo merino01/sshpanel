@@ -96,6 +96,12 @@ export interface TextCopy {
   stamp: Stamp;
 }
 
+/** Las líneas de clave del fichero de un usuario en `/etc/ssh/authorized_keys/`; `null` si no se pudo leer. */
+export interface UserKeys {
+  user: string;
+  lines: string[] | null;
+}
+
 /** Dónde ha quedado una Transferencia terminada; al sustituir un archivo, cómo ha quedado. */
 export type Outcome = { uploaded: string } | { downloaded: string } | { replaced: Stamp };
 
@@ -218,6 +224,9 @@ export const api = {
   clearLocalCopies: () => invoke<void>("clear_local_copies"),
   /** Avisa con su número cuando se guarda una copia vigilada. */
   onLocalCopyChanged: (handler: (id: number) => void) => listen<number>("local-copy-changed", (event) => handler(event.payload)),
+
+  /** Administración: las Claves públicas autorizadas de cada usuario; falla con `admin.keys_unavailable`. */
+  authorizedKeys: () => invoke<UserKeys[]>("authorized_keys"),
 
   /** La versión nueva publicada en las Releases, o `null` si ya es la última. */
   checkUpdate: () => invoke<{ version: string } | null>("check_update"),
