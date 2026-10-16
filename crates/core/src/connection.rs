@@ -24,6 +24,7 @@ mod terminal;
 mod transfer;
 mod trash;
 
+pub(crate) use admin::KeyChange;
 pub use admin::UserKeys;
 pub use editor::{Head, Stamp, TextCopy, TextFile};
 pub use explorer::{Entry, EntryKind, Listing};

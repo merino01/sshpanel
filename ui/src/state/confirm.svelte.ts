@@ -6,6 +6,8 @@ export interface Confirmation {
   confirmLabel: string;
   /** Una segunda acción, además de confirmar y cancelar. */
   alternativeLabel?: string;
+  /** Confirmar hace algo difícil de deshacer: el botón va en el color de error. */
+  destructive?: boolean;
 }
 
 /** Lo que se contesta: la acción principal, la segunda o cancelar. */

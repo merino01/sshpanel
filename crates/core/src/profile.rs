@@ -136,7 +136,7 @@ impl Profile {
     }
 }
 
-fn is_unix_username(name: &str) -> bool {
+pub(crate) fn is_unix_username(name: &str) -> bool {
     let mut chars = name.chars();
     matches!(chars.next(), Some(c) if c.is_ascii_lowercase() || c == '_')
         && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')

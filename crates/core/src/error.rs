@@ -72,6 +72,20 @@ pub enum Error {
     Conflict,
     #[error("no se pueden leer las claves autorizadas de /etc/ssh/authorized_keys")]
     KeysUnavailable,
+    #[error("hace falta la contraseña de sudo para cambiar las claves")]
+    SudoPasswordNeeded,
+    #[error("la contraseña de sudo no es correcta")]
+    SudoWrongPassword,
+    #[error("el usuario no puede usar sudo en el Servidor")]
+    NoSudo,
+    #[error("cambiar las claves necesita una clave de Modo avanzado")]
+    AdminNeedsAdvanced,
+    #[error("la clave ya no está como estaba: alguien ha cambiado el fichero")]
+    KeyChanged,
+    #[error("no se pudo escribir el fichero de claves")]
+    KeyWriteFailed,
+    #[error("el nombre de usuario no es válido")]
+    InvalidUser,
 }
 
 impl Error {
@@ -113,6 +127,13 @@ impl Error {
             Self::WriteFailed => "editor.write_failed",
             Self::Conflict => "editor.conflict",
             Self::KeysUnavailable => "admin.keys_unavailable",
+            Self::SudoPasswordNeeded => "admin.sudo_password_needed",
+            Self::SudoWrongPassword => "admin.sudo_wrong_password",
+            Self::NoSudo => "admin.no_sudo",
+            Self::AdminNeedsAdvanced => "admin.needs_advanced",
+            Self::KeyChanged => "admin.key_changed",
+            Self::KeyWriteFailed => "admin.key_write_failed",
+            Self::InvalidUser => "admin.invalid_user",
         }
     }
 }

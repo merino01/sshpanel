@@ -227,6 +227,19 @@ export const api = {
 
   /** Administración: las Claves públicas autorizadas de cada usuario; falla con `admin.keys_unavailable`. */
   authorizedKeys: () => invoke<UserKeys[]>("authorized_keys"),
+  /** Los usuarios de personas del Servidor, para elegir a quién autorizar una clave. */
+  serverUsers: () => invoke<string[]>("server_users"),
+  /**
+   * Comprueba la contraseña de sudo y el núcleo la recuerda en memoria hasta cambiar de Perfil. Falla con
+   * `admin.sudo_wrong_password`, `admin.no_sudo` o `admin.needs_advanced`.
+   */
+  unlockAdmin: (password: string) => invoke<void>("unlock_admin", { password }),
+  /** Los cambios de claves, con sudo. Sin contraseña recordada fallan con `admin.sudo_password_needed`. */
+  authorizeKey: (user: string, line: string) => invoke<void>("authorize_key", { user, line }),
+  /** Falla con `admin.key_changed` si la línea ya no está. */
+  revokeKey: (user: string, line: string) => invoke<void>("revoke_key", { user, line }),
+  /** Falla con `admin.key_changed` si `old` ya no está. */
+  replaceKey: (user: string, old: string, newLine: string) => invoke<void>("replace_key", { user, old, new: newLine }),
 
   /** La versión nueva publicada en las Releases, o `null` si ya es la última. */
   checkUpdate: () => invoke<{ version: string } | null>("check_update"),

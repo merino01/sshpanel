@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import ConfirmDialog from "./components/ConfirmDialog.svelte";
+  import SudoDialog from "./components/SudoDialog.svelte";
   import ContextMenu from "./components/ContextMenu.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import Toasts from "./components/Toasts.svelte";
@@ -75,4 +76,5 @@
 <DropOverlay />
 <ContextMenu />
 <ConfirmDialog />
+<SudoDialog />
 <Toasts />

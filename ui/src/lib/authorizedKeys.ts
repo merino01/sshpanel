@@ -99,3 +99,13 @@ function unquoted(text: string, match: RegExp): number {
   }
   return -1;
 }
+
+/** La línea de `key` con las opciones de `mode`, conservando su nombre. */
+export function withMode(key: AuthorizedKey, mode: Profile["mode"]): string {
+  return authorizedKeyLine([key.type, key.key, ...(key.name ? [key.name] : [])].join(" "), mode)!;
+}
+
+/** Si `key`, de `user`, es la clave con la que se está conectado: el mismo usuario y la misma `publicKey`. */
+export function isOwnKey(user: string, key: AuthorizedKey, username: string, publicKey: string | null): boolean {
+  return user === username && publicKey?.trim().split(/\s+/)[1] === key.key;
+}

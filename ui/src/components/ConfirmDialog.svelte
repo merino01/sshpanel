@@ -41,7 +41,7 @@
         {#if shown.alternativeLabel}
           <AlertDialog.Action variant="outline" onclick={() => finish("alternative")}>{shown.alternativeLabel}</AlertDialog.Action>
         {/if}
-        <AlertDialog.Action onclick={() => finish("confirm")}>{shown.confirmLabel}</AlertDialog.Action>
+        <AlertDialog.Action variant={shown.destructive ? "destructive" : "default"} onclick={() => finish("confirm")}>{shown.confirmLabel}</AlertDialog.Action>
       </div>
     </AlertDialog.Content>
   </AlertDialog.Root>

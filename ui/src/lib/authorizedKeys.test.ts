@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authorizedKeyLine, parseAuthorizedKey } from "./authorizedKeys";
+import { authorizedKeyLine, isOwnKey, parseAuthorizedKey, withMode } from "./authorizedKeys";
 
 const KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEjEmPlOdEcLaVeNoReAlXxXxXxXxXxXxXxXxXxXxXxX";
 
@@ -68,5 +68,31 @@ describe("parseAuthorizedKey", () => {
     expect(parseAuthorizedKey("restrict,pty")).toBeNull();
     expect(parseAuthorizedKey('command="sin cerrar ssh-ed25519 AAAA')).toBeNull();
     expect(parseAuthorizedKey("restrict,pty ssh-ed25519 no*base64")).toBeNull();
+  });
+});
+
+describe("withMode", () => {
+  it("cambia las opciones y conserva el nombre, también con espacios", () => {
+    const key = parseAuthorizedKey(`restrict,command="internal-sftp" ${KEY} Bob de casa`)!;
+    expect(withMode(key, "advanced")).toBe(`restrict,pty ${KEY} Bob de casa`);
+    expect(parseAuthorizedKey(withMode(key, "advanced"))).toEqual({ ...key, mode: "advanced" });
+  });
+
+  it("sin nombre, queda sin nombre", () => {
+    expect(withMode(parseAuthorizedKey(`restrict,pty ${KEY}`)!, "simple")).toBe(`restrict,command="internal-sftp" ${KEY}`);
+  });
+});
+
+describe("isOwnKey", () => {
+  const key = parseAuthorizedKey(`restrict,pty ${KEY} alice-portatil`)!;
+
+  it("es la propia si coinciden el usuario y la clave, sin mirar el comentario", () => {
+    expect(isOwnKey("alice", key, "alice", `${KEY} sshpanel`)).toBe(true);
+  });
+
+  it("no lo es con otro usuario, otra clave o sin clave pública", () => {
+    expect(isOwnKey("bob", key, "alice", `${KEY} sshpanel`)).toBe(false);
+    expect(isOwnKey("alice", key, "alice", "ssh-ed25519 AAAAotra sshpanel")).toBe(false);
+    expect(isOwnKey("alice", key, "alice", null)).toBe(false);
   });
 });

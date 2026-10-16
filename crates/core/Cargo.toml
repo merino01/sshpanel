@@ -6,6 +6,7 @@ license.workspace = true
 description = "Núcleo de SSH Panel: lógica de Perfil, identidad, SSH/SFTP, independiente de la interfaz"
 
 [dependencies]
+base64 = "0.22.1"
 keyring = "4.2.0"
 rand_core = { version = "0.6", features = ["getrandom"] }
 # `ring` en lugar de `aws-lc-rs`: no exige cmake ni NASM para compilar en Windows.
@@ -16,6 +17,7 @@ serde_json = "1.0.154"
 ssh-key = { version = "0.6.7", features = ["ed25519"] }
 thiserror = "2.0.21"
 tokio = { version = "1.53.3", features = ["fs", "io-util", "macros", "net", "rt", "time", "sync"] }
+zeroize = "1.9.1"
 
 [dev-dependencies]
 tempfile = "3.27.0"

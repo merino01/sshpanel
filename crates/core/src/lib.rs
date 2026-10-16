@@ -12,8 +12,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use tokio::sync::Mutex;
+use zeroize::Zeroizing;
 
-use connection::{Connection, Reserved, Terminal};
+use connection::{Connection, KeyChange, Reserved, Terminal};
 
 pub use connection::{Entry, EntryKind, Head, Listing, Outcome, Progress, Restored, Stamp, TerminalEvent, TextCopy, TextFile, Transfer, Trashed, UserKeys};
 pub use error::{Error, Result};
@@ -33,11 +34,21 @@ pub struct Core {
     reserved: Reserved,
     /// Terminales abiertas, por el número que les da la interfaz.
     terminals: Mutex<HashMap<u32, Arc<Terminal>>>,
+    /// La contraseña de sudo del Administrador, solo en memoria y hasta
+    /// cambiar de Perfil o cerrar la app (ADR 0007). Nunca va a disco.
+    sudo_password: std::sync::Mutex<Option<Zeroizing<String>>>,
 }
 
 impl Core {
     pub fn new(data_dir: impl Into<PathBuf>, secrets: Box<dyn SecretStore>) -> Self {
-        Self { data_dir: data_dir.into(), secrets, connection: Mutex::new(None), reserved: Reserved::default(), terminals: Mutex::default() }
+        Self {
+            data_dir: data_dir.into(),
+            secrets,
+            connection: Mutex::new(None),
+            reserved: Reserved::default(),
+            terminals: Mutex::default(),
+            sudo_password: std::sync::Mutex::default(),
+        }
     }
 
     /// Importa un fichero de Perfil. Genera la identidad del Miembro si todavía
@@ -47,6 +58,7 @@ impl Core {
         identity::ensure(self.secrets.as_ref())?;
         fs::create_dir_all(&self.data_dir).map_err(|_| Error::Storage)?;
         fs::write(self.data_dir.join(PROFILE_FILE), profile.to_json()).map_err(|_| Error::Storage)?;
+        *self.sudo_password.lock().unwrap() = None;
         Ok(profile)
     }
 
@@ -180,6 +192,49 @@ impl Core {
     /// Servidor no las tiene ahí, como pide la guía del servidor.
     pub async fn authorized_keys(&self) -> Result<Vec<UserKeys>> {
         self.connection().await?.authorized_keys().await
+    }
+
+    /// Los usuarios de personas del Servidor, para elegir a quién autorizar una clave.
+    pub async fn server_users(&self) -> Result<Vec<String>> {
+        self.connection().await?.server_users().await
+    }
+
+    /// Comprueba la contraseña de sudo del Administrador y la recuerda, solo en
+    /// memoria, para los cambios de claves. Falla con [`Error::AdminNeedsAdvanced`]
+    /// si su clave es de Modo simple, y con [`Error::SudoWrongPassword`] o
+    /// [`Error::NoSudo`] si sudo no lo deja.
+    pub async fn unlock_admin(&self, password: &str) -> Result<()> {
+        self.connection().await?.check_sudo(password).await?;
+        *self.sudo_password.lock().unwrap() = Some(Zeroizing::new(password.to_string()));
+        Ok(())
+    }
+
+    /// Autoriza `line` en el fichero de claves de `user`, si no está ya.
+    pub async fn authorize_key(&self, user: &str, line: &str) -> Result<()> {
+        self.change_keys(user, KeyChange::Authorize(line)).await
+    }
+
+    /// Quita `line` del fichero de claves de `user`. Falla con
+    /// [`Error::KeyChanged`] si ya no está.
+    pub async fn revoke_key(&self, user: &str, line: &str) -> Result<()> {
+        self.change_keys(user, KeyChange::Revoke(line)).await
+    }
+
+    /// Cambia `old` por `new` en el fichero de claves de `user`, como al
+    /// cambiar de modo. Falla con [`Error::KeyChanged`] si `old` ya no está.
+    pub async fn replace_key(&self, user: &str, old: &str, new: &str) -> Result<()> {
+        self.change_keys(user, KeyChange::Replace(old, new)).await
+    }
+
+    /// Aplica `change` con la contraseña recordada; sin ella, falla con
+    /// [`Error::SudoPasswordNeeded`]. Si ya no vale, la olvida.
+    async fn change_keys(&self, user: &str, change: KeyChange<'_>) -> Result<()> {
+        let password = self.sudo_password.lock().unwrap().clone().ok_or(Error::SudoPasswordNeeded)?;
+        let result = self.connection().await?.change_keys(user, &password, change).await;
+        if result == Err(Error::SudoWrongPassword) {
+            *self.sudo_password.lock().unwrap() = None;
+        }
+        result
     }
 
     /// Abre la Terminal `id` en el Servidor, de `cols` columnas y `rows`

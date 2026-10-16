@@ -5135,12 +5135,14 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
+ "zeroize",
 ]
 
 [[package]]
 name = "sshpanel-core"
 version = "0.9.0"
 dependencies = [
+ "base64 0.22.1",
  "keyring",
  "rand_core 0.6.4",
  "russh",
@@ -5151,6 +5153,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
+ "zeroize",
 ]
 
 [[package]]

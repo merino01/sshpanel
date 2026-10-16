@@ -2,7 +2,8 @@
   «Crear perfil» (Administrador): servidor, usuario, modo y Carpeta compartida
   de un Miembro. La Huella no se escribe: la app la calcula conectándose al
   Servidor. Al terminar dice dónde ha quedado el fichero para enviárselo. Debajo,
-  «Autorizar clave» da la línea de `authorized_keys` de cada Miembro. Sin Perfil
+  «Autorizar clave» escribe en el Servidor la clave que mande, ya con su usuario
+  y su modo. Sin Perfil
   importado, el primero es el del propio Administrador: se importa al momento y
   no hay claves de otros que autorizar. Dentro de la Administración (`embedded`)
   no lleva título: ya lo da su pestaña.
@@ -112,6 +113,8 @@
     </form>
   {/if}
   {#if !createForm.own}
-    <AuthorizeKey />
+    <div class="mt-8 w-full max-w-[28rem] border-t pt-6">
+      <AuthorizeKey form={createForm.authorize} />
+    </div>
   {/if}
 </section>

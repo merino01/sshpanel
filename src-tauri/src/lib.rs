@@ -90,7 +90,12 @@ pub fn run() {
             local_copies::open_local_copy,
             local_copies::forget_local_copy,
             local_copies::clear_local_copies,
-            admin::authorized_keys
+            admin::authorized_keys,
+            admin::server_users,
+            admin::unlock_admin,
+            admin::authorize_key,
+            admin::revoke_key,
+            admin::replace_key
         ])
         .build(tauri::generate_context!())
         .expect("error al iniciar la aplicación")
