@@ -103,6 +103,8 @@ async fn refuses_editing_outside_them() {
     let server = TestServer::start();
     let s = connect(&server, "simple").await;
     server.sh("echo -n x > /srv/otra/dato.txt && chmod 666 /srv/otra/dato.txt");
+    let local = s.dir.path().join("dato.txt");
+    fs::write(&local, "mío").unwrap();
     let outside = Error::OutsideAllowed;
 
     for path in ["/srv/otra/dato.txt", "/home/alice/../../srv/otra/dato.txt", "/etc/passwd"] {
@@ -110,6 +112,9 @@ async fn refuses_editing_outside_them() {
         assert_eq!(s.core.read_text(path).await.unwrap_err(), outside, "{path}");
         assert_eq!(s.core.write_text(path, "mío", None).await.unwrap_err(), outside, "{path}");
         assert_eq!(s.core.write_text_copy(path, "mío").await.unwrap_err(), outside, "{path}");
+        assert_eq!(s.core.stamp(path).await.unwrap_err(), outside, "{path}");
+        let replace = Transfer::replace(&local, path, None);
+        assert_eq!(s.core.run(&replace, |_| {}).await.unwrap_err(), outside, "{path}");
     }
     assert_eq!(server.sh("cat /srv/otra/dato.txt"), "x");
     assert_eq!(server.sh("ls /srv/otra"), "dato.txt");

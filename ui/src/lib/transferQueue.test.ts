@@ -115,4 +115,46 @@ describe("TransferQueue", () => {
 
     expect(status()).toEqual(["running"]);
   });
+
+  it("avisa de cómo acaba a quien la puso en la cola, salvo si se corta la conexión", async () => {
+    const { queue, api, finish, failWith } = setup();
+    const onDone = vi.fn();
+    const onFailed = vi.fn();
+    const track = (name: string): NewTransfer => ({ direction: "upload", name, describe: () => "", onDone, onFailed });
+    const [a, b, c, d] = await Promise.all(["a", "b", "c", "d"].map((name) => queue.enqueue(track(name), async () => {})));
+    await flush();
+
+    await queue.cancel(d);
+    expect(onFailed).toHaveBeenLastCalledWith("transfer.cancelled");
+
+    await finish(a.id, { replaced: { size: 3, modified: 9 } });
+    expect(onDone).toHaveBeenCalledWith({ replaced: { size: 3, modified: 9 } });
+
+    await failWith(b.id, "editor.conflict");
+    expect(onFailed).toHaveBeenLastCalledWith("editor.conflict");
+
+    await failWith(c.id, "connection.lost");
+    expect(onFailed).toHaveBeenCalledTimes(2);
+    expect(api.runTransfer).toHaveBeenCalledTimes(3);
+  });
+
+  it("las ocultas no se pintan y salen de la cola al acabar, salvo si se corta la conexión", async () => {
+    const { queue, api, finish, failWith } = setup();
+    const hidden = (name: string): NewTransfer => ({ direction: "upload", name, describe: () => "", hidden: true });
+    const [a, b, c] = await Promise.all(["a", "b", "c"].map((name) => queue.enqueue(hidden(name), async () => {})));
+    await queue.enqueue({ direction: "upload", name: "d", describe: () => "" }, async () => {});
+    await flush();
+
+    expect(queue.visible.map((tr) => tr.name)).toEqual(["d"]);
+
+    await finish(a.id);
+    await failWith(b.id, "files.permission_denied");
+    expect(api.cancelTransfer).toHaveBeenCalledWith(b.id);
+    await failWith(c.id, "connection.lost");
+    expect(queue.items.map((tr) => tr.name)).toEqual(["c", "d"]);
+
+    queue.resume();
+    await flush();
+    expect(queue.items[0].status).toBe("running");
+  });
 });

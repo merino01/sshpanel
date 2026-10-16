@@ -3,21 +3,23 @@
 //! Cada archivo se copia primero a un nombre provisional y solo toma su nombre
 //! definitivo cuando está completo, así que un archivo con su nombre nunca está
 //! a medias. Nunca se sustituye nada: si el nombre ya existe se usa
-//! `nombre (1)`, `nombre (2)`…
+//! `nombre (1)`, `nombre (2)`… La excepción es [`Transfer::replace`], que
+//! sube de nuevo un archivo abierto en el equipo encima del suyo.
 //!
 //! Una [`Transfer`] recuerda su destino y lo que lleva hecho: si falla, el
 //! siguiente intento sigue donde se quedó, aprovechando los provisionales; si
 //! se cancela, se borra lo que ha creado.
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex as SyncMutex};
 
 use serde::Serialize;
 use tokio::fs;
 use tokio::sync::Mutex;
 
 use super::Connection;
+use super::editor::Stamp;
 use super::naming::{Reservation, Reserved, free_local_path};
 use super::paths::{is_single_name, join};
 use crate::error::{Error, Result};
@@ -43,6 +45,8 @@ pub enum Outcome {
     Uploaded(String),
     /// Ruta en el equipo.
     Downloaded(PathBuf),
+    /// [`Stamp`] del archivo sustituido en el Servidor.
+    Replaced(Stamp),
 }
 
 pub(crate) type Report<'a> = &'a mut (dyn FnMut(Progress) + Send);
@@ -58,6 +62,9 @@ pub struct Transfer {
 enum Job {
     Upload { local: PathBuf, remote_dir: String },
     Download { remote_dir: String, name: String, local_dir: PathBuf },
+    /// `expected` se olvida en cuanto se comprueba, para que un reintento tras
+    /// perder la conexión a medio escribir no lo tome por un conflicto.
+    Replace { local: PathBuf, remote: String, expected: SyncMutex<Option<Stamp>> },
 }
 
 impl Transfer {
@@ -70,6 +77,15 @@ impl Transfer {
     /// carpeta `local_dir` del equipo.
     pub fn download(remote_dir: impl Into<String>, name: impl Into<String>, local_dir: impl Into<PathBuf>) -> Self {
         Self::new(Job::Download { remote_dir: remote_dir.into(), name: name.into(), local_dir: local_dir.into() })
+    }
+
+    /// Sustitución del archivo `remote` del Servidor por el archivo `local`,
+    /// escribiendo en el mismo para que conserve permisos y propietario. Con
+    /// `expected`, falla con [`Error::Conflict`] sin tocar nada si el archivo
+    /// ya no tiene ese [`Stamp`]. Una vez empieza a escribir no se para al
+    /// cancelarla, porque dejaría el archivo a medias.
+    pub fn replace(local: impl Into<PathBuf>, remote: impl Into<String>, expected: Option<Stamp>) -> Self {
+        Self::new(Job::Replace { local: local.into(), remote: remote.into(), expected: SyncMutex::new(expected) })
     }
 
     fn new(job: Job) -> Self {
@@ -169,6 +185,7 @@ async fn undo(connection: Option<&Connection>, job: &Job, started: Option<Starte
                 }
             }
         }
+        Job::Replace { .. } => {}
         Job::Download { .. } => {
             for (item, &done) in items {
                 let local = item.local(Path::new(started.root()));
@@ -198,21 +215,37 @@ impl Connection {
         cancelled: &AtomicBool,
         report: Report<'_>,
     ) -> Result<Outcome> {
-        let remote_dir = match job {
-            Job::Upload { remote_dir, .. } | Job::Download { remote_dir, .. } => remote_dir,
-        };
-        self.check_allowed(remote_dir)?;
         let mut counter = Counter { done: 0, total: 0, report, cancelled };
         match job {
             Job::Upload { local, remote_dir } => {
+                self.check_allowed(remote_dir)?;
                 let started = self.upload(local, remote_dir, started, reserved, &mut counter).await?;
                 Ok(Outcome::Uploaded(started.name.clone()))
             }
             Job::Download { remote_dir, name, local_dir } => {
+                self.check_allowed(remote_dir)?;
                 let started = self.download(remote_dir, name, local_dir, started, reserved, &mut counter).await?;
                 Ok(Outcome::Downloaded(PathBuf::from(started.root())))
             }
+            Job::Replace { local, remote, expected } => Ok(Outcome::Replaced(self.replace(local, remote, expected, &mut counter).await?)),
         }
+    }
+
+    async fn replace(&self, local: &Path, remote: &str, expected: &SyncMutex<Option<Stamp>>, counter: &mut Counter<'_>) -> Result<Stamp> {
+        self.check_file(remote)?;
+        let expected_now = *expected.lock().unwrap();
+        if let Some(expected_now) = expected_now {
+            let meta = self.sftp.metadata(remote).await.map_err(|e| self.failure(e, Error::TransferFailed))?;
+            if Stamp::from(&meta) != expected_now {
+                return Err(Error::Conflict);
+            }
+        }
+        counter.check()?;
+        *expected.lock().unwrap() = None;
+        // De aquí en adelante no se cancela: el archivo quedaría a medias.
+        let never = AtomicBool::new(false);
+        let mut counter = Counter { done: 0, total: 0, report: &mut *counter.report, cancelled: &never };
+        self.replace_file(local, remote, &mut counter).await
     }
 
     async fn upload<'s>(

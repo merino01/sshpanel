@@ -150,6 +150,11 @@ impl Core {
         self.connection().await?.read_head(path).await
     }
 
+    /// Tamaño y fecha de modificación actuales del archivo `path`.
+    pub async fn stamp(&self, path: &str) -> Result<Stamp> {
+        self.connection().await?.stamp(path).await
+    }
+
     /// Lee entero el archivo de texto `path`, con su [`Stamp`]. Falla con
     /// [`Error::NotText`] si no es UTF-8.
     pub async fn read_text(&self, path: &str) -> Result<TextFile> {
@@ -214,8 +219,9 @@ impl Core {
     }
 
     /// Lanza una Transferencia, avisando a `progress` de cada avance, o la
-    /// reanuda donde se quedó si un intento anterior falló. Nunca sustituye
-    /// nada: si el nombre está ocupado usa `nombre (1)`, `nombre (2)`…
+    /// reanuda donde se quedó si un intento anterior falló. Salvo
+    /// [`Transfer::replace`], nunca sustituye nada: si el nombre está ocupado
+    /// usa `nombre (1)`, `nombre (2)`…
     /// Varias Transferencias pueden ir a la vez sobre la misma conexión.
     pub async fn run(&self, transfer: &Transfer, mut progress: impl FnMut(Progress) + Send) -> Result<Outcome> {
         connection::run(self.connection().await.ok(), transfer, &self.reserved, &mut progress).await

@@ -1,4 +1,5 @@
 mod commands;
+mod local_copies;
 mod opened;
 mod windows;
 
@@ -6,6 +7,7 @@ use std::path::Path;
 
 use commands::transfers::Transfers;
 use commands::{editor, files, preferences, profile, terminal, transfers, trash, update};
+use local_copies::LocalCopies;
 use opened::Opened;
 use sshpanel_core::{Core, SystemSecretStore};
 use tauri::Manager;
@@ -32,6 +34,8 @@ pub fn run() {
             let secrets = SystemSecretStore::new(app.config().identifier.clone());
             app.manage(Core::new(data_dir, Box::new(secrets)));
             app.manage(Transfers::default());
+            app.manage(LocalCopies::new(&app.config().identifier));
+            local_copies::watch(app.handle());
             update::manage(app.handle())?;
             windows::open_main(app.handle())?;
             let cwd = std::env::current_dir().unwrap_or_default();
@@ -50,6 +54,7 @@ pub fn run() {
             files::list_dir,
             files::create_folder,
             files::rename,
+            files::file_stamp,
             trash::trash,
             trash::list_trash,
             trash::restore,
@@ -61,6 +66,7 @@ pub fn run() {
             terminal::close_terminal,
             transfers::add_upload,
             transfers::add_download,
+            transfers::add_replace,
             transfers::run_transfer,
             transfers::cancel_transfer,
             update::check_update,
@@ -78,7 +84,12 @@ pub fn run() {
             windows::move_editor,
             windows::set_unsaved,
             windows::unsaved_editors,
-            windows::close_editors
+            windows::close_editors,
+            local_copies::prepare_local_copy,
+            local_copies::watch_local_copy,
+            local_copies::open_local_copy,
+            local_copies::forget_local_copy,
+            local_copies::clear_local_copies
         ])
         .build(tauri::generate_context!())
         .expect("error al iniciar la aplicación")
@@ -88,6 +99,10 @@ pub fn run() {
                 if label == windows::MAIN {
                     _app.exit(0);
                 }
+            }
+            // Las copias de archivos del Servidor no se quedan en el equipo.
+            if let tauri::RunEvent::Exit = _event {
+                _app.state::<LocalCopies>().clear();
             }
             // En macOS, el Perfil abierto con doble clic llega como evento.
             #[cfg(target_os = "macos")]

@@ -6,6 +6,7 @@ import { api, type AppState } from "../lib/api";
 import { confirm } from "./confirm.svelte";
 import { closeEditors, watchEditors } from "./editorWindows.svelte";
 import { enterExplorer } from "./explorer.svelte";
+import { localCopies } from "./localCopies.svelte";
 import { closeMenu } from "./menu.svelte";
 import { resetTerminals } from "./terminal.svelte";
 import { toasts } from "./toasts.svelte";
@@ -139,8 +140,9 @@ export async function openPendingProfile(): Promise<boolean> {
 
 /** Importa el Perfil del fichero `path` y conecta con él. */
 export async function importProfileFrom(path: string) {
-  // Las ventanas del Editor son del Servidor anterior: guardar en ellas escribiría en el nuevo.
+  // Las ventanas del Editor y las copias en el equipo son del Servidor anterior: guardar en ellas escribiría en el nuevo.
   if (!(await closeEditors())) return;
+  await localCopies.clear();
   try {
     session.appState = await api.importProfile(path);
   } catch (code) {

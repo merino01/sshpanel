@@ -10,6 +10,7 @@ use tokio::fs;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
 use super::super::Connection;
+use super::super::editor::Stamp;
 use super::{Progress, Report};
 use crate::error::{Error, Result};
 
@@ -74,6 +75,32 @@ impl Connection {
             let _ = self.sftp.remove_file(partial).await;
         }
         result
+    }
+
+    /// Escribe `local` encima de `remote`, en el mismo archivo y desde el
+    /// principio, y devuelve el [`Stamp`] con el que queda.
+    pub(super) async fn replace_file(&self, local: &Path, remote: &str, counter: &mut Counter<'_>) -> Result<Stamp> {
+        let mut source = fs::File::open(local).await.map_err(|_| Error::LocalUnreadable)?;
+        counter.total = source.metadata().await.map_err(|_| Error::LocalUnreadable)?.len();
+        counter.report();
+        let mut target = self
+            .sftp
+            .open_with_flags(remote, OpenFlags::WRITE | OpenFlags::TRUNCATE)
+            .await
+            .map_err(|e| self.failure(e, Error::TransferFailed))?;
+        let mut buf = vec![0; CHUNK];
+        loop {
+            let n = source.read(&mut buf).await.map_err(|_| Error::LocalUnreadable)?;
+            if n == 0 {
+                break;
+            }
+            target.write_all(&buf[..n]).await.map_err(|e| self.io_failure(e, Error::TransferFailed))?;
+            counter.add(n)?;
+        }
+        target.flush().await.map_err(|e| self.io_failure(e, Error::TransferFailed))?;
+        let meta = target.metadata().await.map_err(|e| self.failure(e, Error::TransferFailed))?;
+        target.shutdown().await.map_err(|e| self.io_failure(e, Error::TransferFailed))?;
+        Ok(Stamp::from(&meta))
     }
 
     /// Copia `remote` a `local` pasando por el provisional, continuando desde

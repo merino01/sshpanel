@@ -1,5 +1,6 @@
 //! Transferencias: subir y descargar archivos y carpetas, con progreso,
-//! cancelar, reintentar, reanudar tras un corte y varias a la vez, a través de
+//! cancelar, reintentar, reanudar tras un corte y varias a la vez, y sustituir
+//! un archivo abierto en el equipo, a través de
 //! la interfaz del núcleo y contra el servidor OpenSSH de prueba.
 
 mod support;
@@ -9,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use sshpanel_core::{Core, Error, MemorySecretStore, Outcome, Progress, Transfer};
+use sshpanel_core::{Core, Error, MemorySecretStore, Outcome, Progress, Stamp, Transfer};
 use support::TestServer;
 use tempfile::TempDir;
 
@@ -96,6 +97,13 @@ fn local_names(dir: &Path) -> Vec<String> {
 }
 
 const CUT_AT: u64 = 8 * 1024 * 1024;
+
+/// Tamaño y fecha de modificación del archivo `path` según el Servidor.
+fn stamp_on_server(server: &TestServer, path: &str) -> Stamp {
+    let out = server.sh(&format!("stat -c '%s %Y' '{path}'"));
+    let (size, modified) = out.split_once(' ').unwrap();
+    Stamp { size: size.parse().unwrap(), modified: Some(modified.parse().unwrap()) }
+}
 
 fn names(core_listing: sshpanel_core::Listing) -> Vec<String> {
     core_listing.entries.into_iter().map(|e| e.name).collect()
@@ -459,4 +467,58 @@ async fn parallel_downloads_all_complete() {
         assert_eq!(outcome.unwrap(), downloaded(s.local().join(name)));
         assert_eq!(local_sha256(&s.local().join(name)), remote_sha256(&server, &format!("/home/alice/{name}")));
     }
+}
+
+#[tokio::test]
+async fn replaces_a_file_in_place_reporting_progress() {
+    let server = TestServer::start();
+    server.sh("mkdir -p /srv/compartida && chmod 777 /srv/compartida");
+    server.sh("printf 'de bob' > /srv/compartida/plano.png && chown bob:alice /srv/compartida/plano.png && chmod 664 /srv/compartida/plano.png");
+    let s = connect(&server).await;
+    let remote = "/srv/compartida/plano.png";
+    let stamp = s.core.stamp(remote).await.unwrap();
+    assert_eq!(stamp, stamp_on_server(&server, remote));
+    let file = s.local().join("plano.png");
+    fs::write(&file, pattern(300_000)).unwrap();
+
+    let mut reports = Vec::new();
+    let outcome = s.core.run(&Transfer::replace(&file, remote, Some(stamp)), |p| reports.push(p)).await.unwrap();
+
+    assert_eq!(outcome, Outcome::Replaced(stamp_on_server(&server, remote)));
+    assert_eq!(remote_sha256(&server, remote), local_sha256(&file));
+    assert_eq!(server.sh("stat -c '%a %U' /srv/compartida/plano.png"), "664 bob");
+    assert_eq!(server.sh("ls -A /srv/compartida"), "plano.png");
+    assert_eq!(reports.last(), Some(&Progress { done: 300_000, total: 300_000 }));
+}
+
+#[tokio::test]
+async fn does_not_replace_a_file_that_changed_on_the_server() {
+    let server = TestServer::start();
+    server.put_file("alice", "foto.png", "original");
+    let s = connect(&server).await;
+    let remote = "/home/alice/foto.png";
+    let stamp = s.core.stamp(remote).await.unwrap();
+    server.sh("printf 'cambio de otro' > /home/alice/foto.png");
+    let file = s.local().join("foto.png");
+    fs::write(&file, "mío").unwrap();
+
+    let transfer = Transfer::replace(&file, remote, Some(stamp));
+    assert_eq!(s.core.run(&transfer, |_| {}).await.unwrap_err(), Error::Conflict);
+    assert_eq!(server.sh("cat /home/alice/foto.png"), "cambio de otro");
+
+    s.core.run(&Transfer::replace(&file, remote, None), |_| {}).await.unwrap();
+    assert_eq!(server.sh("cat /home/alice/foto.png"), "mío");
+}
+
+#[tokio::test]
+async fn replacing_needs_the_file_to_exist() {
+    let server = TestServer::start();
+    let s = connect(&server).await;
+    let file = s.local().join("foto.png");
+    fs::write(&file, "mío").unwrap();
+
+    assert_eq!(s.core.stamp("/home/alice/foto.png").await.unwrap_err(), Error::NotFound);
+    let transfer = Transfer::replace(&file, "/home/alice/foto.png", None);
+    assert_eq!(s.core.run(&transfer, |_| {}).await.unwrap_err(), Error::NotFound);
+    assert_eq!(server.sh("ls /home/alice"), "");
 }

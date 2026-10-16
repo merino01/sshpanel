@@ -16,6 +16,18 @@ export interface NewTransfer {
   describe: (outcome: Outcome) => string;
   /** Carpeta del Servidor que cambia al terminar, para refrescarla si está en pantalla. */
   changes?: string;
+  /**
+   * De la propia app, no del Miembro (como las copias abiertas en el equipo): no se pinta en la lista y
+   * sale de la cola al acabar. Si se corta la conexión, sigue al reconectar como las demás.
+   */
+  hidden?: boolean;
+  /** Ha terminado bien. */
+  onDone?: (outcome: Outcome) => void;
+  /**
+   * Ha fallado o se ha cancelado (`transfer.cancelled`), con el código `code`. No se llama si se ha
+   * perdido la conexión, porque seguirá al reconectar.
+   */
+  onFailed?: (code: unknown) => void;
 }
 
 /** Una Transferencia de la cola. */
@@ -58,12 +70,19 @@ export class TransferQueue {
     this.#deps = deps;
   }
 
+  /** Las que se pintan en la lista: todas menos las ocultas. */
+  get visible(): QueuedTransfer[] {
+    return this.items.filter((transfer) => !transfer.hidden);
+  }
+
   /** Registra la Transferencia en el núcleo con `add` y la pone en la cola. */
-  async enqueue(transfer: NewTransfer, add: (id: number) => Promise<unknown>) {
+  async enqueue(transfer: NewTransfer, add: (id: number) => Promise<unknown>): Promise<QueuedTransfer> {
     const id = this.#nextId++;
     await add(id);
     this.items.push({ ...transfer, id, status: "waiting", progress: null, cancelling: false });
+    const queued = this.items[this.items.length - 1];
     this.#pump();
+    return queued;
   }
 
   /** Para la Transferencia y borra lo que había creado. Si está en curso, `#run` recoge el final. */
@@ -75,9 +94,10 @@ export class TransferQueue {
     } else {
       transfer.status = "cancelled";
       transfer.outcome = t("transfers.cancelled");
+      transfer.onFailed?.("transfer.cancelled");
     }
     await this.#deps.api.cancelTransfer(transfer.id).catch(() => {});
-    if (!wasRunning) this.#changed(transfer);
+    if (!wasRunning) this.#ended(transfer);
   }
 
   retry(transfer: QueuedTransfer) {
@@ -117,10 +137,12 @@ export class TransferQueue {
       const outcome = await this.#deps.api.runTransfer(transfer.id, (progress) => (transfer.progress = progress));
       transfer.outcome = transfer.describe(outcome);
       transfer.status = "done";
+      transfer.onDone?.(outcome);
     } catch (code) {
       if (code === "transfer.cancelled") {
         transfer.status = "cancelled";
         transfer.outcome = t("transfers.cancelled");
+        transfer.onFailed?.(code);
       } else if (isConnectionError(code)) {
         transfer.status = "lost";
         transfer.outcome = t("transfers.lost");
@@ -129,14 +151,19 @@ export class TransferQueue {
       } else {
         transfer.status = "failed";
         transfer.outcome = errorMessage(code);
+        transfer.onFailed?.(code);
       }
     }
     transfer.cancelling = false;
-    if (transfer.status !== "lost") this.#changed(transfer);
+    if (transfer.status !== "lost") this.#ended(transfer);
     this.#pump();
   }
 
-  #changed(transfer: QueuedTransfer) {
+  /** Ha acabado: se refresca su carpeta y, si es oculta, sale de la cola, liberándola en el núcleo si ha fallado. */
+  #ended(transfer: QueuedTransfer) {
     if (transfer.changes !== undefined) this.#deps.onChanged(transfer.changes);
+    if (!transfer.hidden) return;
+    this.items = this.items.filter((item) => item.id !== transfer.id);
+    if (transfer.status === "failed") void this.#deps.api.cancelTransfer(transfer.id).catch(() => {});
   }
 }

@@ -11,6 +11,7 @@ import { formatSize } from "../lib/format";
 import { baseName } from "../lib/paths";
 import { fileTitle, isLarge, isText } from "../lib/textFile";
 import { confirm } from "./confirm.svelte";
+import { localCopies } from "./localCopies.svelte";
 import { inWorkspace, showConnectionLost } from "./session.svelte";
 import { toasts } from "./toasts.svelte";
 
@@ -18,7 +19,17 @@ import { toasts } from "./toasts.svelte";
  * Abre el archivo `path` del Servidor en su ventana del Editor, si es de
  * texto. Si pasa de 5 MB, pregunta antes.
  */
-export async function openInEditor(path: string) {
+export function openInEditor(path: string) {
+  return open(path, () => toasts.error(t("editor.notText", { name: baseName(path) })));
+}
+
+/** Lo que hace el doble clic: abre `path` en el Editor si es de texto y, si no, con la aplicación del equipo. */
+export function openFile(path: string) {
+  return open(path, () => localCopies.open(path));
+}
+
+/** Abre `path` en el Editor si es de texto; si no, llama a `notText`. */
+async function open(path: string, notText: () => unknown) {
   const name = baseName(path);
   let head;
   try {
@@ -26,7 +37,7 @@ export async function openInEditor(path: string) {
   } catch (code) {
     return failed(code);
   }
-  if (!isText(head.bytes)) return toasts.error(t("editor.notText", { name }));
+  if (!isText(head.bytes)) return notText();
   if (isLarge(head.size)) {
     const confirmed = await confirm({
       title: t("editor.largeTitle", { name, size: formatSize(head.size, locale.current) }),

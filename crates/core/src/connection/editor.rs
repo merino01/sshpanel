@@ -57,9 +57,18 @@ pub struct TextCopy {
 impl Connection {
     /// En Modo simple, falla si el archivo `path` queda fuera de las carpetas
     /// permitidas. `path` tiene que ser una ruta absoluta a un nombre.
-    fn check_file(&self, path: &str) -> Result<()> {
+    pub(super) fn check_file(&self, path: &str) -> Result<()> {
         let (dir, _) = split_path(path).ok_or(Error::InvalidName)?;
         self.check_allowed(dir)
+    }
+
+    pub(crate) async fn stamp(&self, path: &str) -> Result<Stamp> {
+        self.check_file(path)?;
+        let meta = self.sftp.metadata(path).await.map_err(|e| self.failure(e, Error::ReadFailed))?;
+        if meta.is_dir() {
+            return Err(Error::ReadFailed);
+        }
+        Ok(Stamp::from(&meta))
     }
 
     pub(crate) async fn read_head(&self, path: &str) -> Result<Head> {

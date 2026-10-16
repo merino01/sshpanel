@@ -1,7 +1,7 @@
 <!--
   Un archivo o carpeta del Explorador. Un clic la selecciona (recibe el foco y
   se marca) y el doble clic la abre: una carpeta, en el Explorador; un archivo
-  de texto, en el Editor. Con el foco, los Atajos (Intro, Supr, F2…) actúan
+  de texto, en el Editor; cualquier otro, con la aplicación del equipo. Con el foco, los Atajos (Intro, Supr, F2…) actúan
   sobre ella; el menú contextual tiene el resto.
 -->
 <script lang="ts">
@@ -12,6 +12,7 @@
   import { joinPath } from "../../lib/paths";
   import { openInEditor } from "../../state/editorWindows.svelte";
   import { askToTrash, explorer, openEntry, select, startRenaming } from "../../state/explorer.svelte";
+  import { localCopies } from "../../state/localCopies.svelte";
   import { openMenu, type MenuItem } from "../../state/menu.svelte";
   import { pickDownload } from "../../state/transfers.svelte";
   import { EXPLORER_COLUMNS, MUTED, ROW } from "../files";
@@ -34,7 +35,16 @@
   function menuItems(): MenuItem[] {
     const items: MenuItem[] = [];
     if (isDir) items.push({ label: t("explorer.openShort"), action: open });
-    if (isFile) items.push({ label: t("editor.openWith"), action: () => void openInEditor(joinPath(explorer.listing.path, entry.name)) });
+    if (isFile) {
+      const path = joinPath(explorer.listing.path, entry.name);
+      items.push({
+        label: t("explorer.openWith"),
+        items: [
+          { label: t("explorer.openWithEditor"), action: () => void openInEditor(path) },
+          { label: t("explorer.openWithApp"), action: () => void localCopies.open(path) },
+        ],
+      });
+    }
     // Un enlace roto no tiene nada que descargar.
     if (entry.kind !== "symlink") items.push({ label: t("explorer.download"), action: () => pickDownload(explorer.listing.path, entry.name) });
     items.push(

@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use sshpanel_core::{Core, Error, Outcome, Progress, Transfer};
+use sshpanel_core::{Core, Error, Outcome, Progress, Stamp, Transfer};
 use tauri::State;
 use tauri::ipc::Channel;
 
@@ -54,6 +54,12 @@ pub fn add_upload(id: u32, local: PathBuf, remote_dir: String, transfers: State<
 #[tauri::command]
 pub fn add_download(id: u32, remote_dir: String, name: String, local_dir: PathBuf, transfers: State<Transfers>) {
     transfers.add(id, Transfer::download(remote_dir, name, local_dir));
+}
+
+/// Sustituye el archivo `remote` del Servidor por la copia `local` abierta en el equipo.
+#[tauri::command]
+pub fn add_replace(id: u32, local: PathBuf, remote: String, expected: Option<Stamp>, transfers: State<Transfers>) {
+    transfers.add(id, Transfer::replace(local, remote, expected));
 }
 
 /// Lanza la Transferencia `id`, o la reanuda donde se quedó.

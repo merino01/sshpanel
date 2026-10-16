@@ -70,8 +70,8 @@ Una barra superior, presente en todas las pantallas, da acceso a dos apartados n
 
 32. Como Miembro, quiero que el doble clic en un archivo que no es de texto lo abra con la aplicación de mi equipo, para ver imágenes, documentos y PDF sin descargarlos a mano.
 33. Como Miembro, quiero que, al guardar en la aplicación de mi equipo, el cambio se suba solo al Servidor, para no tener que acordarme de subirlo.
-34. Como Miembro, quiero que esa subida salga en la cola de Transferencias, para saber cuándo ha llegado.
-35. Como Miembro, quiero ver en el panel de Transferencias qué archivos tengo abiertos en el equipo y poder dejar de vigilar cada uno, para controlar qué se sube.
+34. Como Miembro, quiero ver en el panel de Transferencias cuándo un archivo se está abriendo o subiendo, y si algo ha fallado, para saber cuándo ha llegado.
+35. Como Miembro sin conocimientos técnicos, quiero que lo que abro en el equipo se suba siempre al guardar, sin nada que gestionar, para no tener que entender qué se vigila.
 36. Como Miembro, quiero que las copias temporales se borren al desconectar o cerrar la app, para no dejar archivos del Servidor en mi equipo.
 37. Como Miembro, quiero «Abrir con…» en el menú contextual, para elegir entre el Editor y la aplicación de mi equipo.
 38. Como Miembro avanzado, quiero «Abrir con → vim», que abre el archivo en una pestaña nueva de la Terminal, para usar mi editor de siempre.
@@ -137,8 +137,7 @@ Una barra superior, presente en todas las pantallas, da acceso a dos apartados n
   - Vale igual para el Editor y para la aplicación del equipo.
 - **Abrir con la aplicación del equipo:**
   - La app descarga el archivo a una carpeta temporal propia y lo abre con la aplicación predeterminada del sistema.
-  - Vigila la copia mientras haya conexión y sube cada guardado como una Transferencia normal de la cola.
-  - El panel de Transferencias muestra los «archivos abiertos en el equipo» con «Dejar de vigilar».
+  - Vigila la copia y sube cada guardado hasta cerrar la app o cambiar de Perfil, sin opción de dejar de vigilarla. La descarga y las subidas van por la cola de Transferencias (con su límite y su reanudación al reconectar), pero sin sus filas de siempre: el archivo solo aparece en el panel mientras se abre (con su avance), se sube o no se ha podido subir, y los errores salen además en un aviso.
   - Las copias temporales se borran al desconectar o al cerrar la app.
 - **Doble clic y «Abrir con…»:**
   - El doble clic abre los archivos de texto en el Editor y el resto en la aplicación del equipo.

@@ -7,6 +7,7 @@ import SettingsWindow from "./SettingsWindow.svelte";
 import { loadPreferences } from "./state/preferences.svelte";
 import { start } from "./state/session.svelte";
 import { listenForShortcuts } from "./state/shortcuts.svelte";
+import { watchLocalCopies } from "./state/localCopies.svelte";
 import { listenForDrops } from "./state/transfers.svelte";
 import { checkForUpdate } from "./state/update.svelte";
 
@@ -34,6 +35,7 @@ if (windowName === "settings") {
 } else {
   mount(App, { target });
   listenForDrops();
+  watchLocalCopies();
   void start();
   void checkForUpdate();
 }

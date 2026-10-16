@@ -1,6 +1,6 @@
-//! Explorador: listar, crear carpetas y renombrar.
+//! Explorador: listar, crear carpetas, renombrar y ver si un archivo ha cambiado.
 
-use sshpanel_core::{Core, Listing};
+use sshpanel_core::{Core, Listing, Stamp};
 use tauri::State;
 
 use super::code;
@@ -18,4 +18,9 @@ pub async fn create_folder(parent: String, name: String, core: State<'_, Core>) 
 #[tauri::command]
 pub async fn rename(dir: String, from: String, to: String, core: State<'_, Core>) -> Result<(), String> {
     core.rename(&dir, &from, &to).await.map_err(code)
+}
+
+#[tauri::command]
+pub async fn file_stamp(path: String, core: State<'_, Core>) -> Result<Stamp, String> {
+    core.stamp(&path).await.map_err(code)
 }

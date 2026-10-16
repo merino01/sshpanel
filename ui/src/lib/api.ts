@@ -96,8 +96,14 @@ export interface TextCopy {
   stamp: Stamp;
 }
 
-/** Dónde ha quedado una Transferencia terminada. */
-export type Outcome = { uploaded: string } | { downloaded: string };
+/** Dónde ha quedado una Transferencia terminada; al sustituir un archivo, cómo ha quedado. */
+export type Outcome = { uploaded: string } | { downloaded: string } | { replaced: Stamp };
+
+/** Una subcarpeta nueva y vacía de la carpeta temporal, para descargar una copia que abrir en el equipo. */
+export interface PreparedCopy {
+  id: number;
+  dir: string;
+}
 
 export const api = {
   appState: () => invoke<AppState>("app_state"),
@@ -115,6 +121,8 @@ export const api = {
   listDir: (path: string) => invoke<Listing>("list_dir", { path }),
   createFolder: (parent: string, name: string) => invoke<void>("create_folder", { parent, name }),
   rename: (dir: string, from: string, to: string) => invoke<void>("rename", { dir, from, to }),
+  /** Tamaño y fecha de modificación actuales del archivo `path`. */
+  fileStamp: (path: string) => invoke<Stamp>("file_stamp", { path }),
 
   /** El principio del archivo `path`, para saber si es de texto (ver `lib/textFile`) antes de abrirlo. */
   readHead: (path: string) => invoke<Head>("read_head", { path }),
@@ -184,6 +192,12 @@ export const api = {
   addUpload: (id: number, local: string, remoteDir: string) => invoke<void>("add_upload", { id, local, remoteDir }),
   addDownload: (id: number, remoteDir: string, name: string, localDir: string) =>
     invoke<void>("add_download", { id, remoteDir, name, localDir }),
+  /**
+   * Sustituye el archivo `remote` por la copia `local` abierta en el equipo. Con `expected`, falla con
+   * `editor.conflict` si el archivo ya no tiene ese `Stamp`; con `null`, lo sobrescribe sin mirar.
+   */
+  addReplace: (id: number, local: string, remote: string, expected: Stamp | null) =>
+    invoke<void>("add_replace", { id, local, remote, expected }),
   /** Lanza la Transferencia `id`, o la reanuda donde se quedó, avisando de cada avance. */
   runTransfer: (id: number, onProgress: (progress: Progress) => void) => {
     const channel = new Channel<Progress>();
@@ -191,6 +205,20 @@ export const api = {
     return invoke<Outcome>("run_transfer", { id, onProgress: channel });
   },
   cancelTransfer: (id: number) => invoke<void>("cancel_transfer", { id }),
+
+  /** Archivos abiertos en el equipo: prepara la subcarpeta donde descargar la copia. */
+  prepareLocalCopy: () => invoke<PreparedCopy>("prepare_local_copy"),
+  /** Abre con su aplicación la copia `file`, descargada en la subcarpeta de `id`, y empieza a vigilarla. */
+  watchLocalCopy: (id: number, file: string) => invoke<void>("watch_local_copy", { id, file }),
+  /** Vuelve a abrir con su aplicación la copia `id`. */
+  openLocalCopy: (id: number) => invoke<void>("open_local_copy", { id }),
+  /** Deja de vigilar la copia `id` y la borra del equipo. */
+  forgetLocalCopy: (id: number) => invoke<void>("forget_local_copy", { id }),
+  /** Deja de vigilar todas las copias y las borra del equipo. */
+  clearLocalCopies: () => invoke<void>("clear_local_copies"),
+  /** Avisa con su número cuando se guarda una copia vigilada. */
+  onLocalCopyChanged: (handler: (id: number) => void) => listen<number>("local-copy-changed", (event) => handler(event.payload)),
+
   /** La versión nueva publicada en las Releases, o `null` si ya es la última. */
   checkUpdate: () => invoke<{ version: string } | null>("check_update"),
   /** Instala la versión que encontró `checkUpdate` y reinicia la app. */

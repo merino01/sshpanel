@@ -1,11 +1,14 @@
 /** Menú contextual abierto, si lo hay. Lo pinta `components/ContextMenu.svelte`, montado una sola vez. */
 
-export interface MenuItem {
-  label: string;
-  action: () => void;
-  /** Borra algo: se pinta en el color de error. */
-  destructive?: boolean;
-}
+export type MenuItem =
+  | {
+      label: string;
+      action: () => void;
+      /** Borra algo: se pinta en el color de error. */
+      destructive?: boolean;
+    }
+  /** Abre un submenú con `items`. */
+  | { label: string; items: MenuItem[] };
 
 export interface OpenMenu {
   label: string;
